@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DainnUser.Api/DainnUser.Api.csproj" />
+    <Project Path="src/DainnUser.Application/DainnUser.Application.csproj" />
+    <Project Path="src/DainnUser.Core/DainnUser.Core.csproj" />
+    <Project Path="src/DainnUser.Infrastructure/DainnUser.Infrastructure.csproj" />
+    <Project Path="src/DainnUser.Web/DainnUser.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DainnUser.IntegrationTests/DainnUser.IntegrationTests.csproj" />
+    <Project Path="tests/DainnUser.SecurityTests/DainnUser.SecurityTests.csproj" />
+    <Project Path="tests/DainnUser.UnitTests/DainnUser.UnitTests.csproj" />
+  </Folder>
+</Solution>
