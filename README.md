@@ -79,6 +79,7 @@ See [docs/getting-started.md](docs/getting-started.md) for detailed setup instru
 - [Architecture](docs/architecture.md)
 - [Security Guide](docs/security.md)
 - [Getting Started](docs/getting-started.md)
+- [Database Migrations](docs/migrations.md)
 
 ## Development
 
