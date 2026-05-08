@@ -96,7 +96,7 @@ public class AuthenticationService : IAuthenticationService
     public async Task<bool> VerifyEmailAsync(Guid userId, string token, CancellationToken cancellationToken = default)
     {
         // Get user with tokens
-        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        var user = await _userRepository.GetByIdWithTokensAsync(userId, cancellationToken);
         if (user == null)
         {
             return false;
@@ -133,8 +133,8 @@ public class AuthenticationService : IAuthenticationService
     /// <inheritdoc/>
     public async Task<bool> ResendVerificationEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        // Get user by email
-        var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
+        // Get user by email with tokens
+        var user = await _userRepository.GetByEmailWithTokensAsync(email, cancellationToken);
         if (user == null)
         {
             return false;
@@ -147,7 +147,11 @@ public class AuthenticationService : IAuthenticationService
         }
 
         // Revoke existing verification tokens
-        foreach (var existingToken in user.Tokens.Where(t => t.TokenType == TokenType.EmailVerification && !t.IsUsed && !t.IsRevoked))
+        var tokensToRevoke = user.Tokens
+            .Where(t => t.TokenType == TokenType.EmailVerification && !t.IsUsed && !t.IsRevoked)
+            .ToList();
+
+        foreach (var existingToken in tokensToRevoke)
         {
             existingToken.IsRevoked = true;
             existingToken.RevokedAt = DateTime.UtcNow;
@@ -170,7 +174,7 @@ public class AuthenticationService : IAuthenticationService
         user.Tokens.Add(token);
         user.UpdatedAt = DateTime.UtcNow;
 
-        _userRepository.Update(user);
+        // No need to call Update() - entity is already tracked and EF Core will detect changes
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Send verification email
