@@ -10,7 +10,12 @@
       "Bash(dotnet sln:*)",
       "Bash(dotnet add:*)",
       "Bash(dotnet build:*)",
-      "Bash(dotnet ef:*)"
+      "Bash(dotnet ef:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet run:*)",
+      "Bash(taskkill /F /IM DainnUser.Api.exe)",
+      "Bash(findstr DainnUser)",
+      "Bash(taskkill:*)"
     ]
   }
 }

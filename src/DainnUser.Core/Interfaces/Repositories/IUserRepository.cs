@@ -17,6 +17,22 @@ public interface IUserRepository : IRepository<User>
     Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets a user by email address with tokens.
+    /// </summary>
+    /// <param name="email">The email address.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The user with tokens if found, otherwise null.</returns>
+    Task<User?> GetByEmailWithTokensAsync(string email, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a user by ID with tokens.
+    /// </summary>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The user with tokens if found, otherwise null.</returns>
+    Task<User?> GetByIdWithTokensAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets a user by username.
     /// </summary>
     /// <param name="username">The username.</param>

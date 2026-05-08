@@ -1,0 +1,72 @@
+namespace DainnUser.Infrastructure.Configuration;
+
+/// <summary>
+/// Configuration options for DainnUser library.
+/// </summary>
+public class DainnUserOptions
+{
+    /// <summary>
+    /// Gets or sets a value indicating whether social login is enabled.
+    /// </summary>
+    public bool EnableSocialLogin { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether two-factor authentication is enabled.
+    /// </summary>
+    public bool EnableTwoFactor { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether email verification is required for registration.
+    /// </summary>
+    public bool RequireEmailVerification { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether phone verification is enabled.
+    /// </summary>
+    public bool EnablePhoneVerification { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether account lockout is enabled.
+    /// </summary>
+    public bool EnableAccountLockout { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the maximum failed login attempts before lockout.
+    /// </summary>
+    public int MaxFailedLoginAttempts { get; set; } = 5;
+
+    /// <summary>
+    /// Gets or sets the lockout duration in minutes.
+    /// </summary>
+    public int LockoutDurationMinutes { get; set; } = 15;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether session management is enabled.
+    /// </summary>
+    public bool EnableSessionManagement { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether activity logging is enabled.
+    /// </summary>
+    public bool EnableActivityLogging { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the JWT token expiration in minutes.
+    /// </summary>
+    public int JwtExpirationMinutes { get; set; } = 60;
+
+    /// <summary>
+    /// Gets or sets the refresh token expiration in days.
+    /// </summary>
+    public int RefreshTokenExpirationDays { get; set; } = 7;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether rate limiting is enabled.
+    /// </summary>
+    public bool EnableRateLimiting { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the rate limit requests per minute.
+    /// </summary>
+    public int RateLimitRequestsPerMinute { get; set; } = 60;
+}

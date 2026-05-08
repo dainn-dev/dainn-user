@@ -27,6 +27,22 @@ public class UserRepository : Repository<User>, IUserRepository
     }
 
     /// <inheritdoc/>
+    public async Task<User?> GetByEmailWithTokensAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(u => u.Tokens)
+            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<User?> GetByIdWithTokensAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(u => u.Tokens)
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+    }
+
+    /// <inheritdoc/>
     public async Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         return await _dbSet
