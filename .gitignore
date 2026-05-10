@@ -430,3 +430,4 @@ Thumbs.db
 
 # Claude Code specific
 .claude/memory/archive/*.md
+.claude/settings.local.json

@@ -1,3 +1,4 @@
+using DainnUser.Api.Extensions;
 using DainnUser.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +27,9 @@ builder.Services.AddDainnUser(builder.Configuration, options =>
     options.EnableActivityLogging = true;
 });
 
+// Wire JWT bearer authentication using DainnUser's JWT options
+builder.Services.AddDainnUserJwtAuthentication(builder.Configuration);
+
 // Add CORS (configure as needed)
 builder.Services.AddCors(options =>
 {
@@ -50,6 +54,7 @@ app.UseHttpsRedirection();
 
 app.UseCors();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Add DainnUser middleware

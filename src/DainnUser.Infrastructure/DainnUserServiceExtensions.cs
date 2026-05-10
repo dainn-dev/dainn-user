@@ -123,5 +123,21 @@ public static class DainnUserServiceExtensions
                 "DainnUser email from address is not configured. " +
                 "Please set 'DainnUser:Email:FromEmail' in your configuration.");
         }
+
+        // Validate JWT configuration
+        var jwtSecret = configuration["DainnUser:Jwt:Secret"];
+        if (string.IsNullOrWhiteSpace(jwtSecret))
+        {
+            throw new InvalidOperationException(
+                "DainnUser JWT secret is not configured. " +
+                "Please set 'DainnUser:Jwt:Secret' in your configuration. " +
+                "The secret must be at least 32 characters (256 bits).");
+        }
+
+        if (System.Text.Encoding.UTF8.GetByteCount(jwtSecret) < 32)
+        {
+            throw new InvalidOperationException(
+                "DainnUser JWT secret is too short. It must be at least 32 bytes (256 bits) for HMAC-SHA256.");
+        }
     }
 }

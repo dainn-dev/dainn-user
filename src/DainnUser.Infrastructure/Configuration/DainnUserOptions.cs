@@ -61,6 +61,12 @@ public class DainnUserOptions
     public int RefreshTokenExpirationDays { get; set; } = 7;
 
     /// <summary>
+    /// Gets or sets the password reset token expiration in hours. Tokens are one-time-use and
+    /// invalidated on first reset; this value bounds the time-of-use window.
+    /// </summary>
+    public int PasswordResetTokenExpirationHours { get; set; } = 1;
+
+    /// <summary>
     /// Gets or sets a value indicating whether rate limiting is enabled.
     /// </summary>
     public bool EnableRateLimiting { get; set; } = true;

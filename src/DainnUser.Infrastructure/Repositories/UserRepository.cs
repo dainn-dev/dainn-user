@@ -43,6 +43,15 @@ public class UserRepository : Repository<User>, IUserRepository
     }
 
     /// <inheritdoc/>
+    public async Task<User?> GetByEmailWithRolesAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+    }
+
+    /// <inheritdoc/>
     public async Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         return await _dbSet
@@ -80,6 +89,51 @@ public class UserRepository : Repository<User>, IUserRepository
         return await _dbSet
             .Include(u => u.Logins)
             .FirstOrDefaultAsync(u => u.Logins.Any(l => l.Provider == provider && l.ProviderKey == providerKey), cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task AddTokenAsync(UserToken token, CancellationToken cancellationToken = default)
+    {
+        await _context.Set<UserToken>().AddAsync(token, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<UserToken?> GetRefreshTokenByHashAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<UserToken>()
+            .FirstOrDefaultAsync(
+                t => t.TokenType == TokenType.RefreshToken && t.TokenValue == tokenHash,
+                cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<UserToken?> GetPasswordResetTokenByHashAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        // Eager-load User navigation — the password-reset flow needs both the token (to mark used)
+        // and the user (to update password + send confirmation email).
+        return await _context.Set<UserToken>()
+            .Include(t => t.User)
+            .FirstOrDefaultAsync(
+                t => t.TokenType == TokenType.PasswordReset && t.TokenValue == tokenHash,
+                cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task RevokeAllRefreshTokensAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var tokens = await _context.Set<UserToken>()
+            .Where(t => t.UserId == userId
+                        && t.TokenType == TokenType.RefreshToken
+                        && !t.IsRevoked
+                        && !t.IsUsed)
+            .ToListAsync(cancellationToken);
+
+        var now = DateTime.UtcNow;
+        foreach (var token in tokens)
+        {
+            token.IsRevoked = true;
+            token.RevokedAt = now;
+        }
     }
 
     /// <inheritdoc/>

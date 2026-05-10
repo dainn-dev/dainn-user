@@ -1,3 +1,4 @@
+using DainnUser.Infrastructure.Middleware;
 using Microsoft.AspNetCore.Builder;
 
 namespace DainnUser.Infrastructure;
@@ -9,18 +10,14 @@ public static class DainnUserMiddlewareExtensions
 {
     /// <summary>
     /// Adds DainnUser middleware to the application pipeline.
+    /// Should be invoked AFTER <c>UseAuthentication()</c> so authenticated users are partitioned
+    /// correctly by per-user rate limit rules.
     /// </summary>
     /// <param name="app">The application builder.</param>
     /// <returns>The application builder for chaining.</returns>
     public static IApplicationBuilder UseDainnUser(this IApplicationBuilder app)
     {
-        // Currently no middleware needed, but this provides extension point for future features
-        // such as:
-        // - Custom authentication middleware
-        // - Rate limiting middleware
-        // - Activity logging middleware
-        // - Session management middleware
-
+        app.UseMiddleware<DainnUserRateLimitingMiddleware>();
         return app;
     }
 }

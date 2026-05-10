@@ -20,7 +20,8 @@ public class DainnUserServiceExtensionsTests
                 ["DainnUser:Database:ConnectionString"] = "Data Source=test.db",
                 ["DainnUser:Email:SmtpHost"] = "localhost",
                 ["DainnUser:Email:SmtpPort"] = "1025",
-                ["DainnUser:Email:FromEmail"] = "test@example.com"
+                ["DainnUser:Email:FromEmail"] = "test@example.com",
+                ["DainnUser:Jwt:Secret"] = "test-jwt-secret-must-be-at-least-32-bytes-long-okay"
             })
             .Build();
 
@@ -48,7 +49,8 @@ public class DainnUserServiceExtensionsTests
                 ["DainnUser:Database:ConnectionString"] = "Data Source=test.db",
                 ["DainnUser:Email:SmtpHost"] = "localhost",
                 ["DainnUser:Email:SmtpPort"] = "1025",
-                ["DainnUser:Email:FromEmail"] = "test@example.com"
+                ["DainnUser:Email:FromEmail"] = "test@example.com",
+                ["DainnUser:Jwt:Secret"] = "test-jwt-secret-must-be-at-least-32-bytes-long-okay"
             })
             .Build();
 
@@ -80,7 +82,8 @@ public class DainnUserServiceExtensionsTests
                 ["DainnUser:Database:Provider"] = "SQLite",
                 ["DainnUser:Email:SmtpHost"] = "localhost",
                 ["DainnUser:Email:SmtpPort"] = "1025",
-                ["DainnUser:Email:FromEmail"] = "test@example.com"
+                ["DainnUser:Email:FromEmail"] = "test@example.com",
+                ["DainnUser:Jwt:Secret"] = "test-jwt-secret-must-be-at-least-32-bytes-long-okay"
             })
             .Build();
 
@@ -101,7 +104,8 @@ public class DainnUserServiceExtensionsTests
                 ["DainnUser:Database:ConnectionString"] = "Data Source=test.db",
                 ["DainnUser:Email:SmtpHost"] = "localhost",
                 ["DainnUser:Email:SmtpPort"] = "1025",
-                ["DainnUser:Email:FromEmail"] = "test@example.com"
+                ["DainnUser:Email:FromEmail"] = "test@example.com",
+                ["DainnUser:Jwt:Secret"] = "test-jwt-secret-must-be-at-least-32-bytes-long-okay"
             })
             .Build();
 
@@ -123,7 +127,8 @@ public class DainnUserServiceExtensionsTests
                 ["DainnUser:Database:ConnectionString"] = "Data Source=test.db",
                 ["DainnUser:Email:SmtpHost"] = "localhost",
                 ["DainnUser:Email:SmtpPort"] = "1025",
-                ["DainnUser:Email:FromEmail"] = "test@example.com"
+                ["DainnUser:Email:FromEmail"] = "test@example.com",
+                ["DainnUser:Jwt:Secret"] = "test-jwt-secret-must-be-at-least-32-bytes-long-okay"
             })
             .Build();
 
@@ -144,7 +149,8 @@ public class DainnUserServiceExtensionsTests
                 ["DainnUser:Database:Provider"] = "SQLite",
                 ["DainnUser:Database:ConnectionString"] = "Data Source=test.db",
                 ["DainnUser:Email:SmtpPort"] = "1025",
-                ["DainnUser:Email:FromEmail"] = "test@example.com"
+                ["DainnUser:Email:FromEmail"] = "test@example.com",
+                ["DainnUser:Jwt:Secret"] = "test-jwt-secret-must-be-at-least-32-bytes-long-okay"
             })
             .Build();
 
@@ -165,7 +171,8 @@ public class DainnUserServiceExtensionsTests
                 ["DainnUser:Database:Provider"] = "SQLite",
                 ["DainnUser:Database:ConnectionString"] = "Data Source=test.db",
                 ["DainnUser:Email:SmtpHost"] = "localhost",
-                ["DainnUser:Email:FromEmail"] = "test@example.com"
+                ["DainnUser:Email:FromEmail"] = "test@example.com",
+                ["DainnUser:Jwt:Secret"] = "test-jwt-secret-must-be-at-least-32-bytes-long-okay"
             })
             .Build();
 
@@ -173,6 +180,47 @@ public class DainnUserServiceExtensionsTests
         var act = () => services.AddDainnUser(configuration);
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*SMTP port*");
+    }
+
+    [Fact]
+    public void AddDainnUser_WithMissingJwtSecret_ThrowsException()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DainnUser:Database:Provider"] = "SQLite",
+                ["DainnUser:Database:ConnectionString"] = "Data Source=test.db",
+                ["DainnUser:Email:SmtpHost"] = "localhost",
+                ["DainnUser:Email:SmtpPort"] = "1025",
+                ["DainnUser:Email:FromEmail"] = "test@example.com"
+            })
+            .Build();
+
+        var act = () => services.AddDainnUser(configuration);
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*JWT secret*");
+    }
+
+    [Fact]
+    public void AddDainnUser_WithShortJwtSecret_ThrowsException()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DainnUser:Database:Provider"] = "SQLite",
+                ["DainnUser:Database:ConnectionString"] = "Data Source=test.db",
+                ["DainnUser:Email:SmtpHost"] = "localhost",
+                ["DainnUser:Email:SmtpPort"] = "1025",
+                ["DainnUser:Email:FromEmail"] = "test@example.com",
+                ["DainnUser:Jwt:Secret"] = "too-short"
+            })
+            .Build();
+
+        var act = () => services.AddDainnUser(configuration);
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*too short*");
     }
 
     [Fact]

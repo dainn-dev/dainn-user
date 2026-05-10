@@ -53,6 +53,24 @@ public class EmailService : IEmailService
         await SendEmailAsync(email, subject, body, cancellationToken);
     }
 
+    /// <inheritdoc/>
+    public async Task SendPasswordChangedNotificationAsync(string email, string username, CancellationToken cancellationToken = default)
+    {
+        var subject = "Your Password Has Been Changed";
+        var body = BuildPasswordChangedTemplate(username);
+
+        await SendEmailAsync(email, subject, body, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task SendAccountLockoutNotificationAsync(string email, string username, DateTime lockoutEnd, CancellationToken cancellationToken = default)
+    {
+        var subject = "Account Locked - Security Alert";
+        var body = BuildAccountLockoutTemplate(username, lockoutEnd);
+
+        await SendEmailAsync(email, subject, body, cancellationToken);
+    }
+
     private async Task SendEmailAsync(string toEmail, string subject, string htmlBody, CancellationToken cancellationToken)
     {
         try
@@ -158,6 +176,78 @@ public class EmailService : IEmailService
                         </div>
                         <div class=""footer"">
                             <p>This is an automated message, please do not reply.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+    }
+
+    private static string BuildPasswordChangedTemplate(string username)
+    {
+        return $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset=""utf-8"">
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background-color: #4CAF50; color: white; padding: 20px; text-align: center; }}
+                        .content {{ padding: 20px; background-color: #f9f9f9; }}
+                        .footer {{ padding: 20px; text-align: center; font-size: 12px; color: #666; }}
+                        .warning {{ color: #d32f2f; font-weight: bold; }}
+                    </style>
+                </head>
+                <body>
+                    <div class=""container"">
+                        <div class=""header"">
+                            <h1>Password Changed</h1>
+                        </div>
+                        <div class=""content"">
+                            <p>Hello {username},</p>
+                            <p>Your account password was successfully changed.</p>
+                            <p class=""warning"">If you did not make this change, your account may be compromised. Please contact support immediately or reset your password again.</p>
+                        </div>
+                        <div class=""footer"">
+                            <p>This is an automated security notification, please do not reply.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+    }
+
+    private static string BuildAccountLockoutTemplate(string username, DateTime lockoutEnd)
+    {
+        var lockoutEndDisplay = lockoutEnd.ToString("u");
+        return $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset=""utf-8"">
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background-color: #d32f2f; color: white; padding: 20px; text-align: center; }}
+                        .content {{ padding: 20px; background-color: #f9f9f9; }}
+                        .footer {{ padding: 20px; text-align: center; font-size: 12px; color: #666; }}
+                        .warning {{ color: #d32f2f; font-weight: bold; }}
+                        .when {{ background-color: #f0f0f0; padding: 10px; border-radius: 4px; font-family: monospace; }}
+                    </style>
+                </head>
+                <body>
+                    <div class=""container"">
+                        <div class=""header"">
+                            <h1>Account Locked</h1>
+                        </div>
+                        <div class=""content"">
+                            <p>Hello {username},</p>
+                            <p>Your account has been temporarily locked because of multiple failed sign-in attempts.</p>
+                            <p>The lock will be released automatically at:</p>
+                            <div class=""when"">{lockoutEndDisplay}</div>
+                            <p class=""warning"">If you didn't try to sign in, someone else may know your password — please change it as soon as the lock is released, or contact support to unlock your account immediately.</p>
+                        </div>
+                        <div class=""footer"">
+                            <p>This is an automated security notification, please do not reply.</p>
                         </div>
                     </div>
                 </body>

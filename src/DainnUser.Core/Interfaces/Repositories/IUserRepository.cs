@@ -33,6 +33,14 @@ public interface IUserRepository : IRepository<User>
     Task<User?> GetByIdWithTokensAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets a user by email address with their roles loaded.
+    /// </summary>
+    /// <param name="email">The email address.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The user with roles if found, otherwise null.</returns>
+    Task<User?> GetByEmailWithRolesAsync(string email, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets a user by username.
     /// </summary>
     /// <param name="username">The username.</param>
@@ -72,6 +80,41 @@ public interface IUserRepository : IRepository<User>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The user if found, otherwise null.</returns>
     Task<User?> GetByExternalLoginAsync(LoginProvider provider, string providerKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a <see cref="UserToken"/> to the context. Prefer this over mutating
+    /// <see cref="User.Tokens"/> on a tracked user, which the EF Core InMemory provider
+    /// handles inconsistently.
+    /// </summary>
+    /// <param name="token">The token to add.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task AddTokenAsync(UserToken token, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Looks up a password-reset token row by its stored hash, regardless of state.
+    /// Callers must check <c>IsUsed</c>/<c>IsRevoked</c>/<c>ExpiresAt</c>.
+    /// </summary>
+    /// <param name="tokenHash">SHA-256 hash of the plain reset token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The token with its <see cref="UserToken.User"/> navigation populated, or null.</returns>
+    Task<UserToken?> GetPasswordResetTokenByHashAsync(string tokenHash, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Looks up a refresh token row by its stored hash, regardless of state (used/revoked/expired).
+    /// Callers must check <c>IsUsed</c>/<c>IsRevoked</c>/<c>ExpiresAt</c> themselves.
+    /// </summary>
+    /// <param name="tokenHash">SHA-256 hash of the plain refresh token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The matching token, or null if no token has that hash.</returns>
+    Task<UserToken?> GetRefreshTokenByHashAsync(string tokenHash, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Revokes every active refresh token for a user. Used for token-reuse incident response —
+    /// callers should also deactivate sessions via <see cref="ISessionRepository.DeactivateAllByUserIdAsync"/>.
+    /// </summary>
+    /// <param name="userId">The user whose refresh tokens should be revoked.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task RevokeAllRefreshTokensAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Checks if an email is already taken.

@@ -1,5 +1,6 @@
 using DainnUser.Core.Interfaces.Services;
 using DainnUser.Infrastructure.Configuration;
+using DainnUser.Infrastructure.Middleware;
 using DainnUser.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,8 +25,16 @@ public static class InfrastructureServiceExtensions
         // Configure email options
         services.Configure<EmailOptions>(configuration.GetSection("DainnUser:Email"));
 
-        // Register email service
+        // Configure JWT options
+        services.Configure<JwtOptions>(configuration.GetSection("DainnUser:Jwt"));
+
+        // Configure rate limiting options
+        services.Configure<RateLimitingOptions>(configuration.GetSection("DainnUser:RateLimiting"));
+
+        // Register infrastructure services
         services.AddScoped<IEmailService, EmailService>();
+        services.AddSingleton<IJwtTokenService, JwtTokenService>();
+        services.AddSingleton<RateLimiterRegistry>();
 
         return services;
     }
