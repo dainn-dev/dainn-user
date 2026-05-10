@@ -7,7 +7,6 @@ using DainnUser.Core.Interfaces.Services;
 using DainnUser.Core.Models.Authentication;
 using DainnUser.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Identity;
-
 namespace DainnUser.Application.Services;
 
 /// <summary>
@@ -20,6 +19,7 @@ public class AuthenticationService : IAuthenticationService
     private readonly IEmailService _emailService;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly ITwoFactorService? _twoFactorService;
     private readonly DainnUserOptions _options;
 
     /// <summary>
@@ -37,7 +37,8 @@ public class AuthenticationService : IAuthenticationService
         IEmailService emailService,
         IPasswordHasher<User> passwordHasher,
         IJwtTokenService jwtTokenService,
-        DainnUserOptions options)
+        DainnUserOptions options,
+        ITwoFactorService? twoFactorService = null)
     {
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
@@ -45,6 +46,7 @@ public class AuthenticationService : IAuthenticationService
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;
         _options = options;
+        _twoFactorService = twoFactorService;
     }
 
     /// <inheritdoc/>
@@ -109,6 +111,7 @@ public class AuthenticationService : IAuthenticationService
         string password,
         string? ipAddress,
         string? userAgent,
+        string? rememberDeviceToken = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(email))
@@ -165,8 +168,39 @@ public class AuthenticationService : IAuthenticationService
             .Select(ur => ur.Role!.Name)
             .ToList();
 
+        var loginPermissions = ExtractPermissions(user.UserRoles);
+
+        if (_options.EnableTwoFactor && user.TwoFactorEnabled)
+        {
+            var trusted = _twoFactorService is not null &&
+                          await _twoFactorService.IsDeviceTrustedAsync(user.Id, rememberDeviceToken ?? string.Empty, cancellationToken);
+
+            if (!trusted)
+            {
+                await RecordLoginAttemptAsync(user, true, "Two-factor authentication required.", ipAddress, userAgent, cancellationToken);
+                user.FailedLoginAttempts = 0;
+                user.LockoutEnd = null;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                return new LoginResult
+                {
+                    RequiresTwoFactor = true,
+                    TwoFactorUserId = user.Id,
+                    User = new AuthenticatedUserInfo
+                    {
+                        Id = user.Id,
+                        Email = user.Email,
+                        Username = user.Username,
+                        EmailVerified = user.EmailVerified,
+                        Roles = roleNames
+                    }
+                };
+            }
+        }
+
         var sessionId = Guid.NewGuid();
-        var accessToken = _jwtTokenService.GenerateAccessToken(user, roleNames, sessionId);
+        var accessToken = GenerateAccessToken(user, roleNames, loginPermissions, sessionId);
         var refreshToken = _jwtTokenService.GenerateRefreshToken();
         var refreshTokenHash = _jwtTokenService.HashRefreshToken(refreshToken);
         var refreshExpiresAt = DateTime.UtcNow.AddDays(_options.RefreshTokenExpirationDays);
@@ -220,6 +254,103 @@ public class AuthenticationService : IAuthenticationService
             RefreshToken = refreshToken,
             RefreshTokenExpiresAt = refreshExpiresAt,
             SessionId = sessionId,
+            User = new AuthenticatedUserInfo
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Username = user.Username,
+                EmailVerified = user.EmailVerified,
+                Roles = roleNames
+            }
+        };
+    }
+
+    /// <inheritdoc/>
+    public async Task<LoginResult> CompleteTwoFactorLoginAsync(
+        Guid userId,
+        string code,
+        bool rememberDevice,
+        string? ipAddress,
+        string? userAgent,
+        CancellationToken cancellationToken = default)
+    {
+        if (_twoFactorService is null || !_options.EnableTwoFactor)
+        {
+            throw new InvalidOperationException("Two-factor authentication is not enabled.");
+        }
+
+        var user = await _userRepository.GetWithRolesAsync(userId, cancellationToken);
+        if (user is null)
+        {
+            throw new InvalidTwoFactorCodeException();
+        }
+
+        if (user.Status is UserStatus.Suspended or UserStatus.Deactivated or UserStatus.Locked)
+        {
+            throw new AccountInactiveException(user.Status);
+        }
+
+        var rememberDeviceToken = await _twoFactorService.VerifyTwoFactorCodeAsync(
+            userId, code, rememberDevice, cancellationToken);
+
+        var roleNames = user.UserRoles
+            .Where(ur => ur.Role is not null)
+            .Select(ur => ur.Role!.Name)
+            .ToList();
+
+        var loginPermissions = ExtractPermissions(user.UserRoles);
+
+        var sessionId = Guid.NewGuid();
+        var accessToken = GenerateAccessToken(user, roleNames, loginPermissions, sessionId);
+        var refreshToken = _jwtTokenService.GenerateRefreshToken();
+        var refreshTokenHash = _jwtTokenService.HashRefreshToken(refreshToken);
+        var refreshExpiresAt = DateTime.UtcNow.AddDays(_options.RefreshTokenExpirationDays);
+
+        await _userRepository.AddTokenAsync(new UserToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            TokenType = TokenType.RefreshToken,
+            TokenValue = refreshTokenHash,
+            ExpiresAt = refreshExpiresAt,
+            IsUsed = false,
+            IsRevoked = false,
+            CreatedAt = DateTime.UtcNow
+        }, cancellationToken);
+
+        if (_options.EnableSessionManagement)
+        {
+            await _unitOfWork.Sessions.AddAsync(new UserSession
+            {
+                Id = sessionId,
+                UserId = user.Id,
+                SessionToken = refreshTokenHash,
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = refreshExpiresAt,
+                LastActivityAt = DateTime.UtcNow,
+                IsActive = true
+            }, cancellationToken);
+        }
+
+        user.FailedLoginAttempts = 0;
+        user.LockoutEnd = null;
+        user.LastLoginAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await RecordLoginAttemptAsync(user, true, null, ipAddress, userAgent, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new LoginResult
+        {
+            AccessToken = accessToken.Token,
+            AccessTokenExpiresAt = accessToken.ExpiresAt,
+            RefreshToken = refreshToken,
+            RefreshTokenExpiresAt = refreshExpiresAt,
+            SessionId = sessionId,
+            RequiresTwoFactor = false,
+            TwoFactorRememberDeviceToken = rememberDeviceToken,
             User = new AuthenticatedUserInfo
             {
                 Id = user.Id,
@@ -301,7 +432,9 @@ public class AuthenticationService : IAuthenticationService
             .Select(ur => ur.Role!.Name)
             .ToList();
 
-        var newAccessToken = _jwtTokenService.GenerateAccessToken(user, roleNames, sessionId);
+        var refreshPermissions = ExtractPermissions(user.UserRoles);
+
+        var newAccessToken = GenerateAccessToken(user, roleNames, refreshPermissions, sessionId);
         var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
         var newRefreshTokenHash = _jwtTokenService.HashRefreshToken(newRefreshToken);
         var newRefreshExpiresAt = DateTime.UtcNow.AddDays(_options.RefreshTokenExpirationDays);
@@ -619,6 +752,63 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
+    /// <inheritdoc/>
+    public async Task ChangePasswordAsync(
+        Guid userId,
+        Guid currentSessionId,
+        string currentPassword,
+        string newPassword,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+
+        if (user is null || user.Status is UserStatus.Deactivated or UserStatus.Suspended)
+        {
+            throw new AccountInactiveException(user?.Status ?? UserStatus.Deactivated);
+        }
+
+        // Verify current password.
+        var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword);
+        if (verification == PasswordVerificationResult.Failed)
+        {
+            throw new InvalidCurrentPasswordException();
+        }
+
+        // Update password hash.
+        user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        // Invalidate all sessions and refresh tokens EXCEPT the current session,
+        // so the user stays logged in on this device.
+        await _userRepository.RevokeAllRefreshTokensExceptSessionAsync(user.Id, currentSessionId, cancellationToken);
+        if (_options.EnableSessionManagement)
+        {
+            await _unitOfWork.Sessions.DeactivateAllExceptAsync(user.Id, currentSessionId, cancellationToken);
+        }
+
+        // Log activity.
+        await _unitOfWork.ActivityLogs.AddAsync(new ActivityLog
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            ActivityType = ActivityType.PasswordChange,
+            Description = "Password changed by user.",
+            CreatedAt = DateTime.UtcNow
+        }, cancellationToken);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Best-effort confirmation email.
+        try
+        {
+            await _emailService.SendPasswordChangedNotificationAsync(user.Email, user.Username, cancellationToken);
+        }
+        catch
+        {
+            // swallow — email-service already logs
+        }
+    }
+
     private async Task HandleFailedLoginAsync(
         User user,
         string? ipAddress,
@@ -689,5 +879,28 @@ public class AuthenticationService : IAuthenticationService
         var bytes = System.Text.Encoding.UTF8.GetBytes(input);
         var hash = SHA256.HashData(bytes);
         return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    private AccessTokenResult GenerateAccessToken(
+        User user,
+        IReadOnlyCollection<string> roles,
+        IReadOnlyCollection<string> permissions,
+        Guid sessionId)
+    {
+        return permissions.Count == 0
+            ? _jwtTokenService.GenerateAccessToken(user, roles, sessionId)
+            : _jwtTokenService.GenerateAccessToken(user, roles, permissions, sessionId);
+    }
+
+    private static IReadOnlyList<string> ExtractPermissions(ICollection<UserRole> userRoles)
+    {
+        return userRoles
+            .Select(ur => ur.Role?.Permissions)
+            .Where(permissions => !string.IsNullOrWhiteSpace(permissions))
+            .SelectMany(permissions => permissions!.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Select(p => p.Trim().ToLowerInvariant())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

@@ -17,6 +17,7 @@ public class AuthenticationServiceTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ILoginHistoryRepository> _loginHistoryRepositoryMock;
     private readonly Mock<ISessionRepository> _sessionRepositoryMock;
+    private readonly Mock<IActivityLogRepository> _activityLogRepositoryMock;
     private readonly Mock<IEmailService> _emailServiceMock;
     private readonly Mock<IPasswordHasher<User>> _passwordHasherMock;
     private readonly Mock<IJwtTokenService> _jwtTokenServiceMock;
@@ -29,6 +30,7 @@ public class AuthenticationServiceTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _loginHistoryRepositoryMock = new Mock<ILoginHistoryRepository>();
         _sessionRepositoryMock = new Mock<ISessionRepository>();
+        _activityLogRepositoryMock = new Mock<IActivityLogRepository>();
         _emailServiceMock = new Mock<IEmailService>();
         _passwordHasherMock = new Mock<IPasswordHasher<User>>();
         _jwtTokenServiceMock = new Mock<IJwtTokenService>();
@@ -36,6 +38,7 @@ public class AuthenticationServiceTests
 
         _unitOfWorkMock.SetupGet(u => u.LoginHistories).Returns(_loginHistoryRepositoryMock.Object);
         _unitOfWorkMock.SetupGet(u => u.Sessions).Returns(_sessionRepositoryMock.Object);
+        _unitOfWorkMock.SetupGet(u => u.ActivityLogs).Returns(_activityLogRepositoryMock.Object);
 
         _authenticationService = new AuthenticationService(
             _userRepositoryMock.Object,
@@ -1305,4 +1308,156 @@ public class AuthenticationServiceTests
         _emailServiceMock.Verify(x => x.SendPasswordChangedNotificationAsync(
             "reset@example.com", "resetter", default), Times.Once);
     }
+
+    #region ChangePasswordAsync
+
+    [Fact]
+    public async Task ChangePasswordAsync_WithValidCurrentPassword_UpdatesHashAndInvalidatesOtherSessions()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
+        var user = new User
+        {
+            Id = userId,
+            Email = "user@example.com",
+            Username = "testuser",
+            PasswordHash = "old_hash",
+            Status = UserStatus.Active
+        };
+
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(userId, default)).ReturnsAsync(user);
+        _passwordHasherMock.Setup(x => x.VerifyHashedPassword(user, "old_hash", "OldPass1!"))
+            .Returns(PasswordVerificationResult.Success);
+        _passwordHasherMock.Setup(x => x.HashPassword(user, "NewPass1!"))
+            .Returns("new_hash");
+        _userRepositoryMock.Setup(x => x.RevokeAllRefreshTokensExceptSessionAsync(userId, sessionId, default))
+            .Returns(Task.CompletedTask);
+        _sessionRepositoryMock.Setup(x => x.DeactivateAllExceptAsync(userId, sessionId, default))
+            .Returns(Task.CompletedTask);
+        _activityLogRepositoryMock.Setup(x => x.AddAsync(It.IsAny<ActivityLog>(), default))
+            .Returns(Task.CompletedTask);
+        _unitOfWorkMock.Setup(x => x.SaveChangesAsync(default)).ReturnsAsync(1);
+
+        // Act
+        await _authenticationService.ChangePasswordAsync(userId, sessionId, "OldPass1!", "NewPass1!");
+
+        // Assert
+        user.PasswordHash.Should().Be("new_hash");
+        _userRepositoryMock.Verify(x => x.RevokeAllRefreshTokensExceptSessionAsync(userId, sessionId, default), Times.Once);
+        _sessionRepositoryMock.Verify(x => x.DeactivateAllExceptAsync(userId, sessionId, default), Times.Once);
+        _activityLogRepositoryMock.Verify(x => x.AddAsync(
+            It.Is<ActivityLog>(a => a.UserId == userId && a.ActivityType == ActivityType.PasswordChange),
+            default), Times.Once);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.Once);
+        _emailServiceMock.Verify(x => x.SendPasswordChangedNotificationAsync(
+            user.Email, user.Username, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_WithWrongCurrentPassword_ThrowsInvalidCurrentPasswordException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var user = new User
+        {
+            Id = userId,
+            Email = "user@example.com",
+            Username = "testuser",
+            PasswordHash = "correct_hash",
+            Status = UserStatus.Active
+        };
+
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(userId, default)).ReturnsAsync(user);
+        _passwordHasherMock.Setup(x => x.VerifyHashedPassword(user, "correct_hash", "WrongPass1!"))
+            .Returns(PasswordVerificationResult.Failed);
+
+        // Act
+        var act = async () => await _authenticationService.ChangePasswordAsync(
+            userId, Guid.NewGuid(), "WrongPass1!", "NewPass1!");
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidCurrentPasswordException>();
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.Never);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_WithSuspendedAccount_ThrowsAccountInactiveException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var user = new User
+        {
+            Id = userId,
+            Status = UserStatus.Suspended,
+            PasswordHash = "hash"
+        };
+
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(userId, default)).ReturnsAsync(user);
+
+        // Act
+        var act = async () => await _authenticationService.ChangePasswordAsync(
+            userId, Guid.NewGuid(), "OldPass1!", "NewPass1!");
+
+        // Assert
+        await act.Should().ThrowAsync<AccountInactiveException>();
+        _passwordHasherMock.Verify(x => x.VerifyHashedPassword(
+            It.IsAny<User>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_WithNonExistentUser_ThrowsAccountInactiveException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(userId, default)).ReturnsAsync((User?)null);
+
+        // Act
+        var act = async () => await _authenticationService.ChangePasswordAsync(
+            userId, Guid.NewGuid(), "OldPass1!", "NewPass1!");
+
+        // Assert
+        await act.Should().ThrowAsync<AccountInactiveException>();
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_EmailFailure_DoesNotPropagateException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
+        var user = new User
+        {
+            Id = userId,
+            Email = "user@example.com",
+            Username = "testuser",
+            PasswordHash = "old_hash",
+            Status = UserStatus.Active
+        };
+
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(userId, default)).ReturnsAsync(user);
+        _passwordHasherMock.Setup(x => x.VerifyHashedPassword(user, "old_hash", "OldPass1!"))
+            .Returns(PasswordVerificationResult.Success);
+        _passwordHasherMock.Setup(x => x.HashPassword(user, "NewPass1!")).Returns("new_hash");
+        _userRepositoryMock.Setup(x => x.RevokeAllRefreshTokensExceptSessionAsync(userId, sessionId, default))
+            .Returns(Task.CompletedTask);
+        _sessionRepositoryMock.Setup(x => x.DeactivateAllExceptAsync(userId, sessionId, default))
+            .Returns(Task.CompletedTask);
+        _activityLogRepositoryMock.Setup(x => x.AddAsync(It.IsAny<ActivityLog>(), default))
+            .Returns(Task.CompletedTask);
+        _unitOfWorkMock.Setup(x => x.SaveChangesAsync(default)).ReturnsAsync(1);
+        _emailServiceMock.Setup(x => x.SendPasswordChangedNotificationAsync(
+                It.IsAny<string>(), It.IsAny<string>(), default))
+            .ThrowsAsync(new Exception("SMTP failure"));
+
+        // Act — must not throw even when email fails
+        var act = async () => await _authenticationService.ChangePasswordAsync(
+            userId, sessionId, "OldPass1!", "NewPass1!");
+
+        // Assert
+        await act.Should().NotThrowAsync();
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.Once);
+    }
+
+    #endregion
 }

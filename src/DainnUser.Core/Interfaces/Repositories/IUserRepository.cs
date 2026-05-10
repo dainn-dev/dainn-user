@@ -117,6 +117,16 @@ public interface IUserRepository : IRepository<User>
     Task RevokeAllRefreshTokensAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Revokes every active refresh token for a user except the token tied to the specified session.
+    /// Used during change-password to force re-login on all other devices while keeping the current
+    /// session alive.
+    /// </summary>
+    /// <param name="userId">The user whose other refresh tokens should be revoked.</param>
+    /// <param name="keepSessionId">The session whose refresh token should be preserved.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task RevokeAllRefreshTokensExceptSessionAsync(Guid userId, Guid keepSessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Checks if an email is already taken.
     /// </summary>
     /// <param name="email">The email address.</param>

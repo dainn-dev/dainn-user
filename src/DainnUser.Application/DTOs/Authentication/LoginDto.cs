@@ -14,4 +14,10 @@ public class LoginDto
     /// Gets or sets the user's password.
     /// </summary>
     public string Password { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets an optional remember-device token from a previous 2FA verification.
+    /// When valid, the 2FA challenge is skipped for this login.
+    /// </summary>
+    public string? RememberDeviceToken { get; set; }
 }

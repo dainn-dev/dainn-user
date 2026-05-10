@@ -1,4 +1,5 @@
 using System.Text;
+using DainnUser.Core.Authorization;
 using DainnUser.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
@@ -56,6 +57,22 @@ public static class JwtAuthenticationExtensions
                     ClockSkew = TimeSpan.FromSeconds(jwt.ClockSkewSeconds)
                 };
             });
+
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(DainnUserPolicies.CanReadUsers, policy =>
+                policy.RequireClaim(DainnUserClaimTypes.Permission, DainnUserPermissions.UsersRead));
+            options.AddPolicy(DainnUserPolicies.CanWriteUsers, policy =>
+                policy.RequireClaim(DainnUserClaimTypes.Permission, DainnUserPermissions.UsersWrite));
+            options.AddPolicy(DainnUserPolicies.CanDeleteUser, policy =>
+                policy.RequireClaim(DainnUserClaimTypes.Permission, DainnUserPermissions.UsersDelete));
+            options.AddPolicy(DainnUserPolicies.CanManageRoles, policy =>
+                policy.RequireClaim(DainnUserClaimTypes.Permission, DainnUserPermissions.RolesWrite));
+            options.AddPolicy(DainnUserPolicies.CanDeleteRole, policy =>
+                policy.RequireClaim(DainnUserClaimTypes.Permission, DainnUserPermissions.RolesDelete));
+            options.AddPolicy(DainnUserPolicies.CanManageSettings, policy =>
+                policy.RequireClaim(DainnUserClaimTypes.Permission, DainnUserPermissions.SettingsWrite));
+        });
 
         return services;
     }

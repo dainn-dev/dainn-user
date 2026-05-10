@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# MCP config with API keys
+.mcp.json
+
 # User-specific files
 *.rsuser
 *.suo

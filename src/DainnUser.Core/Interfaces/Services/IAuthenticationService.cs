@@ -43,6 +43,7 @@ public interface IAuthenticationService
         string password,
         string? ipAddress,
         string? userAgent,
+        string? rememberDeviceToken = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -130,4 +131,47 @@ public interface IAuthenticationService
     /// Thrown when the token is invalid, expired, already used, or revoked.
     /// </exception>
     Task ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Changes the password for an authenticated user. Verifies the current password, updates the
+    /// hash, invalidates all other active sessions and refresh tokens (forcing re-login on other
+    /// devices), and sends a confirmation notification to the account owner.
+    /// </summary>
+    /// <param name="userId">The authenticated user's ID (from the JWT claim).</param>
+    /// <param name="currentSessionId">The current session ID to keep alive after the change.</param>
+    /// <param name="currentPassword">The user's existing password for verification.</param>
+    /// <param name="newPassword">The new password to set.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <exception cref="DainnUser.Core.Exceptions.InvalidCurrentPasswordException">
+    /// Thrown when <paramref name="currentPassword"/> does not match the stored hash.
+    /// </exception>
+    /// <exception cref="DainnUser.Core.Exceptions.AccountInactiveException">
+    /// Thrown when the account is suspended or deactivated.
+    /// </exception>
+    /// <summary>
+    /// Completes a login that was halted for a two-factor challenge. Verifies the provided TOTP
+    /// or backup code, then issues the full JWT + refresh token pair and creates the session.
+    /// </summary>
+    /// <param name="userId">The user ID returned by the initial <see cref="LoginAsync"/> call.</param>
+    /// <param name="code">The 6-digit TOTP code or 8-character backup code.</param>
+    /// <param name="rememberDevice">When true, a remember-device token is embedded in the result.</param>
+    /// <param name="ipAddress">Client IP address.</param>
+    /// <param name="userAgent">Client user agent.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Full <see cref="LoginResult"/> with tokens; <c>RequiresTwoFactor</c> will be false.</returns>
+    /// <exception cref="DainnUser.Core.Exceptions.InvalidTwoFactorCodeException">Code is wrong or expired.</exception>
+    Task<LoginResult> CompleteTwoFactorLoginAsync(
+        Guid userId,
+        string code,
+        bool rememberDevice,
+        string? ipAddress,
+        string? userAgent,
+        CancellationToken cancellationToken = default);
+
+    Task ChangePasswordAsync(
+        Guid userId,
+        Guid currentSessionId,
+        string currentPassword,
+        string newPassword,
+        CancellationToken cancellationToken = default);
 }

@@ -16,6 +16,16 @@ public class DainnUserOptions
     public bool EnableTwoFactor { get; set; } = false;
 
     /// <summary>
+    /// Gets or sets how many minutes the pending 2FA setup token is valid.
+    /// </summary>
+    public int TwoFactorSetupExpirationMinutes { get; set; } = 10;
+
+    /// <summary>
+    /// Gets or sets how many days a remember-device token remains valid.
+    /// </summary>
+    public int TwoFactorRememberDeviceDays { get; set; } = 30;
+
+    /// <summary>
     /// Gets or sets a value indicating whether email verification is required for registration.
     /// </summary>
     public bool RequireEmailVerification { get; set; } = true;

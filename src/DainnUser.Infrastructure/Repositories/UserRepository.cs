@@ -137,6 +137,35 @@ public class UserRepository : Repository<User>, IUserRepository
     }
 
     /// <inheritdoc/>
+    public async Task RevokeAllRefreshTokensExceptSessionAsync(Guid userId, Guid keepSessionId, CancellationToken cancellationToken = default)
+    {
+        // Load the session token hash to identify the refresh token to keep.
+        var keepSession = await _context.Set<UserSession>()
+            .Where(s => s.Id == keepSessionId && s.UserId == userId && s.IsActive)
+            .Select(s => s.SessionToken)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var query = _context.Set<UserToken>()
+            .Where(t => t.UserId == userId
+                        && t.TokenType == TokenType.RefreshToken
+                        && !t.IsRevoked
+                        && !t.IsUsed);
+
+        if (keepSession is not null)
+        {
+            query = query.Where(t => t.TokenValue != keepSession);
+        }
+
+        var tokens = await query.ToListAsync(cancellationToken);
+        var now = DateTime.UtcNow;
+        foreach (var token in tokens)
+        {
+            token.IsRevoked = true;
+            token.RevokedAt = now;
+        }
+    }
+
+    /// <inheritdoc/>
     public async Task<bool> IsEmailTakenAsync(string email, Guid? excludeUserId = null, CancellationToken cancellationToken = default)
     {
         var query = _dbSet.Where(u => u.Email == email);

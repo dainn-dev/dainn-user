@@ -18,6 +18,16 @@ public interface IJwtTokenService
     AccessTokenResult GenerateAccessToken(User user, IEnumerable<string> roles, Guid sessionId);
 
     /// <summary>
+    /// Generates a signed JWT access token for a user with role and permission claims.
+    /// </summary>
+    /// <param name="user">The user the token is issued for.</param>
+    /// <param name="roles">The roles assigned to the user, included as claims.</param>
+    /// <param name="permissions">The permissions assigned through the user's roles, included as claims.</param>
+    /// <param name="sessionId">The unique session identifier, included as the "sid" claim.</param>
+    /// <returns>The generated access token and its absolute expiration time (UTC).</returns>
+    AccessTokenResult GenerateAccessToken(User user, IEnumerable<string> roles, IEnumerable<string> permissions, Guid sessionId);
+
+    /// <summary>
     /// Generates a cryptographically random refresh token (URL-safe base64).
     /// </summary>
     /// <returns>The generated refresh token in plain form. The caller is responsible for hashing it before persistence.</returns>

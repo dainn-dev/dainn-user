@@ -39,4 +39,25 @@ public interface IRoleRepository : IRepository<Role>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>True if role name is taken, otherwise false.</returns>
     Task<bool> IsNameTakenAsync(string name, Guid? excludeRoleId = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns true when a user already holds the specified role.
+    /// </summary>
+    Task<bool> UserHasRoleAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the join-table row for a specific user/role pair, or null when none exists.
+    /// </summary>
+    Task<UserRole?> GetUserRoleAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a new user-role assignment directly via the join-table DbSet, bypassing navigation
+    /// mutation (more reliable with EF Core InMemory provider).
+    /// </summary>
+    Task AddUserRoleAsync(UserRole userRole, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks a user-role row for removal.
+    /// </summary>
+    void RemoveUserRole(UserRole userRole);
 }

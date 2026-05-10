@@ -54,4 +54,30 @@ public class RoleRepository : Repository<Role>, IRoleRepository
 
         return await query.AnyAsync(cancellationToken);
     }
+
+    /// <inheritdoc/>
+    public async Task<bool> UserHasRoleAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<UserRole>()
+            .AnyAsync(ur => ur.UserId == userId && ur.RoleId == roleId, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<UserRole?> GetUserRoleAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<UserRole>()
+            .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task AddUserRoleAsync(UserRole userRole, CancellationToken cancellationToken = default)
+    {
+        await _context.Set<UserRole>().AddAsync(userRole, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public void RemoveUserRole(UserRole userRole)
+    {
+        _context.Set<UserRole>().Remove(userRole);
+    }
 }

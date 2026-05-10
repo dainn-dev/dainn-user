@@ -28,6 +28,8 @@ public static class ApplicationServiceExtensions
 
         // Register application services
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<ITwoFactorService, TwoFactorService>();
+        services.AddScoped<IRoleService, RoleService>();
 
         return services;
     }

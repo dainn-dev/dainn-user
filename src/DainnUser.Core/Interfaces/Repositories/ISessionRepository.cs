@@ -46,6 +46,15 @@ public interface ISessionRepository : IRepository<UserSession>
     Task DeactivateAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Deactivates all sessions for a user except the specified session. Used during
+    /// change-password to force re-login on other devices while keeping the current session alive.
+    /// </summary>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="keepSessionId">The session to preserve.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task DeactivateAllExceptAsync(Guid userId, Guid keepSessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deactivates a specific session.
     /// </summary>
     /// <param name="sessionId">The session identifier.</param>

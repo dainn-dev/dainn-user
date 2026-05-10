@@ -48,6 +48,11 @@ public class User
     public bool TwoFactorEnabled { get; set; }
 
     /// <summary>
+    /// Gets or sets the TOTP authenticator secret for two-factor authentication.
+    /// </summary>
+    public string? TwoFactorSecret { get; set; }
+
+    /// <summary>
     /// Gets or sets the current status of the user account.
     /// </summary>
     public UserStatus Status { get; set; } = UserStatus.Pending;

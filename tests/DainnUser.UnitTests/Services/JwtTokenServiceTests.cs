@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using DainnUser.Core.Authorization;
 using DainnUser.Core.Entities;
 using DainnUser.Core.Enums;
 using DainnUser.Infrastructure.Configuration;
@@ -68,6 +69,25 @@ public class JwtTokenServiceTests
         jwt.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Email && c.Value == user.Email);
         jwt.Claims.Should().Contain(c => c.Type == "sid" && c.Value == sessionId.ToString());
         jwt.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).Should().BeEquivalentTo(new[] { "Admin", "User" });
+    }
+
+    [Fact]
+    public void GenerateAccessToken_WithPermissions_IncludesPermissionClaims()
+    {
+        var service = CreateService();
+        var user = SampleUser();
+
+        var result = service.GenerateAccessToken(
+            user,
+            new[] { "Admin" },
+            new[] { "Users:Delete", "users:delete", " users:read " },
+            Guid.NewGuid());
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Token);
+        jwt.Claims
+            .Where(c => c.Type == DainnUserClaimTypes.Permission)
+            .Select(c => c.Value)
+            .Should().BeEquivalentTo(new[] { "users:delete", "users:read" });
     }
 
     [Fact]

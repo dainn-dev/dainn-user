@@ -48,6 +48,21 @@ public class LoginResponse
     public AuthenticatedUserInfo User { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets a value indicating whether the client must complete a 2FA challenge.
+    /// </summary>
+    public bool RequiresTwoFactor { get; set; }
+
+    /// <summary>
+    /// Gets or sets the user ID to send to the 2FA verification endpoint when 2FA is required.
+    /// </summary>
+    public Guid TwoFactorUserId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the remember-device token to store and send on future logins.
+    /// </summary>
+    public string? TwoFactorRememberDeviceToken { get; set; }
+
+    /// <summary>
     /// Maps a domain <see cref="LoginResult"/> into an API <see cref="LoginResponse"/>.
     /// </summary>
     public static LoginResponse FromResult(LoginResult result)
@@ -60,7 +75,10 @@ public class LoginResponse
             AccessTokenExpiresAt = result.AccessTokenExpiresAt,
             RefreshTokenExpiresAt = result.RefreshTokenExpiresAt,
             SessionId = result.SessionId,
-            User = result.User
+            User = result.User,
+            RequiresTwoFactor = result.RequiresTwoFactor,
+            TwoFactorUserId = result.TwoFactorUserId,
+            TwoFactorRememberDeviceToken = result.TwoFactorRememberDeviceToken
         };
     }
 }

@@ -28,5 +28,20 @@ public enum TokenType
     /// <summary>
     /// Phone verification token.
     /// </summary>
-    PhoneVerification = 4
+    PhoneVerification = 4,
+
+    /// <summary>
+    /// TOTP two-factor authenticator secret (stored encrypted/hashed for the user).
+    /// </summary>
+    TwoFactorSecret = 5,
+
+    /// <summary>
+    /// Single-use 2FA backup code (stored as PBKDF2 hash).
+    /// </summary>
+    TwoFactorBackupCode = 6,
+
+    /// <summary>
+    /// Remember-device token that bypasses 2FA challenge for a trusted device.
+    /// </summary>
+    TwoFactorRememberDevice = 7
 }

@@ -65,6 +65,19 @@ public class SessionRepository : Repository<UserSession>, ISessionRepository
     }
 
     /// <inheritdoc/>
+    public async Task DeactivateAllExceptAsync(Guid userId, Guid keepSessionId, CancellationToken cancellationToken = default)
+    {
+        var sessions = await _dbSet
+            .Where(s => s.UserId == userId && s.IsActive && s.Id != keepSessionId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var session in sessions)
+        {
+            session.IsActive = false;
+        }
+    }
+
+    /// <inheritdoc/>
     public async Task DeactivateAsync(Guid sessionId, CancellationToken cancellationToken = default)
     {
         var session = await _dbSet.FindAsync(new object[] { sessionId }, cancellationToken);

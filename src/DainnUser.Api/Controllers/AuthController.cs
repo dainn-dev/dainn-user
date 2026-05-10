@@ -4,6 +4,7 @@ using DainnUser.Api.DTOs.Authentication;
 using DainnUser.Application.DTOs.Authentication;
 using DainnUser.Core.Exceptions;
 using DainnUser.Core.Interfaces.Services;
+using DainnUser.Core.Models.Authentication;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,11 +19,15 @@ namespace DainnUser.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthenticationService _authenticationService;
+    private readonly ITwoFactorService? _twoFactorService;
     private readonly IValidator<RegisterDto> _registerValidator;
     private readonly IValidator<LoginDto> _loginValidator;
     private readonly IValidator<RefreshTokenDto> _refreshValidator;
     private readonly IValidator<ForgotPasswordDto> _forgotPasswordValidator;
     private readonly IValidator<ResetPasswordDto> _resetPasswordValidator;
+    private readonly IValidator<ChangePasswordDto> _changePasswordValidator;
+    private readonly IValidator<TwoFactorCodeDto> _twoFactorCodeValidator;
+    private readonly IValidator<CompleteTwoFactorLoginDto> _completeTwoFactorLoginValidator;
     private readonly ILogger<AuthController> _logger;
 
     /// <summary>
@@ -30,19 +35,27 @@ public class AuthController : ControllerBase
     /// </summary>
     public AuthController(
         IAuthenticationService authenticationService,
+        ITwoFactorService? twoFactorService,
         IValidator<RegisterDto> registerValidator,
         IValidator<LoginDto> loginValidator,
         IValidator<RefreshTokenDto> refreshValidator,
         IValidator<ForgotPasswordDto> forgotPasswordValidator,
         IValidator<ResetPasswordDto> resetPasswordValidator,
+        IValidator<ChangePasswordDto> changePasswordValidator,
+        IValidator<TwoFactorCodeDto> twoFactorCodeValidator,
+        IValidator<CompleteTwoFactorLoginDto> completeTwoFactorLoginValidator,
         ILogger<AuthController> logger)
     {
         _authenticationService = authenticationService;
+        _twoFactorService = twoFactorService;
         _registerValidator = registerValidator;
         _loginValidator = loginValidator;
         _refreshValidator = refreshValidator;
         _forgotPasswordValidator = forgotPasswordValidator;
         _resetPasswordValidator = resetPasswordValidator;
+        _changePasswordValidator = changePasswordValidator;
+        _twoFactorCodeValidator = twoFactorCodeValidator;
+        _completeTwoFactorLoginValidator = completeTwoFactorLoginValidator;
         _logger = logger;
     }
 
@@ -135,6 +148,7 @@ public class AuthController : ControllerBase
                 request.Password,
                 GetClientIp(),
                 Request.Headers.UserAgent.ToString(),
+                request.RememberDeviceToken,
                 cancellationToken);
 
             return Ok(ApiResponse<LoginResponse>.SuccessResponse(LoginResponse.FromResult(result)));
@@ -474,6 +488,338 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Changes the authenticated user's password. Verifies the current password, updates the hash,
+    /// and invalidates all other active sessions (forcing re-login on other devices).
+    /// </summary>
+    /// <param name="request">The change-password request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A confirmation message.</returns>
+    [HttpPost("change-password")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordDto request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var validationResult = await _changePasswordValidator.ValidateAsync(request, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+                return BadRequest(ApiResponse<string>.ErrorResponse("Validation failed.", errors));
+            }
+
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                              ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ApiResponse<string>.ErrorResponse("Invalid token."));
+            }
+
+            var sessionId = ResolveSessionId(User);
+
+            await _authenticationService.ChangePasswordAsync(
+                userId,
+                sessionId,
+                request.CurrentPassword,
+                request.NewPassword,
+                cancellationToken);
+
+            return Ok(ApiResponse<string>.SuccessResponse(
+                "Password changed successfully.",
+                "All other active sessions have been invalidated."));
+        }
+        catch (Core.Exceptions.InvalidCurrentPasswordException)
+        {
+            return BadRequest(ApiResponse<string>.ErrorResponse("Current password is incorrect."));
+        }
+        catch (Core.Exceptions.AccountInactiveException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<string>.ErrorResponse(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during change-password");
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                ApiResponse<string>.ErrorResponse("An unexpected error occurred."));
+        }
+    }
+
+    /// <summary>
+    /// Initiates two-factor authentication setup. Returns the TOTP secret and an otpauth URI
+    /// to scan with an authenticator app. Must be confirmed with <see cref="EnableTwoFactor"/>
+    /// before 2FA is active.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The TOTP secret and otpauth URI.</returns>
+    [HttpPost("2fa/setup")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<TwoFactorSetupResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<TwoFactorSetupResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<TwoFactorSetupResponse>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> SetupTwoFactor(CancellationToken cancellationToken)
+    {
+        if (_twoFactorService is null)
+        {
+            return BadRequest(ApiResponse<TwoFactorSetupResponse>.ErrorResponse("Two-factor authentication is not enabled."));
+        }
+
+        try
+        {
+            var (userId, email) = ResolveUserIdAndEmail(User);
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(ApiResponse<TwoFactorSetupResponse>.ErrorResponse("Invalid token."));
+            }
+
+            var result = await _twoFactorService.PrepareEnableAsync(userId, email, cancellationToken);
+            return Ok(ApiResponse<TwoFactorSetupResponse>.SuccessResponse(
+                TwoFactorSetupResponse.FromResult(result),
+                "Scan the QR code with your authenticator app and confirm with a code."));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<TwoFactorSetupResponse>.ErrorResponse(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during 2FA setup");
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                ApiResponse<TwoFactorSetupResponse>.ErrorResponse("An unexpected error occurred."));
+        }
+    }
+
+    /// <summary>
+    /// Confirms and activates two-factor authentication using the first code from the authenticator app.
+    /// Returns a list of one-time backup codes.
+    /// </summary>
+    /// <param name="request">The confirmation code.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of backup codes.</returns>
+    [HttpPost("2fa/enable")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<BackupCodesResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<BackupCodesResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<BackupCodesResponse>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> EnableTwoFactor(
+        [FromBody] TwoFactorCodeDto request,
+        CancellationToken cancellationToken)
+    {
+        if (_twoFactorService is null)
+        {
+            return BadRequest(ApiResponse<BackupCodesResponse>.ErrorResponse("Two-factor authentication is not enabled."));
+        }
+
+        try
+        {
+            var validationResult = await _twoFactorCodeValidator.ValidateAsync(request, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(ApiResponse<BackupCodesResponse>.ErrorResponse(
+                    "Validation failed.",
+                    validationResult.Errors.Select(e => e.ErrorMessage).ToList()));
+            }
+
+            var (userId, _) = ResolveUserIdAndEmail(User);
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(ApiResponse<BackupCodesResponse>.ErrorResponse("Invalid token."));
+            }
+
+            var backupCodes = await _twoFactorService.EnableTwoFactorAsync(userId, request.Code, cancellationToken);
+            return Ok(ApiResponse<BackupCodesResponse>.SuccessResponse(
+                new BackupCodesResponse { BackupCodes = backupCodes },
+                "Two-factor authentication enabled. Store these backup codes securely — they will not be shown again."));
+        }
+        catch (Core.Exceptions.InvalidTwoFactorCodeException)
+        {
+            return BadRequest(ApiResponse<BackupCodesResponse>.ErrorResponse("Invalid or expired two-factor code."));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<BackupCodesResponse>.ErrorResponse(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error enabling 2FA");
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                ApiResponse<BackupCodesResponse>.ErrorResponse("An unexpected error occurred."));
+        }
+    }
+
+    /// <summary>
+    /// Disables two-factor authentication. Requires a valid TOTP or backup code to confirm.
+    /// Revokes all backup codes and remember-device tokens.
+    /// </summary>
+    /// <param name="request">A valid TOTP or backup code.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A confirmation message.</returns>
+    [HttpPost("2fa/disable")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DisableTwoFactor(
+        [FromBody] TwoFactorCodeDto request,
+        CancellationToken cancellationToken)
+    {
+        if (_twoFactorService is null)
+        {
+            return BadRequest(ApiResponse<string>.ErrorResponse("Two-factor authentication is not enabled."));
+        }
+
+        try
+        {
+            var validationResult = await _twoFactorCodeValidator.ValidateAsync(request, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(ApiResponse<string>.ErrorResponse(
+                    "Validation failed.",
+                    validationResult.Errors.Select(e => e.ErrorMessage).ToList()));
+            }
+
+            var (userId, _) = ResolveUserIdAndEmail(User);
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(ApiResponse<string>.ErrorResponse("Invalid token."));
+            }
+
+            await _twoFactorService.DisableTwoFactorAsync(userId, request.Code, cancellationToken);
+            return Ok(ApiResponse<string>.SuccessResponse("Two-factor authentication disabled."));
+        }
+        catch (Core.Exceptions.InvalidTwoFactorCodeException)
+        {
+            return BadRequest(ApiResponse<string>.ErrorResponse("Invalid or expired two-factor code."));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error disabling 2FA");
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                ApiResponse<string>.ErrorResponse("An unexpected error occurred."));
+        }
+    }
+
+    /// <summary>
+    /// Completes a login that required two-factor authentication. Verifies the TOTP or backup code
+    /// and issues access/refresh tokens.
+    /// </summary>
+    /// <param name="request">The 2FA challenge completion request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Full login response with tokens.</returns>
+    [HttpPost("2fa/login")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> CompleteTwoFactorLogin(
+        [FromBody] CompleteTwoFactorLoginDto request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var validationResult = await _completeTwoFactorLoginValidator.ValidateAsync(request, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(ApiResponse<LoginResponse>.ErrorResponse(
+                    "Validation failed.",
+                    validationResult.Errors.Select(e => e.ErrorMessage).ToList()));
+            }
+
+            var result = await _authenticationService.CompleteTwoFactorLoginAsync(
+                request.UserId,
+                request.Code,
+                request.RememberDevice,
+                GetClientIp(),
+                Request.Headers.UserAgent.ToString(),
+                cancellationToken);
+
+            return Ok(ApiResponse<LoginResponse>.SuccessResponse(LoginResponse.FromResult(result)));
+        }
+        catch (Core.Exceptions.InvalidTwoFactorCodeException)
+        {
+            return Unauthorized(ApiResponse<LoginResponse>.ErrorResponse("Invalid or expired two-factor code."));
+        }
+        catch (Core.Exceptions.AccountInactiveException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<LoginResponse>.ErrorResponse(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error completing 2FA login");
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                ApiResponse<LoginResponse>.ErrorResponse("An unexpected error occurred."));
+        }
+    }
+
+    /// <summary>
+    /// Regenerates ten fresh backup codes. Requires a valid TOTP code (backup codes are not accepted
+    /// here to prevent exhaustion attacks). Old backup codes are immediately revoked.
+    /// </summary>
+    /// <param name="request">A valid TOTP code.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The new backup codes.</returns>
+    [HttpPost("2fa/backup-codes/regenerate")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<BackupCodesResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<BackupCodesResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<BackupCodesResponse>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RegenerateBackupCodes(
+        [FromBody] TwoFactorCodeDto request,
+        CancellationToken cancellationToken)
+    {
+        if (_twoFactorService is null)
+        {
+            return BadRequest(ApiResponse<BackupCodesResponse>.ErrorResponse("Two-factor authentication is not enabled."));
+        }
+
+        try
+        {
+            var validationResult = await _twoFactorCodeValidator.ValidateAsync(request, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(ApiResponse<BackupCodesResponse>.ErrorResponse(
+                    "Validation failed.",
+                    validationResult.Errors.Select(e => e.ErrorMessage).ToList()));
+            }
+
+            var (userId, _) = ResolveUserIdAndEmail(User);
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(ApiResponse<BackupCodesResponse>.ErrorResponse("Invalid token."));
+            }
+
+            var backupCodes = await _twoFactorService.RegenerateBackupCodesAsync(userId, request.Code, cancellationToken);
+            return Ok(ApiResponse<BackupCodesResponse>.SuccessResponse(
+                new BackupCodesResponse { BackupCodes = backupCodes },
+                "Backup codes regenerated. All previous codes are now invalid."));
+        }
+        catch (Core.Exceptions.InvalidTwoFactorCodeException)
+        {
+            return BadRequest(ApiResponse<BackupCodesResponse>.ErrorResponse("Invalid or expired two-factor code."));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<BackupCodesResponse>.ErrorResponse(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error regenerating backup codes");
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                ApiResponse<BackupCodesResponse>.ErrorResponse("An unexpected error occurred."));
+        }
+    }
+
     private string? GetClientIp()
     {
         // Honor X-Forwarded-For when configured (consumers should also call UseForwardedHeaders).
@@ -484,6 +830,19 @@ public class AuthController : ControllerBase
         }
 
         return HttpContext.Connection.RemoteIpAddress?.ToString();
+    }
+
+    private static (Guid UserId, string Email) ResolveUserIdAndEmail(ClaimsPrincipal principal)
+    {
+        var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? principal.FindFirst("sub")?.Value;
+        var email = principal.FindFirst(ClaimTypes.Email)?.Value
+                    ?? principal.FindFirst("email")?.Value
+                    ?? string.Empty;
+
+        return Guid.TryParse(userIdClaim, out var userId)
+            ? (userId, email)
+            : (Guid.Empty, email);
     }
 
     private static Guid ResolveSessionId(ClaimsPrincipal principal)

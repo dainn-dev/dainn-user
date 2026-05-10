@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using DainnUser.Core.Authorization;
 using DainnUser.Core.Entities;
 using DainnUser.Core.Interfaces.Services;
 using DainnUser.Infrastructure.Configuration;
@@ -52,8 +53,19 @@ public class JwtTokenService : IJwtTokenService
     /// <inheritdoc/>
     public AccessTokenResult GenerateAccessToken(User user, IEnumerable<string> roles, Guid sessionId)
     {
+        return GenerateAccessToken(user, roles, Array.Empty<string>(), sessionId);
+    }
+
+    /// <inheritdoc/>
+    public AccessTokenResult GenerateAccessToken(
+        User user,
+        IEnumerable<string> roles,
+        IEnumerable<string> permissions,
+        Guid sessionId)
+    {
         ArgumentNullException.ThrowIfNull(user);
         ArgumentNullException.ThrowIfNull(roles);
+        ArgumentNullException.ThrowIfNull(permissions);
 
         var now = DateTime.UtcNow;
         var expires = now.AddMinutes(_dainnUserOptions.JwtExpirationMinutes);
@@ -68,9 +80,14 @@ public class JwtTokenService : IJwtTokenService
             new("email_verified", user.EmailVerified ? "true" : "false")
         };
 
-        foreach (var role in roles.Where(r => !string.IsNullOrWhiteSpace(r)))
+        foreach (var role in roles.Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            claims.Add(new Claim(ClaimTypes.Role, role));
+            claims.Add(new Claim(ClaimTypes.Role, role.Trim()));
+        }
+
+        foreach (var permission in permissions.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            claims.Add(new Claim(DainnUserClaimTypes.Permission, permission.Trim().ToLowerInvariant()));
         }
 
         var token = new JwtSecurityToken(

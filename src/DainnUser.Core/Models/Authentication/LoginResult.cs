@@ -34,6 +34,25 @@ public class LoginResult
     /// Gets or sets information about the authenticated user.
     /// </summary>
     public AuthenticatedUserInfo User { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether a 2FA challenge is required to complete login.
+    /// When true, <see cref="AccessToken"/> and <see cref="RefreshToken"/> are empty; the client
+    /// must complete the 2FA flow using <see cref="TwoFactorUserId"/>.
+    /// </summary>
+    public bool RequiresTwoFactor { get; set; }
+
+    /// <summary>
+    /// Gets or sets the user ID to pass to the 2FA verification endpoint when
+    /// <see cref="RequiresTwoFactor"/> is true.
+    /// </summary>
+    public Guid TwoFactorUserId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the remember-device token issued after successful 2FA verification when requested.
+    /// Clients should store this securely and send it with future login attempts.
+    /// </summary>
+    public string? TwoFactorRememberDeviceToken { get; set; }
 }
 
 /// <summary>

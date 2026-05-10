@@ -620,4 +620,102 @@ public class AuthenticationServiceIntegrationTests : IClassFixture<DatabaseFixtu
         var act = async () => await _authenticationService.ResetPasswordAsync(capturedToken, "Pass-333!");
         await act.Should().ThrowAsync<InvalidPasswordResetTokenException>();
     }
+
+    #region ChangePasswordAsync
+
+    [Fact]
+    public async Task ChangePasswordAsync_ValidCurrentPassword_UpdatesHashAndInvalidatesOtherSessions()
+    {
+        // Arrange — create user and two sessions (simulate login from two devices)
+        var password = "OldPass1!";
+        var userId = await _authenticationService.RegisterAsync(
+            "changepw@example.com", "changepwuser", password);
+
+        var loginResult1 = await _authenticationService.LoginAsync(
+            "changepw@example.com", password, "1.1.1.1", "DeviceA");
+        var loginResult2 = await _authenticationService.LoginAsync(
+            "changepw@example.com", password, "2.2.2.2", "DeviceB");
+
+        var currentSessionId = loginResult1.SessionId;
+
+        // Act
+        await _authenticationService.ChangePasswordAsync(
+            userId, currentSessionId, password, "NewPass2!");
+
+        // Assert — user's password updated in DB
+        var userInDb = await _fixture.DbContext.Users.FindAsync(userId);
+        userInDb.Should().NotBeNull();
+        var newHash = userInDb!.PasswordHash;
+        var hashResult = new PasswordHasher<User>().VerifyHashedPassword(userInDb, newHash, "NewPass2!");
+        hashResult.Should().Be(PasswordVerificationResult.Success);
+
+        // Assert — second session deactivated, first session still active
+        var sessions = await _fixture.DbContext.UserSessions
+            .Where(s => s.UserId == userId)
+            .ToListAsync();
+        sessions.Should().HaveCount(2);
+        sessions.First(s => s.Id == currentSessionId).IsActive.Should().BeTrue();
+        sessions.First(s => s.Id == loginResult2.SessionId).IsActive.Should().BeFalse();
+
+        // Assert — activity log recorded
+        var logs = await _fixture.DbContext.ActivityLogs.Where(l => l.UserId == userId).ToListAsync();
+        logs.Should().Contain(l => l.ActivityType == ActivityType.PasswordChange);
+
+        // Assert — confirmation email sent
+        _emailServiceMock.Verify(x => x.SendPasswordChangedNotificationAsync(
+            "changepw@example.com", "changepwuser", default), Times.Once);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_WrongCurrentPassword_ThrowsAndDoesNotUpdateDb()
+    {
+        // Arrange
+        var password = "OriginalPass1!";
+        var userId = await _authenticationService.RegisterAsync(
+            "changepw-fail@example.com", "changepwfail", password);
+
+        var loginResult = await _authenticationService.LoginAsync(
+            "changepw-fail@example.com", password, null, null);
+
+        var originalHash = (await _fixture.DbContext.Users.FindAsync(userId))!.PasswordHash;
+
+        // Act
+        var act = async () => await _authenticationService.ChangePasswordAsync(
+            userId, loginResult.SessionId, "WrongPass1!", "NewPass2!");
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidCurrentPasswordException>();
+
+        var userInDb = await _fixture.DbContext.Users.FindAsync(userId);
+        userInDb!.PasswordHash.Should().Be(originalHash);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_AfterChange_OldPasswordNoLongerWorks()
+    {
+        // Arrange
+        var oldPassword = "BeforeChange1!";
+        var newPassword = "AfterChange2!";
+        var userId = await _authenticationService.RegisterAsync(
+            "changepw-verify@example.com", "changepwverify", oldPassword);
+
+        var loginResult = await _authenticationService.LoginAsync(
+            "changepw-verify@example.com", oldPassword, null, null);
+
+        // Act
+        await _authenticationService.ChangePasswordAsync(
+            userId, loginResult.SessionId, oldPassword, newPassword);
+
+        // Assert — old password rejected
+        var actOld = async () => await _authenticationService.LoginAsync(
+            "changepw-verify@example.com", oldPassword, null, null);
+        await actOld.Should().ThrowAsync<InvalidCredentialsException>();
+
+        // Assert — new password accepted
+        var newLogin = await _authenticationService.LoginAsync(
+            "changepw-verify@example.com", newPassword, null, null);
+        newLogin.AccessToken.Should().NotBeNullOrEmpty();
+    }
+
+    #endregion
 }
