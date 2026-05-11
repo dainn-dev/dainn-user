@@ -1,6 +1,6 @@
 {
   "env": {
-    "ANTHROPIC_BASE_URL": "https://open-api.dainn.online/",
+    "ANTHROPIC_BASE_URL": "https://open-api.dainn.online/v1",
     "ANTHROPIC_AUTH_TOKEN": "sk-5aa71b2d91741e3c-ylzc3l-7139c7b7",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-7",

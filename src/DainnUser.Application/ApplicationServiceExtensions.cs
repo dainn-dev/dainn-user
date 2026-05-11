@@ -34,6 +34,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<ILoginHistoryService, LoginHistoryService>();
         services.AddScoped<ISocialLoginService, SocialLoginService>();
+        services.AddScoped<IRecaptchaService, RecaptchaService>();
 
         return services;
     }
