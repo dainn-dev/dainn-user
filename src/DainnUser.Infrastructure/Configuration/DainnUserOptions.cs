@@ -89,6 +89,21 @@ public class DainnUserOptions
     public int LoginHistoryRetentionDays { get; set; } = 90;
 
     /// <summary>
+    /// Gets or sets the Google OAuth client ID.
+    /// </summary>
+    public string GoogleClientId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Google OAuth client secret.
+    /// </summary>
+    public string GoogleClientSecret { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Google OAuth callback path.
+    /// </summary>
+    public string GoogleCallbackPath { get; set; } = "/signin-google";
+
+    /// <summary>
     /// Gets or sets a value indicating whether rate limiting is enabled.
     /// </summary>
     public bool EnableRateLimiting { get; set; } = true;

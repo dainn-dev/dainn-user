@@ -196,4 +196,10 @@ public class UserRepository : Repository<User>, IUserRepository
     {
         await _context.Set<UserProfile>().AddAsync(profile, cancellationToken);
     }
+
+    /// <inheritdoc/>
+    public async Task AddLoginAsync(UserLogin login, CancellationToken cancellationToken = default)
+    {
+        await _context.Set<UserLogin>().AddAsync(login, cancellationToken);
+    }
 }
