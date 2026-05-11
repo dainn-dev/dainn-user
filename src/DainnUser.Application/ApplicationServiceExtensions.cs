@@ -31,6 +31,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ITwoFactorService, TwoFactorService>();
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<ISessionService, SessionService>();
 
         return services;
     }

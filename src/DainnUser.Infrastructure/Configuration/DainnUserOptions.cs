@@ -77,6 +77,12 @@ public class DainnUserOptions
     public int PasswordResetTokenExpirationHours { get; set; } = 1;
 
     /// <summary>
+    /// Gets or sets the maximum number of active sessions allowed per user.
+    /// When exceeded, the oldest session is deactivated.
+    /// </summary>
+    public int MaxActiveSessionsPerUser { get; set; } = 5;
+
+    /// <summary>
     /// Gets or sets a value indicating whether rate limiting is enabled.
     /// </summary>
     public bool EnableRateLimiting { get; set; } = true;
