@@ -20,6 +20,7 @@ public class AuthenticationService : IAuthenticationService
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly ITwoFactorService? _twoFactorService;
+    private readonly ISessionService? _sessionService;
     private readonly DainnUserOptions _options;
 
     /// <summary>
@@ -38,7 +39,8 @@ public class AuthenticationService : IAuthenticationService
         IPasswordHasher<User> passwordHasher,
         IJwtTokenService jwtTokenService,
         DainnUserOptions options,
-        ITwoFactorService? twoFactorService = null)
+        ITwoFactorService? twoFactorService = null,
+        ISessionService? sessionService = null)
     {
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
@@ -47,6 +49,7 @@ public class AuthenticationService : IAuthenticationService
         _jwtTokenService = jwtTokenService;
         _options = options;
         _twoFactorService = twoFactorService;
+        _sessionService = sessionService;
     }
 
     /// <inheritdoc/>
@@ -224,18 +227,27 @@ public class AuthenticationService : IAuthenticationService
         // the refresh token so that the future refresh endpoint can resolve session + token in one lookup.
         if (_options.EnableSessionManagement)
         {
-            await _unitOfWork.Sessions.AddAsync(new UserSession
+            if (_sessionService is not null)
             {
-                Id = sessionId,
-                UserId = user.Id,
-                SessionToken = refreshTokenHash,
-                IpAddress = ipAddress,
-                UserAgent = userAgent,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = refreshExpiresAt,
-                LastActivityAt = DateTime.UtcNow,
-                IsActive = true
-            }, cancellationToken);
+                var session = await _sessionService.CreateSessionAsync(
+                    user.Id, refreshTokenHash, ipAddress, userAgent, cancellationToken);
+                sessionId = session.Id;
+            }
+            else
+            {
+                await _unitOfWork.Sessions.AddAsync(new UserSession
+                {
+                    Id = sessionId,
+                    UserId = user.Id,
+                    SessionToken = refreshTokenHash,
+                    IpAddress = ipAddress,
+                    UserAgent = userAgent,
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = refreshExpiresAt,
+                    LastActivityAt = DateTime.UtcNow,
+                    IsActive = true
+                }, cancellationToken);
+            }
         }
 
         // Reset lockout counters on successful auth and stamp last-login.
@@ -320,18 +332,27 @@ public class AuthenticationService : IAuthenticationService
 
         if (_options.EnableSessionManagement)
         {
-            await _unitOfWork.Sessions.AddAsync(new UserSession
+            if (_sessionService is not null)
             {
-                Id = sessionId,
-                UserId = user.Id,
-                SessionToken = refreshTokenHash,
-                IpAddress = ipAddress,
-                UserAgent = userAgent,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = refreshExpiresAt,
-                LastActivityAt = DateTime.UtcNow,
-                IsActive = true
-            }, cancellationToken);
+                var session = await _sessionService.CreateSessionAsync(
+                    user.Id, refreshTokenHash, ipAddress, userAgent, cancellationToken);
+                sessionId = session.Id;
+            }
+            else
+            {
+                await _unitOfWork.Sessions.AddAsync(new UserSession
+                {
+                    Id = sessionId,
+                    UserId = user.Id,
+                    SessionToken = refreshTokenHash,
+                    IpAddress = ipAddress,
+                    UserAgent = userAgent,
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = refreshExpiresAt,
+                    LastActivityAt = DateTime.UtcNow,
+                    IsActive = true
+                }, cancellationToken);
+            }
         }
 
         user.FailedLoginAttempts = 0;
@@ -388,7 +409,14 @@ public class AuthenticationService : IAuthenticationService
             await _userRepository.RevokeAllRefreshTokensAsync(token.UserId, cancellationToken);
             if (_options.EnableSessionManagement)
             {
-                await _unitOfWork.Sessions.DeactivateAllByUserIdAsync(token.UserId, cancellationToken);
+                if (_sessionService is not null)
+                {
+                    await _sessionService.RevokeAllSessionsAsync(token.UserId, cancellationToken);
+                }
+                else
+                {
+                    await _unitOfWork.Sessions.DeactivateAllByUserIdAsync(token.UserId, cancellationToken);
+                }
             }
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             throw new InvalidRefreshTokenException("Refresh token reuse detected.", isReuseDetected: true);
@@ -417,9 +445,27 @@ public class AuthenticationService : IAuthenticationService
 
         // Rotate session if we have one tied to the old hash; otherwise mint a new one.
         UserSession? session = null;
+        var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
+        var newRefreshTokenHash = _jwtTokenService.HashRefreshToken(newRefreshToken);
+        var newRefreshExpiresAt = DateTime.UtcNow.AddDays(_options.RefreshTokenExpirationDays);
+
         if (_options.EnableSessionManagement)
         {
-            session = await _unitOfWork.Sessions.GetByTokenAsync(hash, cancellationToken);
+            if (_sessionService is not null)
+            {
+                session = await _sessionService.RotateSessionAsync(
+                    hash, newRefreshTokenHash, ipAddress, userAgent, cancellationToken);
+
+                if (session is null)
+                {
+                    session = await _sessionService.CreateSessionAsync(
+                        user.Id, newRefreshTokenHash, ipAddress, userAgent, cancellationToken);
+                }
+            }
+            else
+            {
+                session = await _unitOfWork.Sessions.GetByTokenAsync(hash, cancellationToken);
+            }
         }
         var sessionId = session?.Id ?? Guid.NewGuid();
 
@@ -435,9 +481,6 @@ public class AuthenticationService : IAuthenticationService
         var refreshPermissions = ExtractPermissions(user.UserRoles);
 
         var newAccessToken = GenerateAccessToken(user, roleNames, refreshPermissions, sessionId);
-        var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
-        var newRefreshTokenHash = _jwtTokenService.HashRefreshToken(newRefreshToken);
-        var newRefreshExpiresAt = DateTime.UtcNow.AddDays(_options.RefreshTokenExpirationDays);
 
         await _userRepository.AddTokenAsync(new UserToken
         {
@@ -453,30 +496,42 @@ public class AuthenticationService : IAuthenticationService
 
         if (_options.EnableSessionManagement)
         {
-            if (session is not null && session.IsActive)
+            if (_sessionService is not null)
             {
-                // Rotate token + extend lifetime + refresh metadata for the existing session.
-                session.SessionToken = newRefreshTokenHash;
-                session.LastActivityAt = DateTime.UtcNow;
-                session.ExpiresAt = newRefreshExpiresAt;
-                if (!string.IsNullOrWhiteSpace(ipAddress)) session.IpAddress = ipAddress;
-                if (!string.IsNullOrWhiteSpace(userAgent)) session.UserAgent = userAgent;
+                if (session is null)
+                {
+                    session = await _sessionService.CreateSessionAsync(
+                        user.Id, newRefreshTokenHash, ipAddress, userAgent, cancellationToken);
+                    sessionId = session.Id;
+                }
             }
             else
             {
-                // Defensive: missing/inactive session — create a new one tied to the new hash.
-                await _unitOfWork.Sessions.AddAsync(new UserSession
+                if (session is not null && session.IsActive)
                 {
-                    Id = sessionId,
-                    UserId = user.Id,
-                    SessionToken = newRefreshTokenHash,
-                    IpAddress = ipAddress,
-                    UserAgent = userAgent,
-                    CreatedAt = DateTime.UtcNow,
-                    ExpiresAt = newRefreshExpiresAt,
-                    LastActivityAt = DateTime.UtcNow,
-                    IsActive = true
-                }, cancellationToken);
+                    // Rotate token + extend lifetime + refresh metadata for the existing session.
+                    session.SessionToken = newRefreshTokenHash;
+                    session.LastActivityAt = DateTime.UtcNow;
+                    session.ExpiresAt = newRefreshExpiresAt;
+                    if (!string.IsNullOrWhiteSpace(ipAddress)) session.IpAddress = ipAddress;
+                    if (!string.IsNullOrWhiteSpace(userAgent)) session.UserAgent = userAgent;
+                }
+                else
+                {
+                    // Defensive: missing/inactive session — create a new one tied to the new hash.
+                    await _unitOfWork.Sessions.AddAsync(new UserSession
+                    {
+                        Id = sessionId,
+                        UserId = user.Id,
+                        SessionToken = newRefreshTokenHash,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        CreatedAt = DateTime.UtcNow,
+                        ExpiresAt = newRefreshExpiresAt,
+                        LastActivityAt = DateTime.UtcNow,
+                        IsActive = true
+                    }, cancellationToken);
+                }
             }
         }
 
@@ -736,7 +791,14 @@ public class AuthenticationService : IAuthenticationService
         await _userRepository.RevokeAllRefreshTokensAsync(user.Id, cancellationToken);
         if (_options.EnableSessionManagement)
         {
-            await _unitOfWork.Sessions.DeactivateAllByUserIdAsync(user.Id, cancellationToken);
+            if (_sessionService is not null)
+            {
+                await _sessionService.RevokeAllSessionsAsync(user.Id, cancellationToken);
+            }
+            else
+            {
+                await _unitOfWork.Sessions.DeactivateAllByUserIdAsync(user.Id, cancellationToken);
+            }
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -783,7 +845,14 @@ public class AuthenticationService : IAuthenticationService
         await _userRepository.RevokeAllRefreshTokensExceptSessionAsync(user.Id, currentSessionId, cancellationToken);
         if (_options.EnableSessionManagement)
         {
-            await _unitOfWork.Sessions.DeactivateAllExceptAsync(user.Id, currentSessionId, cancellationToken);
+            if (_sessionService is not null)
+            {
+                await _sessionService.RevokeAllExceptAsync(user.Id, currentSessionId, cancellationToken);
+            }
+            else
+            {
+                await _unitOfWork.Sessions.DeactivateAllExceptAsync(user.Id, currentSessionId, cancellationToken);
+            }
         }
 
         // Log activity.
