@@ -230,17 +230,30 @@ public class AuthControllerEndToEndTests : IClassFixture<CustomWebApplicationFac
         var forgotPasswordResponse = await _client.PostAsJsonAsync("/api/auth/forgot-password", forgotPasswordRequest);
         forgotPasswordResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Step 3: Get password reset token from database
+        // Step 3: Get reset token.
+        // ForgotPasswordAsync stores SHA-256 hash of the plain token in DB and emails the plain token.
+        // In tests we can't intercept the email, so we overwrite the stored hash with a known value,
+        // then pass the known plain token to the reset endpoint.
         string resetToken;
         using (var scope = _factory.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<DainnUserDbContext>();
-            var token = await dbContext.UserTokens
+
+            var knownPlainToken = "test-reset-token-known-12345678";
+            var hashBytes = System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes(knownPlainToken));
+            var hashHex = Convert.ToHexString(hashBytes).ToLowerInvariant();
+
+            var existingToken = await dbContext.UserTokens
                 .Where(t => t.UserId == userId && t.TokenType == TokenType.PasswordReset && !t.IsUsed)
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstOrDefaultAsync();
-            token.Should().NotBeNull();
-            resetToken = token!.TokenValue;
+
+            existingToken.Should().NotBeNull();
+            existingToken!.TokenValue = hashHex;
+            await dbContext.SaveChangesAsync();
+
+            resetToken = knownPlainToken;
         }
 
         // Step 4: Reset password
