@@ -30,6 +30,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ITwoFactorService, TwoFactorService>();
         services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<IProfileService, ProfileService>();
 
         return services;
     }
