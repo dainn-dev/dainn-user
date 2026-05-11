@@ -190,4 +190,10 @@ public class UserRepository : Repository<User>, IUserRepository
 
         return await query.AnyAsync(cancellationToken);
     }
+
+    /// <inheritdoc/>
+    public async Task AddProfileAsync(UserProfile profile, CancellationToken cancellationToken = default)
+    {
+        await _context.Set<UserProfile>().AddAsync(profile, cancellationToken);
+    }
 }

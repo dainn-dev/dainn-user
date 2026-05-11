@@ -143,4 +143,12 @@ public interface IUserRepository : IRepository<User>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>True if username is taken, otherwise false.</returns>
     Task<bool> IsUsernameTakenAsync(string username, Guid? excludeUserId = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a user profile to the database. Intended for cases where the user entity
+    /// is already tracked and <c>User.Profile</c> should not be set directly.
+    /// </summary>
+    /// <param name="profile">The profile to add.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task AddProfileAsync(UserProfile profile, CancellationToken cancellationToken = default);
 }
