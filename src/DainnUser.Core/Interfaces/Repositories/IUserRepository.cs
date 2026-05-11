@@ -151,4 +151,11 @@ public interface IUserRepository : IRepository<User>
     /// <param name="profile">The profile to add.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task AddProfileAsync(UserProfile profile, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a <see cref="UserLogin"/> for the user.
+    /// </summary>
+    /// <param name="login">The login to add.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task AddLoginAsync(UserLogin login, CancellationToken cancellationToken = default);
 }
