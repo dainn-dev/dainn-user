@@ -125,7 +125,7 @@ public class ProfileServiceIntegrationTests : IClassFixture<DatabaseFixture>
         // Assert - Updated fields changed, others preserved
         updateResult.FirstName.Should().Be("Janet");
         updateResult.LastName.Should().Be("Smith");
-        // Existing derived DisplayName is preserved unless explicitly cleared.
+        // Existing DisplayName null in data; fallback auto-derives from first/last name.
         updateResult.DisplayName.Should().Be("Jane Smith");
         updateResult.Gender.Should().Be("Female");
         updateResult.Language.Should().Be("en");

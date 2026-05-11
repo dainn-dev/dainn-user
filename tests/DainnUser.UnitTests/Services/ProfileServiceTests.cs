@@ -378,7 +378,7 @@ public class ProfileServiceTests
     }
 
     [Fact]
-    public async Task UpdateProfileAsync_OnlyUpdatesFieldsProvidedInDto()
+    public async Task UpdateProfileAsync_WhenDisplayNameNullInDto_AutoDerivesDisplayName()
     {
         var userId = Guid.NewGuid();
         var profile = new UserProfile
@@ -387,7 +387,7 @@ public class ProfileServiceTests
             UserId = userId,
             FirstName = "Original",
             LastName = "Name",
-            DisplayName = null, // DisplayName is null so fallback will apply
+            DisplayName = null, // Profile DisplayName is null; DTO explicitly has null DisplayName, so fallback auto-derives from FirstName + LastName
             Gender = "Male",
             Language = "en",
             Timezone = "UTC",
@@ -418,12 +418,23 @@ public class ProfileServiceTests
 
         profile.FirstName.Should().Be("Updated");
         profile.LastName.Should().Be("Name");
-        // DisplayName is null, so fallback to FirstName + LastName
+        // Profile DisplayName was null and DTO does not provide DisplayName, so fallback auto-derives
         profile.DisplayName.Should().Be("Updated Name");
         profile.Gender.Should().Be("Male");
         profile.Language.Should().Be("en");
         profile.Timezone.Should().Be("UTC");
         profile.Bio.Should().Be("Updated bio");
         profile.Website.Should().Be("https://original.com");
+    }
+
+    [Fact]
+    public async Task UpdateProfileAsync_WhenDtoIsNull_ThrowsArgumentNullException()
+    {
+        var userId = Guid.NewGuid();
+
+        var act = () => _service.UpdateProfileAsync(userId, null!);
+
+        await act.Should().ThrowAsync<ArgumentNullException>()
+            .WithParameterName("dto");
     }
 }
