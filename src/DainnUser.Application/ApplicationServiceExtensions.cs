@@ -32,6 +32,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ISessionService, SessionService>();
+        services.AddScoped<ILoginHistoryService, LoginHistoryService>();
 
         return services;
     }
