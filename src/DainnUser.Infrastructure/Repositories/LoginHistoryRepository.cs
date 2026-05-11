@@ -71,4 +71,45 @@ public class LoginHistoryRepository : Repository<LoginHistory>, ILoginHistoryRep
             .OrderByDescending(lh => lh.CreatedAt)
             .ToListAsync(cancellationToken);
     }
+
+    /// <inheritdoc/>
+    public async Task<(IEnumerable<LoginHistory> Items, int TotalCount)> GetByUserIdWithDateRangeAsync(
+        Guid userId,
+        int pageNumber,
+        int pageSize,
+        DateTime? startDate,
+        DateTime? endDate,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbSet.Where(lh => lh.UserId == userId);
+
+        if (startDate.HasValue)
+            query = query.Where(lh => lh.CreatedAt >= startDate.Value);
+
+        if (endDate.HasValue)
+            query = query.Where(lh => lh.CreatedAt <= endDate.Value);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderByDescending(lh => lh.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
+    /// <inheritdoc/>
+    public async Task<int> RemoveOldRecordsAsync(DateTime cutoffDate, CancellationToken cancellationToken = default)
+    {
+        var oldRecords = await _dbSet
+            .Where(lh => lh.CreatedAt < cutoffDate)
+            .ToListAsync(cancellationToken);
+
+        if (oldRecords.Count == 0)
+            return 0;
+
+        _dbSet.RemoveRange(oldRecords);
+        return oldRecords.Count;
+    }
 }

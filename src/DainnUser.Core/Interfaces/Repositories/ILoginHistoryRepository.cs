@@ -52,4 +52,25 @@ public interface ILoginHistoryRepository : IRepository<LoginHistory>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A collection of login history entries from the specified IP.</returns>
     Task<IEnumerable<LoginHistory>> GetByIpAddressAsync(string ipAddress, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets login history for a specific user with optional date range filtering and pagination.
+    /// </summary>
+    Task<(IEnumerable<LoginHistory> Items, int TotalCount)> GetByUserIdWithDateRangeAsync(
+        Guid userId,
+        int pageNumber,
+        int pageSize,
+        DateTime? startDate,
+        DateTime? endDate,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes login history records older than the specified cutoff date.
+    /// </summary>
+    /// <param name="cutoffDate">Records with CreatedAt older than this date will be removed.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The number of records removed.</returns>
+    Task<int> RemoveOldRecordsAsync(
+        DateTime cutoffDate,
+        CancellationToken cancellationToken = default);
 }

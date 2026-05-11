@@ -83,6 +83,12 @@ public class DainnUserOptions
     public int MaxActiveSessionsPerUser { get; set; } = 5;
 
     /// <summary>
+    /// Gets or sets the login history retention period in days.
+    /// Records older than this will be eligible for cleanup.
+    /// </summary>
+    public int LoginHistoryRetentionDays { get; set; } = 90;
+
+    /// <summary>
     /// Gets or sets a value indicating whether rate limiting is enabled.
     /// </summary>
     public bool EnableRateLimiting { get; set; } = true;
