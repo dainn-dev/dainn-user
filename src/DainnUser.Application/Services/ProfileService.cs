@@ -1,7 +1,8 @@
-using DainnUser.Core.Models.Profile;
 using DainnUser.Core.Entities;
+using DainnUser.Core.Exceptions;
 using DainnUser.Core.Interfaces.Repositories;
 using DainnUser.Core.Interfaces.Services;
+using DainnUser.Core.Models.Profile;
 
 namespace DainnUser.Application.Services;
 
@@ -30,7 +31,7 @@ public class ProfileService : IProfileService
         var user = await _userRepository.GetWithProfileAsync(userId, cancellationToken);
         if (user is null)
         {
-            throw new InvalidOperationException("User not found.");
+            throw new UserNotFoundException(userId);
         }
 
         return MapToDto(user);
@@ -44,7 +45,7 @@ public class ProfileService : IProfileService
         var user = await _userRepository.GetWithProfileAsync(userId, cancellationToken);
         if (user is null)
         {
-            throw new InvalidOperationException("User not found.");
+            throw new UserNotFoundException(userId);
         }
 
         var now = DateTime.UtcNow;

@@ -29,7 +29,7 @@ public class UpdateProfileDtoValidator : AbstractValidator<UpdateProfileDto>
             .MaximumLength(100).WithMessage("Last name must not exceed 100 characters.");
 
         RuleFor(x => x.DisplayName)
-            .MaximumLength(100).WithMessage("Display name must not exceed 100 characters.");
+            .MaximumLength(200).WithMessage("Display name must not exceed 200 characters.");
 
         RuleFor(x => x.Bio)
             .MaximumLength(500).WithMessage("Bio must not exceed 500 characters.");
