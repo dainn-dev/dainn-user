@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using DainnUser.Core.Authorization;
 using DainnUser.Infrastructure.Configuration;
@@ -39,7 +40,13 @@ public static class JwtAuthenticationExtensions
                 "DainnUser:Jwt:Secret must be at least 32 bytes (256 bits) for HMAC-SHA256.");
         }
 
-        var signingKey = new SymmetricSecurityKey(keyBytes);
+        var signingKey = new SymmetricSecurityKey(keyBytes)
+        {
+            KeyId = "DainnUserSigningKey"
+        };
+
+        // Clear the default inbound claim type map to prevent JWT claims from being transformed
+        JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -56,6 +63,10 @@ public static class JwtAuthenticationExtensions
                     IssuerSigningKey = signingKey,
                     ClockSkew = TimeSpan.FromSeconds(jwt.ClockSkewSeconds)
                 };
+
+                // Set MapInboundClaims = false to use JwtSecurityTokenHandler (compatible
+                // with JwtTokenService) instead of the default JsonWebTokenHandler.
+                options.MapInboundClaims = false;
             });
 
         services.AddAuthorization(options =>

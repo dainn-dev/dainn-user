@@ -45,7 +45,10 @@ public class JwtTokenService : IJwtTokenService
                 "JWT secret must be at least 32 bytes (256 bits) for HMAC-SHA256.");
         }
 
-        _signingKey = new SymmetricSecurityKey(keyBytes);
+        _signingKey = new SymmetricSecurityKey(keyBytes)
+        {
+            KeyId = "DainnUserSigningKey"
+        };
         _signingCredentials = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
         _tokenHandler = new JwtSecurityTokenHandler();
     }
@@ -72,12 +75,12 @@ public class JwtTokenService : IJwtTokenService
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.Email, user.Email),
-            new(JwtRegisteredClaimNames.UniqueName, user.Username),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new("sid", sessionId.ToString()),
-            new("email_verified", user.EmailVerified ? "true" : "false")
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim("sid", sessionId.ToString()),
+            new Claim("email_verified", user.EmailVerified ? "true" : "false")
         };
 
         foreach (var role in roles.Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.OrdinalIgnoreCase))
