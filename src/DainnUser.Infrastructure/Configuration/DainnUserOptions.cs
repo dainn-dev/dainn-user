@@ -104,6 +104,32 @@ public class DainnUserOptions
     public string GoogleCallbackPath { get; set; } = "/signin-google";
 
     /// <summary>
+    /// Gets or sets a value indicating whether reCAPTCHA verification is enabled.
+    /// </summary>
+    public bool RecaptchaEnabled { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the reCAPTCHA version ("v2" or "v3").
+    /// </summary>
+    public string RecaptchaVersion { get; set; } = "v3";
+
+    /// <summary>
+    /// Gets or sets the reCAPTCHA site key (public, used in frontend).
+    /// </summary>
+    public string RecaptchaSiteKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the reCAPTCHA secret key (private, used for verification).
+    /// </summary>
+    public string RecaptchaSecretKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the minimum score threshold for v3 verification.
+    /// Scores below this threshold are considered bot traffic.
+    /// </summary>
+    public double RecaptchaMinimumScore { get; set; } = 0.5;
+
+    /// <summary>
     /// Gets or sets a value indicating whether rate limiting is enabled.
     /// </summary>
     public bool EnableRateLimiting { get; set; } = true;
