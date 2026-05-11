@@ -63,3 +63,8 @@ app.UseDainnUser();
 app.MapControllers();
 
 app.Run();
+
+/// <summary>
+/// Public partial Program class for integration testing with WebApplicationFactory.
+/// </summary>
+public partial class Program { }
