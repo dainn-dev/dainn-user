@@ -1,0 +1,55 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome to DainnUser MVC Sample</h1>
+    <p class="lead">This sample demonstrates DainnUser integration with ASP.NET Core MVC.</p>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <div class="alert alert-info mt-4">
+            <h4>You are logged in as @User.Identity.Name</h4>
+            <p>
+                <a asp-controller="Account" asp-action="Profile" class="btn btn-primary">View Profile</a>
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="mt-4">
+            <a asp-controller="Account" asp-action="Login" class="btn btn-primary btn-lg me-2">Login</a>
+            <a asp-controller="Account" asp-action="Register" class="btn btn-outline-primary btn-lg">Register</a>
+        </div>
+    }
+
+    <div class="mt-5">
+        <h3>Features</h3>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Authentication</h5>
+                        <p class="card-text">Register, login, logout with JWT tokens</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Profile Management</h5>
+                        <p class="card-text">Update user profile information</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Password Reset</h5>
+                        <p class="card-text">Forgot password flow with email</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
