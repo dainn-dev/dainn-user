@@ -49,4 +49,9 @@ public class UpdateProfileDto
     /// Gets or sets the website URL of the user.
     /// </summary>
     public string? Website { get; set; }
+
+    /// <summary>
+    /// Gets or sets the avatar URL of the user.
+    /// </summary>
+    public string? AvatarUrl { get; set; }
 }

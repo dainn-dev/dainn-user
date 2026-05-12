@@ -100,28 +100,77 @@ public static class DainnUserServiceExtensions
         }
 
         // Validate email configuration
-        var smtpHost = configuration["DainnUser:Email:SmtpHost"];
-        if (string.IsNullOrWhiteSpace(smtpHost))
-        {
-            throw new InvalidOperationException(
-                "DainnUser email SMTP host is not configured. " +
-                "Please set 'DainnUser:Email:SmtpHost' in your configuration.");
-        }
-
-        var smtpPort = configuration["DainnUser:Email:SmtpPort"];
-        if (string.IsNullOrWhiteSpace(smtpPort) || !int.TryParse(smtpPort, out _))
-        {
-            throw new InvalidOperationException(
-                "DainnUser email SMTP port is not configured or invalid. " +
-                "Please set 'DainnUser:Email:SmtpPort' in your configuration.");
-        }
-
         var fromEmail = configuration["DainnUser:Email:FromEmail"];
         if (string.IsNullOrWhiteSpace(fromEmail))
         {
             throw new InvalidOperationException(
                 "DainnUser email from address is not configured. " +
                 "Please set 'DainnUser:Email:FromEmail' in your configuration.");
+        }
+
+        var emailProvider = configuration["DainnUser:Email:Provider"] ?? "Smtp";
+        switch (emailProvider.ToLowerInvariant())
+        {
+            case "smtp":
+                var smtpHost = configuration["DainnUser:Email:SmtpHost"];
+                if (string.IsNullOrWhiteSpace(smtpHost))
+                {
+                    throw new InvalidOperationException(
+                        "DainnUser email SMTP host is not configured. " +
+                        "Please set 'DainnUser:Email:SmtpHost' in your configuration.");
+                }
+
+                var smtpPort = configuration["DainnUser:Email:SmtpPort"];
+                if (string.IsNullOrWhiteSpace(smtpPort) || !int.TryParse(smtpPort, out _))
+                {
+                    throw new InvalidOperationException(
+                        "DainnUser email SMTP port is not configured or invalid. " +
+                        "Please set 'DainnUser:Email:SmtpPort' in your configuration.");
+                }
+
+                break;
+
+            case "sendgrid":
+                var sendGridApiKey = configuration["DainnUser:Email:SendGridApiKey"];
+                if (string.IsNullOrWhiteSpace(sendGridApiKey))
+                {
+                    throw new InvalidOperationException(
+                        "DainnUser email SendGrid API key is not configured. " +
+                        "Please set 'DainnUser:Email:SendGridApiKey' in your configuration.");
+                }
+
+                break;
+
+            case "awsses":
+                var awsRegion = configuration["DainnUser:Email:AwsRegion"];
+                if (string.IsNullOrWhiteSpace(awsRegion))
+                {
+                    throw new InvalidOperationException(
+                        "DainnUser email AWS region is not configured. " +
+                        "Please set 'DainnUser:Email:AwsRegion' in your configuration.");
+                }
+
+                var awsAccessKeyId = configuration["DainnUser:Email:AwsAccessKeyId"];
+                if (string.IsNullOrWhiteSpace(awsAccessKeyId))
+                {
+                    throw new InvalidOperationException(
+                        "DainnUser email AWS access key ID is not configured. " +
+                        "Please set 'DainnUser:Email:AwsAccessKeyId' in your configuration.");
+                }
+
+                var awsSecretAccessKey = configuration["DainnUser:Email:AwsSecretAccessKey"];
+                if (string.IsNullOrWhiteSpace(awsSecretAccessKey))
+                {
+                    throw new InvalidOperationException(
+                        "DainnUser email AWS secret access key is not configured. " +
+                        "Please set 'DainnUser:Email:AwsSecretAccessKey' in your configuration.");
+                }
+
+                break;
+
+            default:
+                throw new InvalidOperationException(
+                    $"Unsupported email provider: '{emailProvider}'. Supported providers: Smtp, SendGrid, AwsSes.");
         }
 
         // Validate JWT configuration

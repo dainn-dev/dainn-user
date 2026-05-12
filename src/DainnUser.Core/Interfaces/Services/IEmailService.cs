@@ -6,6 +6,17 @@ namespace DainnUser.Core.Interfaces.Services;
 public interface IEmailService
 {
     /// <summary>
+    /// Sends a generic email with optional attachments.
+    /// </summary>
+    Task SendEmailAsync(
+        string toEmail,
+        string? toName,
+        string subject,
+        string htmlBody,
+        IEnumerable<EmailAttachment>? attachments = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Sends an email verification message to the specified email address.
     /// </summary>
     /// <param name="email">The recipient email address.</param>

@@ -104,6 +104,51 @@ public class DainnUserOptions
     public string GoogleCallbackPath { get; set; } = "/signin-google";
 
     /// <summary>
+    /// Gets or sets the Facebook OAuth app ID.
+    /// </summary>
+    public string FacebookAppId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Facebook OAuth app secret.
+    /// </summary>
+    public string FacebookAppSecret { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Facebook OAuth callback path.
+    /// </summary>
+    public string FacebookCallbackPath { get; set; } = "/signin-facebook";
+
+    /// <summary>
+    /// Gets or sets the Microsoft OAuth client ID.
+    /// </summary>
+    public string MicrosoftClientId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Microsoft OAuth client secret.
+    /// </summary>
+    public string MicrosoftClientSecret { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Microsoft OAuth callback path.
+    /// </summary>
+    public string MicrosoftCallbackPath { get; set; } = "/signin-microsoft";
+
+    /// <summary>
+    /// Gets or sets the GitHub OAuth client ID.
+    /// </summary>
+    public string GitHubClientId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the GitHub OAuth client secret.
+    /// </summary>
+    public string GitHubClientSecret { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the GitHub OAuth callback path.
+    /// </summary>
+    public string GitHubCallbackPath { get; set; } = "/signin-github";
+
+    /// <summary>
     /// Gets or sets a value indicating whether reCAPTCHA verification is enabled.
     /// </summary>
     public bool RecaptchaEnabled { get; set; } = false;

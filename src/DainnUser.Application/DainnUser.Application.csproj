@@ -1,5 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+
+    <PackageId>DainnUser.Application</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Dainn Team</Authors>
+    <Company>Dainn</Company>
+    <Description>Application layer for DainnUser with business logic, services, and validation.</Description>
+    <PackageTags>authentication;authorization;user-management;identity;jwt</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>docs/README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/dainn/dainn-user</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/dainn/dainn-user</PackageProjectUrl>
+    <Copyright>Copyright (c) 2024 Dainn</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\docs\README.md" Link="docs\README.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\DainnUser.Core\DainnUser.Core.csproj" />
     <ProjectReference Include="..\DainnUser.Infrastructure\DainnUser.Infrastructure.csproj" />
@@ -10,13 +36,5 @@
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591</NoWarn>
-  </PropertyGroup>
 
 </Project>

@@ -1,29 +1,46 @@
 using DainnUser.Core.Interfaces.Services;
-using DainnUser.Infrastructure.Configuration;
-using MailKit.Net.Smtp;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using MimeKit;
 
 namespace DainnUser.Infrastructure.Services;
 
 /// <summary>
-/// Service implementation for sending emails.
+/// Service implementation for sending emails using configured provider.
 /// </summary>
 public class EmailService : IEmailService
 {
-    private readonly EmailOptions _emailOptions;
+    private readonly IEmailProvider _provider;
     private readonly ILogger<EmailService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EmailService"/> class.
     /// </summary>
-    /// <param name="emailOptions">The email configuration options.</param>
+    /// <param name="provider">The email provider.</param>
     /// <param name="logger">The logger.</param>
-    public EmailService(IOptions<EmailOptions> emailOptions, ILogger<EmailService> logger)
+    public EmailService(IEmailProvider provider, ILogger<EmailService> logger)
     {
-        _emailOptions = emailOptions.Value;
+        _provider = provider;
         _logger = logger;
+    }
+
+    /// <inheritdoc/>
+    public async Task SendEmailAsync(
+        string toEmail,
+        string? toName,
+        string subject,
+        string htmlBody,
+        IEnumerable<EmailAttachment>? attachments = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _provider.SendEmailAsync(toEmail, toName, subject, htmlBody, attachments, cancellationToken);
+            _logger.LogInformation("Email sent successfully to {Email} with subject: {Subject}", toEmail, subject);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email to {Email} with subject: {Subject}", toEmail, subject);
+            throw;
+        }
     }
 
     /// <inheritdoc/>
@@ -75,28 +92,7 @@ public class EmailService : IEmailService
     {
         try
         {
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(_emailOptions.FromName, _emailOptions.FromEmail));
-            message.To.Add(new MailboxAddress(string.Empty, toEmail));
-            message.Subject = subject;
-
-            var bodyBuilder = new BodyBuilder
-            {
-                HtmlBody = htmlBody
-            };
-            message.Body = bodyBuilder.ToMessageBody();
-
-            using var client = new SmtpClient();
-            await client.ConnectAsync(_emailOptions.SmtpHost, _emailOptions.SmtpPort, _emailOptions.EnableSsl, cancellationToken);
-
-            if (!string.IsNullOrEmpty(_emailOptions.SmtpUsername) && !string.IsNullOrEmpty(_emailOptions.SmtpPassword))
-            {
-                await client.AuthenticateAsync(_emailOptions.SmtpUsername, _emailOptions.SmtpPassword, cancellationToken);
-            }
-
-            await client.SendAsync(message, cancellationToken);
-            await client.DisconnectAsync(true, cancellationToken);
-
+            await _provider.SendEmailAsync(toEmail, null, subject, htmlBody, null, cancellationToken);
             _logger.LogInformation("Email sent successfully to {Email} with subject: {Subject}", toEmail, subject);
         }
         catch (Exception ex)

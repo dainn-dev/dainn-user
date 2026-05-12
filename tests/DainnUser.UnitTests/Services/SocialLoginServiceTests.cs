@@ -43,6 +43,12 @@ public class SocialLoginServiceTests
             EnableSocialLogin = true,
             GoogleClientId = "test-client-id",
             GoogleClientSecret = "test-client-secret",
+            FacebookAppId = "test-fb-app-id",
+            FacebookAppSecret = "test-fb-secret",
+            GitHubClientId = "test-github-client-id",
+            GitHubClientSecret = "test-github-client-secret",
+            MicrosoftClientId = "test-microsoft-client-id",
+            MicrosoftClientSecret = "test-microsoft-client-secret",
             RefreshTokenExpirationDays = 7
         };
 
@@ -535,5 +541,638 @@ public class SocialLoginServiceTests
         user.Logins.Should().NotContain(googleLogin);
         user.Logins.Should().Contain(facebookLogin);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task LoginWithFacebookAsync_NewUser_AutoRegistersAndLogsIn()
+    {
+        SetupFacebookOAuthSuccess();
+
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Facebook, "fb-123", default))
+            .ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.GetByEmailAsync("fb@example.com", default))
+            .ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.IsUsernameTakenAsync(It.IsAny<string>(), null, default))
+            .ReturnsAsync(false);
+        _userRepositoryMock.Setup(x => x.AddAsync(It.IsAny<User>(), default))
+            .Returns((User u, CancellationToken _) => Task.FromResult(u));
+        _userRepositoryMock.Setup(x => x.GetWithRolesAsync(It.IsAny<Guid>(), default))
+            .ReturnsAsync(CreateTestUser());
+        SetupJwtMocks();
+
+        var result = await _socialLoginService.LoginWithFacebookAsync("fb-auth-code", "http://localhost/callback", "127.0.0.1", "TestAgent");
+
+        result.Should().NotBeNull();
+        result.User.Should().NotBeNull();
+        result.User!.Email.Should().Be("fb@example.com");
+        result.AccessToken.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task LoginWithFacebookAsync_ExistingFacebookUser_LogsIn()
+    {
+        SetupFacebookOAuthSuccess();
+
+        var existingUser = CreateTestUser();
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Facebook, "fb-123", default))
+            .ReturnsAsync(existingUser);
+        _userRepositoryMock.Setup(x => x.GetWithRolesAsync(existingUser.Id, default))
+            .ReturnsAsync(existingUser);
+        SetupJwtMocks();
+
+        var result = await _socialLoginService.LoginWithFacebookAsync("fb-auth-code", "http://localhost/callback", "127.0.0.1", "TestAgent");
+
+        result.Should().NotBeNull();
+        result.User.Should().NotBeNull();
+        result.User!.Email.Should().Be(existingUser.Email);
+    }
+
+    [Fact]
+    public async Task LoginWithFacebookAsync_ExistingEmailUser_LinksAccountAndLogsIn()
+    {
+        SetupFacebookOAuthSuccess();
+
+        var existingUser = CreateTestUser();
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Facebook, "fb-123", default))
+            .ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.GetByEmailAsync("fb@example.com", default))
+            .ReturnsAsync(existingUser);
+        _userRepositoryMock.Setup(x => x.GetWithRolesAsync(existingUser.Id, default))
+            .ReturnsAsync(existingUser);
+        SetupJwtMocks();
+
+        var result = await _socialLoginService.LoginWithFacebookAsync("fb-auth-code", "http://localhost/callback", "127.0.0.1", "TestAgent");
+
+        result.Should().NotBeNull();
+        result.User.Should().NotBeNull();
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.AtLeast(1));
+    }
+
+    [Fact]
+    public async Task LoginWithFacebookAsync_SocialLoginDisabled_ThrowsException()
+    {
+        var disabledOptions = new DainnUserOptions
+        {
+            EnableSocialLogin = false,
+            FacebookAppId = "test",
+            FacebookAppSecret = "test"
+        };
+        var service = new SocialLoginService(
+            _userRepositoryMock.Object, _unitOfWorkMock.Object,
+            _jwtTokenServiceMock.Object, _sessionServiceMock.Object,
+            _passwordHasherMock.Object, Options.Create(disabledOptions), _httpClient);
+
+        await service.Invoking(s => s.LoginWithFacebookAsync("code", "callback", null, null))
+            .Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*not enabled*");
+    }
+
+    [Fact]
+    public async Task LinkFacebookAccountAsync_NewFacebookAccount_LinksSuccessfully()
+    {
+        SetupFacebookOAuthSuccess();
+
+        var user = CreateTestUser();
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(user.Id, default))
+            .ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Facebook, "fb-123", default))
+            .ReturnsAsync((User?)null);
+
+        await _socialLoginService.LinkFacebookAccountAsync(user.Id, "fb-auth-code", "http://localhost/callback");
+
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task LinkFacebookAccountAsync_AlreadyLinkedToSameUser_DoesNothing()
+    {
+        SetupFacebookOAuthSuccess();
+
+        var user = CreateTestUser();
+        user.Logins.Add(new UserLogin
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Provider = LoginProvider.Facebook,
+            ProviderKey = "fb-123"
+        });
+
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(user.Id, default))
+            .ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Facebook, "fb-123", default))
+            .ReturnsAsync(user);
+
+        await _socialLoginService.LinkFacebookAccountAsync(user.Id, "fb-auth-code", "http://localhost/callback");
+
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.Never);
+    }
+
+    [Fact]
+    public async Task LinkFacebookAccountAsync_AlreadyLinkedToOtherUser_ThrowsException()
+    {
+        SetupFacebookOAuthSuccess();
+
+        var user1 = CreateTestUser();
+        var user2 = CreateTestUser();
+        user2.Email = "other@example.com";
+
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(user1.Id, default))
+            .ReturnsAsync(user1);
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Facebook, "fb-123", default))
+            .ReturnsAsync(user2);
+
+        await _socialLoginService.Invoking(s => s.LinkFacebookAccountAsync(user1.Id, "fb-auth-code", "http://localhost/callback"))
+            .Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*already linked*");
+    }
+
+    [Fact]
+    public async Task LoginWithGitHubAsync_NewUser_AutoRegistersAndLogsIn()
+    {
+        SetupGitHubOAuthSuccess();
+        SetupJwtMocks();
+
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.GitHub, "gh-123", default))
+            .ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.GetByEmailAsync("gh@example.com", default))
+            .ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.IsUsernameTakenAsync(It.IsAny<string>(), null, default))
+            .ReturnsAsync(false);
+        _userRepositoryMock.Setup(x => x.AddAsync(It.IsAny<User>(), default))
+            .Returns((User u, CancellationToken _) => Task.FromResult(u));
+        _userRepositoryMock.Setup(x => x.GetWithRolesAsync(It.IsAny<Guid>(), default))
+            .ReturnsAsync((Guid id, CancellationToken _) => CreateTestUser());
+        _passwordHasherMock.Setup(x => x.HashPassword(It.IsAny<User>(), It.IsAny<string>()))
+            .Returns("hashed-password");
+
+        var result = await _socialLoginService.LoginWithGitHubAsync("gh-auth-code", "http://localhost/callback", null, null);
+
+        result.Should().NotBeNull();
+        result.User.Should().NotBeNull();
+        result.User.Email.Should().Be("gh@example.com");
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.AtLeast(1));
+    }
+
+    [Fact]
+    public async Task LoginWithGitHubAsync_ExistingGitHubUser_LogsIn()
+    {
+        SetupGitHubOAuthSuccess();
+        SetupJwtMocks();
+
+        var user = CreateTestUser();
+        user.Logins.Add(new UserLogin
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Provider = LoginProvider.GitHub,
+            ProviderKey = "gh-123"
+        });
+
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.GitHub, "gh-123", default))
+            .ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetWithRolesAsync(user.Id, default))
+            .ReturnsAsync(user);
+
+        var result = await _socialLoginService.LoginWithGitHubAsync("gh-auth-code", "http://localhost/callback", null, null);
+
+        result.Should().NotBeNull();
+        result.User.Email.Should().Be(user.Email);
+    }
+
+    [Fact]
+    public async Task LoginWithGitHubAsync_ExistingEmailUser_LinksAccountAndLogsIn()
+    {
+        SetupGitHubOAuthSuccess();
+        SetupJwtMocks();
+
+        var user = CreateTestUser();
+        user.Email = "gh@example.com";
+
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.GitHub, "gh-123", default))
+            .ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.GetByEmailAsync("gh@example.com", default))
+            .ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetWithRolesAsync(user.Id, default))
+            .ReturnsAsync(user);
+
+        var result = await _socialLoginService.LoginWithGitHubAsync("gh-auth-code", "http://localhost/callback", null, null);
+
+        result.Should().NotBeNull();
+        result.User.Should().NotBeNull();
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.AtLeast(1));
+    }
+
+    [Fact]
+    public async Task LoginWithGitHubAsync_SocialLoginDisabled_ThrowsException()
+    {
+        var disabledOptions = new DainnUserOptions
+        {
+            EnableSocialLogin = false,
+            GitHubClientId = "test",
+            GitHubClientSecret = "test"
+        };
+        var service = new SocialLoginService(
+            _userRepositoryMock.Object, _unitOfWorkMock.Object,
+            _jwtTokenServiceMock.Object, _sessionServiceMock.Object,
+            _passwordHasherMock.Object, Options.Create(disabledOptions), _httpClient);
+
+        await service.Invoking(s => s.LoginWithGitHubAsync("code", "callback", null, null))
+            .Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*not enabled*");
+    }
+
+    [Fact]
+    public async Task LinkGitHubAccountAsync_NewGitHubAccount_LinksSuccessfully()
+    {
+        SetupGitHubOAuthSuccess();
+
+        var user = CreateTestUser();
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(user.Id, default))
+            .ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.GitHub, "gh-123", default))
+            .ReturnsAsync((User?)null);
+
+        await _socialLoginService.LinkGitHubAccountAsync(user.Id, "gh-auth-code", "http://localhost/callback");
+
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task LinkGitHubAccountAsync_AlreadyLinkedToSameUser_DoesNothing()
+    {
+        SetupGitHubOAuthSuccess();
+
+        var user = CreateTestUser();
+        user.Logins.Add(new UserLogin
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Provider = LoginProvider.GitHub,
+            ProviderKey = "gh-123"
+        });
+
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(user.Id, default))
+            .ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.GitHub, "gh-123", default))
+            .ReturnsAsync(user);
+
+        await _socialLoginService.LinkGitHubAccountAsync(user.Id, "gh-auth-code", "http://localhost/callback");
+
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.Never);
+    }
+
+    [Fact]
+    public async Task LinkGitHubAccountAsync_AlreadyLinkedToOtherUser_ThrowsException()
+    {
+        SetupGitHubOAuthSuccess();
+
+        var user1 = CreateTestUser();
+        var user2 = CreateTestUser();
+        user2.Email = "other@example.com";
+
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(user1.Id, default))
+            .ReturnsAsync(user1);
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.GitHub, "gh-123", default))
+            .ReturnsAsync(user2);
+
+        await _socialLoginService.Invoking(s => s.LinkGitHubAccountAsync(user1.Id, "gh-auth-code", "http://localhost/callback"))
+            .Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*already linked*");
+    }
+
+    [Fact]
+    public async Task LoginWithMicrosoftAsync_NewUser_AutoRegistersAndLogsIn()
+    {
+        SetupMicrosoftOAuthSuccess();
+        SetupJwtMocks();
+
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Microsoft, "ms-123", default))
+            .ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.GetByEmailAsync("ms@example.com", default))
+            .ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.IsUsernameTakenAsync(It.IsAny<string>(), null, default))
+            .ReturnsAsync(false);
+        _userRepositoryMock.Setup(x => x.AddAsync(It.IsAny<User>(), default))
+            .Returns((User u, CancellationToken _) => Task.FromResult(u));
+        _userRepositoryMock.Setup(x => x.GetWithRolesAsync(It.IsAny<Guid>(), default))
+            .ReturnsAsync((Guid id, CancellationToken _) => CreateTestUser());
+        _passwordHasherMock.Setup(x => x.HashPassword(It.IsAny<User>(), It.IsAny<string>()))
+            .Returns("hashed-password");
+
+        var result = await _socialLoginService.LoginWithMicrosoftAsync("ms-auth-code", "http://localhost/callback", null, null);
+
+        result.Should().NotBeNull();
+        result.User.Should().NotBeNull();
+        result.User.Email.Should().Be("ms@example.com");
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.AtLeast(1));
+    }
+
+    [Fact]
+    public async Task LoginWithMicrosoftAsync_ExistingMicrosoftUser_LogsIn()
+    {
+        SetupMicrosoftOAuthSuccess();
+        SetupJwtMocks();
+
+        var user = CreateTestUser();
+        user.Logins.Add(new UserLogin
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Provider = LoginProvider.Microsoft,
+            ProviderKey = "ms-123"
+        });
+
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Microsoft, "ms-123", default))
+            .ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetWithRolesAsync(user.Id, default))
+            .ReturnsAsync(user);
+
+        var result = await _socialLoginService.LoginWithMicrosoftAsync("ms-auth-code", "http://localhost/callback", null, null);
+
+        result.Should().NotBeNull();
+        result.User.Email.Should().Be(user.Email);
+    }
+
+    [Fact]
+    public async Task LoginWithMicrosoftAsync_ExistingEmailUser_LinksAccountAndLogsIn()
+    {
+        SetupMicrosoftOAuthSuccess();
+        SetupJwtMocks();
+
+        var user = CreateTestUser();
+        user.Email = "ms@example.com";
+
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Microsoft, "ms-123", default))
+            .ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.GetByEmailAsync("ms@example.com", default))
+            .ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetWithRolesAsync(user.Id, default))
+            .ReturnsAsync(user);
+
+        var result = await _socialLoginService.LoginWithMicrosoftAsync("ms-auth-code", "http://localhost/callback", null, null);
+
+        result.Should().NotBeNull();
+        result.User.Should().NotBeNull();
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.AtLeast(1));
+    }
+
+    [Fact]
+    public async Task LoginWithMicrosoftAsync_SocialLoginDisabled_ThrowsException()
+    {
+        var disabledOptions = new DainnUserOptions
+        {
+            EnableSocialLogin = false,
+            MicrosoftClientId = "test",
+            MicrosoftClientSecret = "test"
+        };
+        var service = new SocialLoginService(
+            _userRepositoryMock.Object, _unitOfWorkMock.Object,
+            _jwtTokenServiceMock.Object, _sessionServiceMock.Object,
+            _passwordHasherMock.Object, Options.Create(disabledOptions), _httpClient);
+
+        await service.Invoking(s => s.LoginWithMicrosoftAsync("code", "callback", null, null))
+            .Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*not enabled*");
+    }
+
+    [Fact]
+    public async Task LinkMicrosoftAccountAsync_NewMicrosoftAccount_LinksSuccessfully()
+    {
+        SetupMicrosoftOAuthSuccess();
+
+        var user = CreateTestUser();
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(user.Id, default))
+            .ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Microsoft, "ms-123", default))
+            .ReturnsAsync((User?)null);
+
+        await _socialLoginService.LinkMicrosoftAccountAsync(user.Id, "ms-auth-code", "http://localhost/callback");
+
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task LinkMicrosoftAccountAsync_AlreadyLinkedToSameUser_DoesNothing()
+    {
+        SetupMicrosoftOAuthSuccess();
+
+        var user = CreateTestUser();
+        user.Logins.Add(new UserLogin
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Provider = LoginProvider.Microsoft,
+            ProviderKey = "ms-123"
+        });
+
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(user.Id, default))
+            .ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Microsoft, "ms-123", default))
+            .ReturnsAsync(user);
+
+        await _socialLoginService.LinkMicrosoftAccountAsync(user.Id, "ms-auth-code", "http://localhost/callback");
+
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.Never);
+    }
+
+    [Fact]
+    public async Task LinkMicrosoftAccountAsync_AlreadyLinkedToOtherUser_ThrowsException()
+    {
+        SetupMicrosoftOAuthSuccess();
+
+        var user1 = CreateTestUser();
+        var user2 = CreateTestUser();
+        user2.Email = "other@example.com";
+
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(user1.Id, default))
+            .ReturnsAsync(user1);
+        _userRepositoryMock.Setup(x => x.GetByExternalLoginAsync(LoginProvider.Microsoft, "ms-123", default))
+            .ReturnsAsync(user2);
+
+        await _socialLoginService.Invoking(s => s.LinkMicrosoftAccountAsync(user1.Id, "ms-auth-code", "http://localhost/callback"))
+            .Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*already linked*");
+    }
+
+    private void SetupMicrosoftOAuthSuccess(string msUserId = "ms-123", string email = "ms@example.com", string displayName = "Microsoft User")
+    {
+        _options.MicrosoftClientId = "test-microsoft-client-id";
+        _options.MicrosoftClientSecret = "test-microsoft-client-secret";
+
+        var tokenResponse = new
+        {
+            access_token = "ms-access-token",
+            token_type = "Bearer",
+            expires_in = 3600,
+            scope = "openid profile email"
+        };
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Post &&
+                    req.RequestUri!.ToString().StartsWith("https://login.microsoftonline.com/common/oauth2/v2.0/token")),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonSerializer.Serialize(tokenResponse), Encoding.UTF8, "application/json")
+            });
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get &&
+                    req.RequestUri!.ToString().StartsWith("https://graph.microsoft.com/v1.0/me")),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonSerializer.Serialize(new
+                {
+                    id = msUserId,
+                    displayName = displayName,
+                    mail = email,
+                    userPrincipalName = email
+                }), Encoding.UTF8, "application/json")
+            });
+    }
+
+    private void SetupGitHubOAuthSuccess(string ghUserId = "gh-123", string email = "gh@example.com", string login = "ghuser", string name = "GitHub User")
+    {
+        _options.GitHubClientId = "test-github-client-id";
+        _options.GitHubClientSecret = "test-github-client-secret";
+
+        var tokenResponse = new
+        {
+            access_token = "gh-access-token",
+            token_type = "bearer",
+            scope = "user:email"
+        };
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Post &&
+                    req.RequestUri!.ToString().StartsWith("https://github.com/login/oauth/access_token")),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonSerializer.Serialize(tokenResponse), Encoding.UTF8, "application/json")
+            });
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get &&
+                    req.RequestUri!.ToString().StartsWith("https://api.github.com/user") &&
+                    !req.RequestUri.ToString().Contains("/emails")),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonSerializer.Serialize(new
+                {
+                    id = ghUserId,
+                    login = login,
+                    name = name,
+                    email = email,
+                    avatar_url = "https://example.com/gh.jpg"
+                }), Encoding.UTF8, "application/json")
+            });
+    }
+
+    private void SetupFacebookOAuthSuccess(string fbUserId = "fb-123", string email = "fb@example.com", string name = "Facebook User")
+    {
+        _options.FacebookAppId = "test-fb-app-id";
+        _options.FacebookAppSecret = "test-fb-secret";
+
+        var tokenResponse = new
+        {
+            access_token = "fb-access-token",
+            token_type = "Bearer",
+            expires_in = 5184000
+        };
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get &&
+                    req.RequestUri!.ToString().StartsWith("https://graph.facebook.com/v18.0/oauth/access_token")),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonSerializer.Serialize(tokenResponse), Encoding.UTF8, "application/json")
+            });
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get &&
+                    req.RequestUri!.ToString().StartsWith("https://graph.facebook.com/v18.0/me")),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonSerializer.Serialize(new
+                {
+                    id = fbUserId,
+                    email = email,
+                    name = name,
+                    picture = new { data = new { url = "https://example.com/fb.jpg" } }
+                }), Encoding.UTF8, "application/json")
+            });
+    }
+
+    private void SetupJwtMocks()
+    {
+        _jwtTokenServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<User>(), It.IsAny<List<string>>(), It.IsAny<Guid>()))
+            .Returns(new AccessTokenResult("access-token", DateTime.UtcNow.AddHours(1)));
+        _jwtTokenServiceMock.Setup(x => x.GenerateRefreshToken())
+            .Returns("refresh-token");
+        _jwtTokenServiceMock.Setup(x => x.HashRefreshToken(It.IsAny<string>()))
+            .Returns("hashed-refresh");
+        _userRepositoryMock.Setup(x => x.AddTokenAsync(It.IsAny<UserToken>(), default))
+            .Returns(Task.CompletedTask);
+        _sessionServiceMock.Setup(x => x.CreateSessionAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), default))
+            .ReturnsAsync(new UserSession
+            {
+                Id = Guid.NewGuid(),
+                UserId = Guid.NewGuid(),
+                SessionToken = "hashed-refresh",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+    }
+
+    private User CreateTestUser()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "test@example.com",
+            Username = "testuser",
+            Status = UserStatus.Active,
+            EmailVerified = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            Logins = new List<UserLogin>(),
+            UserRoles = new List<UserRole>()
+        };
+        return user;
     }
 }

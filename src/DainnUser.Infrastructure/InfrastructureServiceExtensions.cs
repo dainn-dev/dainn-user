@@ -31,11 +31,57 @@ public static class InfrastructureServiceExtensions
         // Configure rate limiting options
         services.Configure<RateLimitingOptions>(configuration.GetSection("DainnUser:RateLimiting"));
 
+        // Configure storage options
+        services.Configure<StorageOptions>(configuration.GetSection("DainnUser:Storage"));
+
+        // Register email provider
+        RegisterEmailProvider(services, configuration);
+
+        // Register storage provider
+        RegisterStorageProvider(services, configuration);
+
         // Register infrastructure services
         services.AddScoped<IEmailService, EmailService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<RateLimiterRegistry>();
+        services.AddScoped<IAvatarService, AvatarService>();
 
         return services;
+    }
+
+    private static void RegisterEmailProvider(IServiceCollection services, IConfiguration configuration)
+    {
+        var provider = configuration["DainnUser:Email:Provider"] ?? "Smtp";
+
+        switch (provider.ToLowerInvariant())
+        {
+            case "sendgrid":
+                services.AddScoped<IEmailProvider, SendGridEmailProvider>();
+                break;
+            case "awsses":
+                services.AddScoped<IEmailProvider, AwsSesEmailProvider>();
+                break;
+            default:
+                services.AddScoped<IEmailProvider, SmtpEmailProvider>();
+                break;
+        }
+    }
+
+    private static void RegisterStorageProvider(IServiceCollection services, IConfiguration configuration)
+    {
+        var provider = configuration["DainnUser:Storage:Provider"] ?? "Local";
+
+        switch (provider.ToLowerInvariant())
+        {
+            case "azure":
+                services.AddScoped<IStorageService, AzureBlobStorageService>();
+                break;
+            case "awss3":
+                services.AddHttpClient<IStorageService, AwsS3StorageService>();
+                break;
+            default:
+                services.AddScoped<IStorageService, LocalFileSystemStorageService>();
+                break;
+        }
     }
 }

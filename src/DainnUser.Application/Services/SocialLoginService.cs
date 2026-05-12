@@ -129,6 +129,243 @@ public class SocialLoginService : ISocialLoginService
     }
 
     /// <inheritdoc/>
+    public async Task<LoginResult> LoginWithFacebookAsync(
+        string authorizationCode,
+        string callbackUrl,
+        string? ipAddress,
+        string? userAgent,
+        CancellationToken ct = default)
+    {
+        EnsureSocialLoginEnabled();
+
+        var accessToken = await ExchangeCodeForFacebookTokensAsync(authorizationCode, callbackUrl, ct);
+        var facebookUser = await FetchFacebookUserInfoAsync(accessToken, ct);
+
+        var user = await _userRepository.GetByExternalLoginAsync(
+            LoginProvider.Facebook, facebookUser.Id, ct);
+
+        if (user is not null)
+        {
+            return await IssueLoginResult(user, ipAddress, userAgent, ct);
+        }
+
+        user = await _userRepository.GetByEmailAsync(facebookUser.Email, ct);
+        if (user is not null)
+        {
+            await CreateFacebookUserLoginAsync(user.Id, facebookUser, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return await IssueLoginResult(user, ipAddress, userAgent, ct);
+        }
+
+        var username = await DeriveUniqueUsernameFromFacebookAsync(facebookUser, ct);
+        user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = facebookUser.Email,
+            Username = username,
+            EmailVerified = true,
+            Status = UserStatus.Active,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, Guid.NewGuid().ToString("N"));
+
+        await _userRepository.AddAsync(user, ct);
+        await CreateFacebookUserLoginAsync(user.Id, facebookUser, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return await IssueLoginResult(user, ipAddress, userAgent, ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task LinkFacebookAccountAsync(
+        Guid userId,
+        string authorizationCode,
+        string callbackUrl,
+        CancellationToken ct = default)
+    {
+        EnsureSocialLoginEnabled();
+
+        var user = await _userRepository.GetByIdAsync(userId, ct);
+        if (user is null)
+            throw new UserNotFoundException(userId);
+
+        var accessToken = await ExchangeCodeForFacebookTokensAsync(authorizationCode, callbackUrl, ct);
+        var facebookUser = await FetchFacebookUserInfoAsync(accessToken, ct);
+
+        var existingUser = await _userRepository.GetByExternalLoginAsync(
+            LoginProvider.Facebook, facebookUser.Id, ct);
+        if (existingUser is not null)
+        {
+            if (existingUser.Id != userId)
+                throw new InvalidOperationException("Facebook account is already linked to another user.");
+            return;
+        }
+
+        await CreateFacebookUserLoginAsync(userId, facebookUser, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<LoginResult> LoginWithGitHubAsync(
+        string authorizationCode,
+        string callbackUrl,
+        string? ipAddress,
+        string? userAgent,
+        CancellationToken ct = default)
+    {
+        EnsureSocialLoginEnabled();
+
+        var accessToken = await ExchangeCodeForGitHubTokensAsync(authorizationCode, callbackUrl, ct);
+        var githubUser = await FetchGitHubUserInfoAsync(accessToken, ct);
+
+        var user = await _userRepository.GetByExternalLoginAsync(
+            LoginProvider.GitHub, githubUser.Id, ct);
+
+        if (user is not null)
+        {
+            return await IssueLoginResult(user, ipAddress, userAgent, ct);
+        }
+
+        user = await _userRepository.GetByEmailAsync(githubUser.Email, ct);
+        if (user is not null)
+        {
+            await CreateGitHubUserLoginAsync(user.Id, githubUser, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return await IssueLoginResult(user, ipAddress, userAgent, ct);
+        }
+
+        var username = await DeriveUniqueUsernameFromGitHubAsync(githubUser, ct);
+        user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = githubUser.Email,
+            Username = username,
+            EmailVerified = true,
+            Status = UserStatus.Active,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, Guid.NewGuid().ToString("N"));
+
+        await _userRepository.AddAsync(user, ct);
+        await CreateGitHubUserLoginAsync(user.Id, githubUser, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return await IssueLoginResult(user, ipAddress, userAgent, ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task LinkGitHubAccountAsync(
+        Guid userId,
+        string authorizationCode,
+        string callbackUrl,
+        CancellationToken ct = default)
+    {
+        EnsureSocialLoginEnabled();
+
+        var user = await _userRepository.GetByIdAsync(userId, ct);
+        if (user is null)
+            throw new UserNotFoundException(userId);
+
+        var accessToken = await ExchangeCodeForGitHubTokensAsync(authorizationCode, callbackUrl, ct);
+        var githubUser = await FetchGitHubUserInfoAsync(accessToken, ct);
+
+        var existingUser = await _userRepository.GetByExternalLoginAsync(
+            LoginProvider.GitHub, githubUser.Id, ct);
+        if (existingUser is not null)
+        {
+            if (existingUser.Id != userId)
+                throw new InvalidOperationException("GitHub account is already linked to another user.");
+            return;
+        }
+
+        await CreateGitHubUserLoginAsync(userId, githubUser, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<LoginResult> LoginWithMicrosoftAsync(
+        string authorizationCode,
+        string callbackUrl,
+        string? ipAddress,
+        string? userAgent,
+        CancellationToken ct = default)
+    {
+        EnsureSocialLoginEnabled();
+
+        var accessToken = await ExchangeCodeForMicrosoftTokensAsync(authorizationCode, callbackUrl, ct);
+        var microsoftUser = await FetchMicrosoftUserInfoAsync(accessToken, ct);
+
+        var user = await _userRepository.GetByExternalLoginAsync(
+            LoginProvider.Microsoft, microsoftUser.Id, ct);
+
+        if (user is not null)
+        {
+            return await IssueLoginResult(user, ipAddress, userAgent, ct);
+        }
+
+        user = await _userRepository.GetByEmailAsync(microsoftUser.Email, ct);
+        if (user is not null)
+        {
+            await CreateMicrosoftUserLoginAsync(user.Id, microsoftUser, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return await IssueLoginResult(user, ipAddress, userAgent, ct);
+        }
+
+        var username = await DeriveUniqueUsernameFromMicrosoftAsync(microsoftUser, ct);
+        user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = microsoftUser.Email,
+            Username = username,
+            EmailVerified = true,
+            Status = UserStatus.Active,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, Guid.NewGuid().ToString("N"));
+
+        await _userRepository.AddAsync(user, ct);
+        await CreateMicrosoftUserLoginAsync(user.Id, microsoftUser, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return await IssueLoginResult(user, ipAddress, userAgent, ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task LinkMicrosoftAccountAsync(
+        Guid userId,
+        string authorizationCode,
+        string callbackUrl,
+        CancellationToken ct = default)
+    {
+        EnsureSocialLoginEnabled();
+
+        var user = await _userRepository.GetByIdAsync(userId, ct);
+        if (user is null)
+            throw new UserNotFoundException(userId);
+
+        var accessToken = await ExchangeCodeForMicrosoftTokensAsync(authorizationCode, callbackUrl, ct);
+        var microsoftUser = await FetchMicrosoftUserInfoAsync(accessToken, ct);
+
+        var existingUser = await _userRepository.GetByExternalLoginAsync(
+            LoginProvider.Microsoft, microsoftUser.Id, ct);
+        if (existingUser is not null)
+        {
+            if (existingUser.Id != userId)
+                throw new InvalidOperationException("Microsoft account is already linked to another user.");
+            return;
+        }
+
+        await CreateMicrosoftUserLoginAsync(userId, microsoftUser, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+    }
+
+    /// <inheritdoc/>
     public async Task UnlinkProviderAsync(
         Guid userId,
         LoginProvider provider,
@@ -331,6 +568,284 @@ public class SocialLoginService : ISocialLoginService
         return username;
     }
 
+    private async Task<string> ExchangeCodeForFacebookTokensAsync(
+        string code, string callbackUrl, CancellationToken ct)
+    {
+        var url = $"https://graph.facebook.com/v18.0/oauth/access_token?client_id={Uri.EscapeDataString(_options.FacebookAppId)}&client_secret={Uri.EscapeDataString(_options.FacebookAppSecret)}&redirect_uri={Uri.EscapeDataString(callbackUrl)}&code={Uri.EscapeDataString(code)}";
+
+        var response = await _httpClient.GetAsync(url, ct);
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException("Invalid Facebook authorization code.");
+
+        var tokenResponse = await response.Content.ReadFromJsonAsync<FacebookTokenResponse>(
+            cancellationToken: ct);
+
+        if (tokenResponse?.AccessToken is null)
+            throw new InvalidOperationException("Invalid Facebook authorization code.");
+
+        return tokenResponse.AccessToken;
+    }
+
+    private async Task<FacebookUserInfo> FetchFacebookUserInfoAsync(
+        string accessToken, CancellationToken ct)
+    {
+        var response = await _httpClient.GetAsync(
+            $"https://graph.facebook.com/v18.0/me?fields=id,email,name,picture&access_token={accessToken}", ct);
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException("Failed to fetch Facebook user information.");
+
+        var userInfo = await response.Content.ReadFromJsonAsync<FacebookUserInfo>(cancellationToken: ct);
+        return userInfo ?? throw new InvalidOperationException("Failed to parse Facebook user information.");
+    }
+
+    private async Task CreateFacebookUserLoginAsync(Guid userId, FacebookUserInfo facebookUser, CancellationToken ct)
+    {
+        await _unitOfWork.Users.AddLoginAsync(new UserLogin
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Provider = LoginProvider.Facebook,
+            ProviderKey = facebookUser.Id,
+            ProviderDisplayName = facebookUser.Name,
+            LinkedAt = DateTime.UtcNow
+        }, ct);
+    }
+
+    private async Task<string> DeriveUniqueUsernameFromFacebookAsync(FacebookUserInfo facebookUser, CancellationToken ct)
+    {
+        var prefix = facebookUser.Email.Split('@')[0];
+        var username = prefix;
+
+        var isTaken = await _userRepository.IsUsernameTakenAsync(username, null, ct);
+        if (isTaken)
+        {
+            var random = new Random();
+            for (int i = 0; i < 10; i++)
+            {
+                username = $"{prefix}{random.Next(1000, 9999)}";
+                isTaken = await _userRepository.IsUsernameTakenAsync(username, null, ct);
+                if (!isTaken)
+                    break;
+            }
+
+            if (isTaken)
+            {
+                username = $"{prefix}_{Guid.NewGuid().ToString("N")[..8]}";
+            }
+        }
+
+        return username;
+    }
+
+    private async Task<string> ExchangeCodeForGitHubTokensAsync(
+        string code, string callbackUrl, CancellationToken ct)
+    {
+        var payload = new Dictionary<string, string>
+        {
+            ["code"] = code,
+            ["client_id"] = _options.GitHubClientId,
+            ["client_secret"] = _options.GitHubClientSecret,
+            ["redirect_uri"] = callbackUrl
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "https://github.com/login/oauth/access_token")
+        {
+            Content = new FormUrlEncodedContent(payload)
+        };
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+        var response = await _httpClient.SendAsync(request, ct);
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException("Invalid GitHub authorization code.");
+
+        var tokenResponse = await response.Content.ReadFromJsonAsync<GitHubTokenResponse>(
+            cancellationToken: ct);
+
+        if (tokenResponse?.AccessToken is null)
+            throw new InvalidOperationException("Invalid GitHub authorization code.");
+
+        return tokenResponse.AccessToken;
+    }
+
+    private async Task<GitHubUserInfo> FetchGitHubUserInfoAsync(
+        string accessToken, CancellationToken ct)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
+        request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("DainnUser", "1.0"));
+
+        var response = await _httpClient.SendAsync(request, ct);
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException("Failed to fetch GitHub user information.");
+
+        var userInfo = await response.Content.ReadFromJsonAsync<GitHubUserInfo>(cancellationToken: ct);
+        if (userInfo is null)
+            throw new InvalidOperationException("Failed to parse GitHub user information.");
+
+        // If email is null, fetch from emails endpoint
+        if (string.IsNullOrWhiteSpace(userInfo.Email))
+        {
+            var emailRequest = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user/emails");
+            emailRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+            emailRequest.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
+            emailRequest.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("DainnUser", "1.0"));
+
+            var emailResponse = await _httpClient.SendAsync(emailRequest, ct);
+            if (emailResponse.IsSuccessStatusCode)
+            {
+                var emails = await emailResponse.Content.ReadFromJsonAsync<List<GitHubEmail>>(cancellationToken: ct);
+                var primaryEmail = emails?.FirstOrDefault(e => e.Primary && e.Verified);
+                if (primaryEmail is not null)
+                {
+                    userInfo.Email = primaryEmail.EmailAddress;
+                }
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(userInfo.Email))
+            throw new InvalidOperationException("GitHub account does not have a verified email address.");
+
+        return userInfo;
+    }
+
+    private async Task CreateGitHubUserLoginAsync(Guid userId, GitHubUserInfo githubUser, CancellationToken ct)
+    {
+        await _unitOfWork.Users.AddLoginAsync(new UserLogin
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Provider = LoginProvider.GitHub,
+            ProviderKey = githubUser.Id,
+            ProviderDisplayName = githubUser.Name ?? githubUser.Login,
+            LinkedAt = DateTime.UtcNow
+        }, ct);
+    }
+
+    private async Task<string> DeriveUniqueUsernameFromGitHubAsync(GitHubUserInfo githubUser, CancellationToken ct)
+    {
+        // Use GitHub login as base, or email prefix if login is not available
+        var prefix = !string.IsNullOrWhiteSpace(githubUser.Login)
+            ? githubUser.Login
+            : githubUser.Email.Split('@')[0];
+        var username = prefix;
+
+        var isTaken = await _userRepository.IsUsernameTakenAsync(username, null, ct);
+        if (isTaken)
+        {
+            var random = new Random();
+            for (int i = 0; i < 10; i++)
+            {
+                username = $"{prefix}{random.Next(1000, 9999)}";
+                isTaken = await _userRepository.IsUsernameTakenAsync(username, null, ct);
+                if (!isTaken)
+                    break;
+            }
+
+            if (isTaken)
+            {
+                username = $"{prefix}_{Guid.NewGuid().ToString("N")[..8]}";
+            }
+        }
+
+        return username;
+    }
+
+    private async Task<string> ExchangeCodeForMicrosoftTokensAsync(
+        string code, string callbackUrl, CancellationToken ct)
+    {
+        var payload = new Dictionary<string, string>
+        {
+            ["code"] = code,
+            ["client_id"] = _options.MicrosoftClientId,
+            ["client_secret"] = _options.MicrosoftClientSecret,
+            ["redirect_uri"] = callbackUrl,
+            ["grant_type"] = "authorization_code"
+        };
+
+        var response = await _httpClient.PostAsync(
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            new FormUrlEncodedContent(payload), ct);
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException("Invalid Microsoft authorization code.");
+
+        var tokenResponse = await response.Content.ReadFromJsonAsync<MicrosoftTokenResponse>(
+            cancellationToken: ct);
+
+        if (tokenResponse?.AccessToken is null)
+            throw new InvalidOperationException("Invalid Microsoft authorization code.");
+
+        return tokenResponse.AccessToken;
+    }
+
+    private async Task<MicrosoftUserInfo> FetchMicrosoftUserInfoAsync(
+        string accessToken, CancellationToken ct)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/me");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await _httpClient.SendAsync(request, ct);
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException("Failed to fetch Microsoft user information.");
+
+        var userInfo = await response.Content.ReadFromJsonAsync<MicrosoftUserInfo>(cancellationToken: ct);
+        if (userInfo is null)
+            throw new InvalidOperationException("Failed to parse Microsoft user information.");
+
+        if (string.IsNullOrWhiteSpace(userInfo.Mail) && string.IsNullOrWhiteSpace(userInfo.UserPrincipalName))
+            throw new InvalidOperationException("Microsoft account does not have an email address.");
+
+        // Use Mail if available, otherwise UserPrincipalName
+        userInfo.Email = userInfo.Mail ?? userInfo.UserPrincipalName!;
+
+        return userInfo;
+    }
+
+    private async Task CreateMicrosoftUserLoginAsync(Guid userId, MicrosoftUserInfo microsoftUser, CancellationToken ct)
+    {
+        await _unitOfWork.Users.AddLoginAsync(new UserLogin
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Provider = LoginProvider.Microsoft,
+            ProviderKey = microsoftUser.Id,
+            ProviderDisplayName = microsoftUser.DisplayName ?? microsoftUser.Email,
+            LinkedAt = DateTime.UtcNow
+        }, ct);
+    }
+
+    private async Task<string> DeriveUniqueUsernameFromMicrosoftAsync(MicrosoftUserInfo microsoftUser, CancellationToken ct)
+    {
+        var prefix = microsoftUser.Email.Split('@')[0];
+        var username = prefix;
+
+        var isTaken = await _userRepository.IsUsernameTakenAsync(username, null, ct);
+        if (isTaken)
+        {
+            var random = new Random();
+            for (int i = 0; i < 10; i++)
+            {
+                username = $"{prefix}{random.Next(1000, 9999)}";
+                isTaken = await _userRepository.IsUsernameTakenAsync(username, null, ct);
+                if (!isTaken)
+                    break;
+            }
+
+            if (isTaken)
+            {
+                username = $"{prefix}_{Guid.NewGuid().ToString("N")[..8]}";
+            }
+        }
+
+        return username;
+    }
+
     // --- Google API models ---
 
     private class GoogleTokenResponse
@@ -358,5 +873,127 @@ public class SocialLoginService : ISocialLoginService
 
         [JsonPropertyName("picture")]
         public string? Picture { get; set; }
+    }
+
+    // --- Facebook API models ---
+
+    private class FacebookTokenResponse
+    {
+        [JsonPropertyName("access_token")]
+        public string? AccessToken { get; set; }
+
+        [JsonPropertyName("token_type")]
+        public string? TokenType { get; set; }
+
+        [JsonPropertyName("expires_in")]
+        public int? ExpiresIn { get; set; }
+    }
+
+    private class FacebookUserInfo
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("email")]
+        public string Email { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
+        [JsonPropertyName("picture")]
+        public FacebookPicture? Picture { get; set; }
+    }
+
+    private class FacebookPicture
+    {
+        [JsonPropertyName("data")]
+        public FacebookPictureData? Data { get; set; }
+    }
+
+    private class FacebookPictureData
+    {
+        [JsonPropertyName("url")]
+        public string? Url { get; set; }
+    }
+
+    // --- GitHub API models ---
+
+    private class GitHubTokenResponse
+    {
+        [JsonPropertyName("access_token")]
+        public string? AccessToken { get; set; }
+
+        [JsonPropertyName("token_type")]
+        public string? TokenType { get; set; }
+
+        [JsonPropertyName("scope")]
+        public string? Scope { get; set; }
+    }
+
+    private class GitHubUserInfo
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("login")]
+        public string? Login { get; set; }
+
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
+        [JsonPropertyName("email")]
+        public string? Email { get; set; }
+
+        [JsonPropertyName("avatar_url")]
+        public string? AvatarUrl { get; set; }
+    }
+
+    private class GitHubEmail
+    {
+        [JsonPropertyName("email")]
+        public string EmailAddress { get; set; } = string.Empty;
+
+        [JsonPropertyName("primary")]
+        public bool Primary { get; set; }
+
+        [JsonPropertyName("verified")]
+        public bool Verified { get; set; }
+    }
+
+    // --- Microsoft API models ---
+
+    private class MicrosoftTokenResponse
+    {
+        [JsonPropertyName("access_token")]
+        public string? AccessToken { get; set; }
+
+        [JsonPropertyName("token_type")]
+        public string? TokenType { get; set; }
+
+        [JsonPropertyName("expires_in")]
+        public int? ExpiresIn { get; set; }
+
+        [JsonPropertyName("refresh_token")]
+        public string? RefreshToken { get; set; }
+
+        [JsonPropertyName("scope")]
+        public string? Scope { get; set; }
+    }
+
+    private class MicrosoftUserInfo
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("displayName")]
+        public string? DisplayName { get; set; }
+
+        [JsonPropertyName("mail")]
+        public string? Mail { get; set; }
+
+        [JsonPropertyName("userPrincipalName")]
+        public string? UserPrincipalName { get; set; }
+
+        public string Email { get; set; } = string.Empty;
     }
 }

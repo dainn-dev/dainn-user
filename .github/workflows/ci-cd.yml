@@ -1,0 +1,179 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  release:
+    types: [ published ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run unit tests
+      run: dotnet test --configuration Release --no-build --verbosity normal --filter "FullyQualifiedName~UnitTests" --logger "trx;LogFileName=unit-tests.trx"
+
+    - name: Run integration tests
+      run: dotnet test --configuration Release --no-build --verbosity normal --filter "FullyQualifiedName~IntegrationTests" --logger "trx;LogFileName=integration-tests.trx"
+
+    - name: Run security tests
+      run: dotnet test --configuration Release --no-build --verbosity normal --filter "FullyQualifiedName~SecurityTests" --logger "trx;LogFileName=security-tests.trx"
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: '**/TestResults/*.trx'
+
+  code-coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Run tests with coverage
+      run: dotnet test --configuration Release --collect:"XPlat Code Coverage" --results-directory ./coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        directory: ./coverage
+        fail_ci_if_error: false
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Run security scan
+      run: |
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee security-scan.log
+        if grep -q "has the following vulnerable packages" security-scan.log; then
+          echo "::warning::Vulnerable packages detected"
+        fi
+
+  pack:
+    name: Pack NuGet Packages
+    runs-on: ubuntu-latest
+    needs: [build-and-test, code-coverage, security-scan]
+    if: github.event_name == 'release'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Extract version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Pack NuGet packages
+      run: dotnet pack --configuration Release --no-build -p:PackageVersion=${{ steps.get_version.outputs.VERSION }} -o ./nupkgs
+
+    - name: Upload packages as artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget-packages
+        path: ./nupkgs/*.nupkg
+
+  publish:
+    name: Publish to NuGet
+    runs-on: ubuntu-latest
+    needs: pack
+    if: github.event_name == 'release'
+
+    steps:
+    - name: Download packages
+      uses: actions/download-artifact@v4
+      with:
+        name: nuget-packages
+        path: ./nupkgs
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Publish to NuGet.org
+      run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+    - name: Create release notes
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const release = context.payload.release;
+          const packages = [
+            'DainnUser.Core',
+            'DainnUser.Infrastructure',
+            'DainnUser.Application',
+            'DainnUser.Web'
+          ];
+
+          let body = release.body || '';
+          body += '\n\n## 📦 NuGet Packages\n\n';
+
+          packages.forEach(pkg => {
+            body += `- [${pkg}](https://www.nuget.org/packages/${pkg}/${release.tag_name.replace('v', '')})\n`;
+          });
+
+          await github.rest.repos.updateRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: release.id,
+            body: body
+          });

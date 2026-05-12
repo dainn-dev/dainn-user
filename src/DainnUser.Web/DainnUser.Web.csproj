@@ -1,15 +1,33 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\DainnUser.Application\DainnUser.Application.csproj" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+
+    <PackageId>DainnUser.Web</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Dainn Team</Authors>
+    <Company>Dainn</Company>
+    <Description>Web UI components (Razor/Blazor) for DainnUser authentication and user management.</Description>
+    <PackageTags>authentication;authorization;user-management;identity;razor;blazor</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>docs/README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/dainn/dainn-user</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/dainn/dainn-user</PackageProjectUrl>
+    <Copyright>Copyright (c) 2024 Dainn</Copyright>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\docs\README.md" Link="docs\README.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DainnUser.Application\DainnUser.Application.csproj" />
+  </ItemGroup>
 
 </Project>

@@ -122,6 +122,11 @@ public class ProfileService : IProfileService
         {
             profile.Website = Normalize(dto.Website);
         }
+
+        if (dto.AvatarUrl is not null)
+        {
+            profile.AvatarUrl = dto.AvatarUrl;
+        }
     }
 
     private static ProfileDto MapToDto(User user)
