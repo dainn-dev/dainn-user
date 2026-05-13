@@ -1,6 +1,7 @@
 using DainnUser.Core.Entities;
 using DainnUser.Core.Exceptions;
 using DainnUser.Core.Interfaces.Repositories;
+using DainnUser.Core.Interfaces.Services;
 using DainnUser.Core.Models.Address;
 
 namespace DainnUser.Application.Services;
@@ -8,7 +9,7 @@ namespace DainnUser.Application.Services;
 /// <summary>
 /// Service implementation for address management.
 /// </summary>
-public class AddressService
+public class AddressService : IAddressService
 {
     private readonly IUserRepository _userRepository;
     private readonly IAddressRepository _addressRepository;
