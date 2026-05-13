@@ -66,6 +66,11 @@ Creates a new user account and sends a verification email.
 }
 ```
 
+**Status Codes:**
+- `201 Created` - Registration successful
+- `400 Bad Request` - Validation failed
+- `409 Conflict` - Email or username already exists
+
 ---
 
 ### 2. Verify Email
@@ -106,6 +111,10 @@ Verifies a user's email address using the token sent via email.
 ```
 
 **Token Expiration:** Verification tokens expire after 24 hours.
+
+**Status Codes:**
+- `200 OK` - Email verified successfully
+- `400 Bad Request` - Invalid, expired, or already used token
 
 ---
 
@@ -150,13 +159,556 @@ Resends the verification email to a user who hasn't verified their email yet.
 - Only works for unverified accounts
 - Rate limiting recommended in production
 
+**Status Codes:**
+- `200 OK` - Verification email sent
+- `400 Bad Request` - User not found or email already verified
+
+---
+
+### 4. Login
+
+Authenticates user and returns JWT tokens.
+
+**Endpoint:** `POST /auth/login`
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePass123!@#",
+  "rememberDeviceToken": null
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "abc123def456...",
+    "expiresIn": 3600,
+    "tokenType": "Bearer",
+    "user": {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "email": "user@example.com",
+      "username": "johndoe",
+      "emailVerified": true,
+      "twoFactorEnabled": false
+    },
+    "requiresTwoFactor": false
+  },
+  "message": null,
+  "errors": null
+}
+```
+
+**Error Response (401 Unauthorized):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Invalid email or password.",
+  "errors": null
+}
+```
+
+**Error Response (403 Forbidden - Email Not Verified):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Email not verified. Please check your email.",
+  "errors": null
+}
+```
+
+**Error Response (423 Locked):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Account is locked due to too many failed login attempts.",
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - Login successful
+- `401 Unauthorized` - Invalid credentials
+- `403 Forbidden` - Email not verified
+- `423 Locked` - Account locked
+
+---
+
+### 5. Logout
+
+Ends current session and revokes refresh token.
+
+**Endpoint:** `POST /auth/logout`
+
+**Authorization:** Required (Bearer token)
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "Logged out.",
+  "message": "Session ended.",
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - Logout successful
+- `401 Unauthorized` - Invalid or missing token
+
+---
+
+### 6. Refresh Token
+
+Refreshes access token using refresh token. Rotates refresh token.
+
+**Endpoint:** `POST /auth/refresh-token`
+
+**Request Body:**
+
+```json
+{
+  "refreshToken": "abc123def456..."
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "new-refresh-token...",
+    "expiresIn": 3600,
+    "tokenType": "Bearer",
+    "user": {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "email": "user@example.com",
+      "username": "johndoe",
+      "emailVerified": true,
+      "twoFactorEnabled": false
+    },
+    "requiresTwoFactor": false
+  },
+  "message": null,
+  "errors": null
+}
+```
+
+**Error Response (401 Unauthorized):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Invalid refresh token.",
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - Token refreshed successfully
+- `401 Unauthorized` - Invalid or expired refresh token
+
+---
+
+### 7. Forgot Password
+
+Initiates password reset. Always returns 200 to prevent user enumeration.
+
+**Endpoint:** `POST /auth/forgot-password`
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "If an account with that email exists, a password reset link has been sent.",
+  "message": null,
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - Request processed (always returns 200 for security)
+
+---
+
+### 8. Reset Password
+
+Completes password reset using token from email. Invalidates all sessions.
+
+**Endpoint:** `POST /auth/reset-password`
+
+**Request Body:**
+
+```json
+{
+  "token": "reset-token-from-email",
+  "newPassword": "NewSecurePass123!@#",
+  "confirmPassword": "NewSecurePass123!@#"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "Password reset successfully.",
+  "message": "All active sessions have been invalidated. Please log in with your new password.",
+  "errors": null
+}
+```
+
+**Error Response (400 Bad Request):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Invalid or expired password reset token.",
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - Password reset successful
+- `400 Bad Request` - Invalid or expired token
+
+---
+
+### 9. Change Password
+
+Changes password for authenticated user. Invalidates all other sessions.
+
+**Endpoint:** `POST /auth/change-password`
+
+**Authorization:** Required (Bearer token)
+
+**Request Body:**
+
+```json
+{
+  "currentPassword": "OldPass123!@#",
+  "newPassword": "NewPass123!@#",
+  "confirmPassword": "NewPass123!@#"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "Password changed successfully.",
+  "message": "All other active sessions have been invalidated.",
+  "errors": null
+}
+```
+
+**Error Response (400 Bad Request):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Current password is incorrect.",
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - Password changed successfully
+- `400 Bad Request` - Current password incorrect or validation failed
+- `401 Unauthorized` - Invalid or missing token
+
+---
+
+### 10. Setup Two-Factor Authentication
+
+Initiates 2FA setup. Returns TOTP secret and QR code URI.
+
+**Endpoint:** `POST /auth/2fa/setup`
+
+**Authorization:** Required (Bearer token)
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "secret": "JBSWY3DPEHPK3PXP",
+    "qrCodeUri": "otpauth://totp/DainnUser:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=DainnUser"
+  },
+  "message": "Scan the QR code with your authenticator app and confirm with a code.",
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - 2FA setup initiated
+- `401 Unauthorized` - Invalid or missing token
+
+---
+
+### 11. Enable Two-Factor Authentication
+
+Confirms and activates 2FA. Returns backup codes.
+
+**Endpoint:** `POST /auth/2fa/enable`
+
+**Authorization:** Required (Bearer token)
+
+**Request Body:**
+
+```json
+{
+  "code": "123456"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "backupCodes": [
+      "12345678",
+      "23456789",
+      "34567890",
+      "45678901",
+      "56789012",
+      "67890123",
+      "78901234",
+      "89012345",
+      "90123456",
+      "01234567"
+    ]
+  },
+  "message": "Two-factor authentication enabled. Store these backup codes securely — they will not be shown again.",
+  "errors": null
+}
+```
+
+**Error Response (400 Bad Request):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Invalid or expired two-factor code.",
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - 2FA enabled successfully
+- `400 Bad Request` - Invalid or expired code
+- `401 Unauthorized` - Invalid or missing token
+
+---
+
+### 12. Disable Two-Factor Authentication
+
+Disables 2FA. Requires valid TOTP or backup code.
+
+**Endpoint:** `POST /auth/2fa/disable`
+
+**Authorization:** Required (Bearer token)
+
+**Request Body:**
+
+```json
+{
+  "code": "123456"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "Two-factor authentication disabled.",
+  "message": null,
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - 2FA disabled successfully
+- `400 Bad Request` - Invalid code
+- `401 Unauthorized` - Invalid or missing token
+
+---
+
+### 13. Complete Two-Factor Login
+
+Completes login requiring 2FA. Verifies TOTP or backup code.
+
+**Endpoint:** `POST /auth/2fa/login`
+
+**Authorization:** None (public endpoint)
+
+**Request Body:**
+
+```json
+{
+  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "code": "123456",
+  "rememberDevice": false
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "abc123def456...",
+    "expiresIn": 3600,
+    "tokenType": "Bearer",
+    "user": {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "email": "user@example.com",
+      "username": "johndoe",
+      "emailVerified": true,
+      "twoFactorEnabled": true
+    },
+    "requiresTwoFactor": false
+  },
+  "message": null,
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - 2FA login successful
+- `400 Bad Request` - Invalid code
+- `401 Unauthorized` - Invalid user ID
+
+---
+
+### 14. Regenerate Backup Codes
+
+Regenerates 2FA backup codes. Requires valid TOTP code (not backup code).
+
+**Endpoint:** `POST /auth/2fa/backup-codes/regenerate`
+
+**Authorization:** Required (Bearer token)
+
+**Request Body:**
+
+```json
+{
+  "code": "123456"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "backupCodes": [
+      "11111111",
+      "22222222",
+      "33333333",
+      "44444444",
+      "55555555",
+      "66666666",
+      "77777777",
+      "88888888",
+      "99999999",
+      "00000000"
+    ]
+  },
+  "message": "Backup codes regenerated. All previous codes are now invalid.",
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - Backup codes regenerated
+- `400 Bad Request` - Invalid code or backup code used
+- `401 Unauthorized` - Invalid or missing token
+
+---
+
+### 15. Unlock Account (Admin)
+
+Manually unlocks locked user account. Admin only.
+
+**Endpoint:** `POST /auth/admin/unlock-account/{userId}`
+
+**Authorization:** Required (Bearer token, Administrator role)
+
+**Path Parameters:**
+- `userId` (required): User ID (GUID format)
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "Account unlocked.",
+  "message": "Failed login counters reset and lockout cleared.",
+  "errors": null
+}
+```
+
+**Error Response (404 Not Found):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "User not found.",
+  "errors": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - Account unlocked successfully
+- `401 Unauthorized` - Invalid or missing token
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - User not found
+
 ---
 
 ## Profile Endpoints
 
 All profile endpoints require authentication via Bearer token.
 
-### 4. Get Profile
+### 1. Get Profile
 
 Gets the authenticated user's profile information.
 
@@ -213,9 +765,14 @@ Gets the authenticated user's profile information.
 }
 ```
 
+**Status Codes:**
+- `200 OK` - Profile retrieved successfully
+- `401 Unauthorized` - Invalid or missing token
+- `404 Not Found` - User not found
+
 ---
 
-### 5. Update Profile
+### 2. Update Profile
 
 Updates the authenticated user's profile information.
 
@@ -291,9 +848,14 @@ Updates the authenticated user's profile information.
 }
 ```
 
+**Status Codes:**
+- `200 OK` - Profile updated successfully
+- `400 Bad Request` - Validation failed
+- `401 Unauthorized` - Invalid or missing token
+
 ---
 
-### 6. Upload Avatar
+### 3. Upload Avatar
 
 Uploads or updates the authenticated user's avatar image.
 
@@ -345,9 +907,14 @@ Uploads or updates the authenticated user's avatar image.
 }
 ```
 
+**Status Codes:**
+- `200 OK` - Avatar uploaded successfully
+- `400 Bad Request` - Invalid file type or size
+- `401 Unauthorized` - Invalid or missing token
+
 ---
 
-### 7. Delete Avatar
+### 4. Delete Avatar
 
 Deletes the authenticated user's avatar image.
 
@@ -382,9 +949,13 @@ Deletes the authenticated user's avatar image.
 }
 ```
 
+**Status Codes:**
+- `200 OK` - Avatar deleted successfully
+- `401 Unauthorized` - Invalid or missing token
+
 ---
 
-### 8. Update Profile Settings
+### 5. Update Profile Settings
 
 Updates the authenticated user's profile settings (language, timezone).
 
@@ -441,13 +1012,18 @@ Updates the authenticated user's profile settings (language, timezone).
 }
 ```
 
+**Status Codes:**
+- `200 OK` - Settings updated successfully
+- `400 Bad Request` - Validation failed
+- `401 Unauthorized` - Invalid or missing token
+
 ---
 
 ## User Management Endpoints
 
 All user management endpoints require authentication and Administrator role.
 
-### 9. List Users
+### 1. List Users
 
 Gets a paginated list of all users with optional filtering.
 
@@ -525,9 +1101,14 @@ Gets a paginated list of all users with optional filtering.
 }
 ```
 
+**Status Codes:**
+- `200 OK` - Users retrieved successfully
+- `401 Unauthorized` - Invalid or missing token
+- `403 Forbidden` - Insufficient permissions
+
 ---
 
-### 10. Get User
+### 2. Get User
 
 Gets a specific user by ID.
 
@@ -571,9 +1152,15 @@ Gets a specific user by ID.
 }
 ```
 
+**Status Codes:**
+- `200 OK` - User retrieved successfully
+- `401 Unauthorized` - Invalid or missing token
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - User not found
+
 ---
 
-### 11. Update User
+### 3. Update User
 
 Updates a specific user's information.
 
@@ -643,9 +1230,16 @@ Updates a specific user's information.
 }
 ```
 
+**Status Codes:**
+- `200 OK` - User updated successfully
+- `400 Bad Request` - Validation failed or duplicate email/username
+- `401 Unauthorized` - Invalid or missing token
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - User not found
+
 ---
 
-### 12. Delete User
+### 4. Delete User
 
 Deletes a specific user.
 
@@ -692,9 +1286,16 @@ Deletes a specific user.
 }
 ```
 
+**Status Codes:**
+- `200 OK` - User deleted successfully
+- `400 Bad Request` - Cannot delete own account
+- `401 Unauthorized` - Invalid or missing token
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - User not found
+
 ---
 
-### 13. Lock User
+### 5. Lock User
 
 Locks a user account, preventing login.
 
@@ -741,9 +1342,16 @@ Locks a user account, preventing login.
 }
 ```
 
+**Status Codes:**
+- `200 OK` - User locked successfully
+- `400 Bad Request` - Cannot lock own account
+- `401 Unauthorized` - Invalid or missing token
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - User not found
+
 ---
 
-### 14. Unlock User
+### 6. Unlock User
 
 Unlocks a previously locked user account.
 
@@ -776,9 +1384,15 @@ Unlocks a previously locked user account.
 }
 ```
 
+**Status Codes:**
+- `200 OK` - User unlocked successfully
+- `401 Unauthorized` - Invalid or missing token
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - User not found
+
 ---
 
-### 15. Add Role to User
+### 7. Add Role to User
 
 Adds a role to a user.
 
@@ -830,9 +1444,16 @@ Adds a role to a user.
 }
 ```
 
+**Status Codes:**
+- `200 OK` - Role added successfully
+- `400 Bad Request` - User already has role
+- `401 Unauthorized` - Invalid or missing token
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - User or role not found
+
 ---
 
-### 16. Remove Role from User
+### 8. Remove Role from User
 
 Removes a role from a user.
 
@@ -866,502 +1487,12 @@ Removes a role from a user.
 }
 ```
 
----
-
-### 4. Login
-
-Authenticates user and returns JWT tokens.
-
-**Endpoint:** `POST /auth/login`
-
-**Request Body:**
-
-```json
-{
-  "email": "user@example.com",
-  "password": "SecurePass123!@#",
-  "rememberDeviceToken": null
-}
-```
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "abc123def456...",
-    "expiresIn": 3600,
-    "tokenType": "Bearer",
-    "user": {
-      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "email": "user@example.com",
-      "username": "johndoe",
-      "emailVerified": true,
-      "twoFactorEnabled": false
-    },
-    "requiresTwoFactor": false
-  },
-  "message": null,
-  "errors": null
-}
-```
-
-**Error Response (401 Unauthorized):**
-
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "Invalid email or password.",
-  "errors": null
-}
-```
-
-**Error Response (403 Forbidden - Email Not Verified):**
-
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "Email not verified. Please check your email.",
-  "errors": null
-}
-```
-
-**Error Response (423 Locked):**
-
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "Account is locked due to too many failed login attempts.",
-  "errors": null
-}
-```
-
-**Authorization:** None (public endpoint)
-
----
-
-### 5. Logout
-
-Ends current session and revokes refresh token.
-
-**Endpoint:** `POST /auth/logout`
-
-**Authorization:** Required (Bearer token)
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": "Logged out.",
-  "message": "Session ended.",
-  "errors": null
-}
-```
-
----
-
-### 6. Refresh Token
-
-Refreshes access token using refresh token. Rotates refresh token.
-
-**Endpoint:** `POST /auth/refresh-token`
-
-**Request Body:**
-
-```json
-{
-  "refreshToken": "abc123def456..."
-}
-```
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "new-refresh-token...",
-    "expiresIn": 3600,
-    "tokenType": "Bearer",
-    "user": {
-      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "email": "user@example.com",
-      "username": "johndoe",
-      "emailVerified": true,
-      "twoFactorEnabled": false
-    },
-    "requiresTwoFactor": false
-  },
-  "message": null,
-  "errors": null
-}
-```
-
-**Error Response (401 Unauthorized):**
-
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "Invalid refresh token.",
-  "errors": null
-}
-```
-
-**Authorization:** None (public endpoint)
-
----
-
-### 7. Forgot Password
-
-Initiates password reset. Always returns 200 to prevent user enumeration.
-
-**Endpoint:** `POST /auth/forgot-password`
-
-**Request Body:**
-
-```json
-{
-  "email": "user@example.com"
-}
-```
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": "If an account with that email exists, a password reset link has been sent.",
-  "message": null,
-  "errors": null
-}
-```
-
-**Authorization:** None (public endpoint)
-
----
-
-### 8. Reset Password
-
-Completes password reset using token from email. Invalidates all sessions.
-
-**Endpoint:** `POST /auth/reset-password`
-
-**Request Body:**
-
-```json
-{
-  "token": "reset-token-from-email",
-  "newPassword": "NewSecurePass123!@#",
-  "confirmPassword": "NewSecurePass123!@#"
-}
-```
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": "Password reset successfully.",
-  "message": "All active sessions have been invalidated. Please log in with your new password.",
-  "errors": null
-}
-```
-
-**Error Response (400 Bad Request):**
-
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "Invalid or expired password reset token.",
-  "errors": null
-}
-```
-
-**Authorization:** None (public endpoint)
-
----
-
-### 9. Change Password
-
-Changes password for authenticated user. Invalidates all other sessions.
-
-**Endpoint:** `POST /auth/change-password`
-
-**Authorization:** Required (Bearer token)
-
-**Request Body:**
-
-```json
-{
-  "currentPassword": "OldPass123!@#",
-  "newPassword": "NewPass123!@#",
-  "confirmPassword": "NewPass123!@#"
-}
-```
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": "Password changed successfully.",
-  "message": "All other active sessions have been invalidated.",
-  "errors": null
-}
-```
-
-**Error Response (400 Bad Request):**
-
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "Current password is incorrect.",
-  "errors": null
-}
-```
-
----
-
-### 10. Setup Two-Factor Authentication
-
-Initiates 2FA setup. Returns TOTP secret and QR code URI.
-
-**Endpoint:** `POST /auth/2fa/setup`
-
-**Authorization:** Required (Bearer token)
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": {
-    "secret": "JBSWY3DPEHPK3PXP",
-    "qrCodeUri": "otpauth://totp/DainnUser:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=DainnUser"
-  },
-  "message": "Scan the QR code with your authenticator app and confirm with a code.",
-  "errors": null
-}
-```
-
----
-
-### 11. Enable Two-Factor Authentication
-
-Confirms and activates 2FA. Returns backup codes.
-
-**Endpoint:** `POST /auth/2fa/enable`
-
-**Authorization:** Required (Bearer token)
-
-**Request Body:**
-
-```json
-{
-  "code": "123456"
-}
-```
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": {
-    "backupCodes": [
-      "12345678",
-      "23456789",
-      "34567890",
-      "45678901",
-      "56789012",
-      "67890123",
-      "78901234",
-      "89012345",
-      "90123456",
-      "01234567"
-    ]
-  },
-  "message": "Two-factor authentication enabled. Store these backup codes securely — they will not be shown again.",
-  "errors": null
-}
-```
-
-**Error Response (400 Bad Request):**
-
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "Invalid or expired two-factor code.",
-  "errors": null
-}
-```
-
----
-
-### 12. Disable Two-Factor Authentication
-
-Disables 2FA. Requires valid TOTP or backup code.
-
-**Endpoint:** `POST /auth/2fa/disable`
-
-**Authorization:** Required (Bearer token)
-
-**Request Body:**
-
-```json
-{
-  "code": "123456"
-}
-```
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": "Two-factor authentication disabled.",
-  "message": null,
-  "errors": null
-}
-```
-
----
-
-### 13. Complete Two-Factor Login
-
-Completes login requiring 2FA. Verifies TOTP or backup code.
-
-**Endpoint:** `POST /auth/2fa/login`
-
-**Authorization:** None (public endpoint)
-
-**Request Body:**
-
-```json
-{
-  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "code": "123456",
-  "rememberDevice": false
-}
-```
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "abc123def456...",
-    "expiresIn": 3600,
-    "tokenType": "Bearer",
-    "user": {
-      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "email": "user@example.com",
-      "username": "johndoe",
-      "emailVerified": true,
-      "twoFactorEnabled": true
-    },
-    "requiresTwoFactor": false
-  },
-  "message": null,
-  "errors": null
-}
-```
-
----
-
-### 14. Regenerate Backup Codes
-
-Regenerates 2FA backup codes. Requires valid TOTP code (not backup code).
-
-**Endpoint:** `POST /auth/2fa/backup-codes/regenerate`
-
-**Authorization:** Required (Bearer token)
-
-**Request Body:**
-
-```json
-{
-  "code": "123456"
-}
-```
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": {
-    "backupCodes": [
-      "11111111",
-      "22222222",
-      "33333333",
-      "44444444",
-      "55555555",
-      "66666666",
-      "77777777",
-      "88888888",
-      "99999999",
-      "00000000"
-    ]
-  },
-  "message": "Backup codes regenerated. All previous codes are now invalid.",
-  "errors": null
-}
-```
-
----
-
-### 15. Unlock Account (Admin)
-
-Manually unlocks locked user account. Admin only.
-
-**Endpoint:** `POST /auth/admin/unlock-account/{userId}`
-
-**Authorization:** Required (Bearer token, Administrator role)
-
-**Path Parameters:**
-- `userId` (required): User ID (GUID format)
-
-**Success Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": "Account unlocked.",
-  "message": "Failed login counters reset and lockout cleared.",
-  "errors": null
-}
-```
-
-**Error Response (404 Not Found):**
-
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "User not found.",
-  "errors": null
-}
-```
-
----
-
-## Profile Endpoints
-
-All profile endpoints require authentication via Bearer token.
+**Status Codes:**
+- `200 OK` - Role removed successfully
+- `400 Bad Request` - Cannot remove last administrator role
+- `401 Unauthorized` - Invalid or missing token
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - User or role not found
 
 ---
 
