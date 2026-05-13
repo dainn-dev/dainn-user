@@ -868,6 +868,503 @@ Removes a role from a user.
 
 ---
 
+### 4. Login
+
+Authenticates user and returns JWT tokens.
+
+**Endpoint:** `POST /auth/login`
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePass123!@#",
+  "rememberDeviceToken": null
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "abc123def456...",
+    "expiresIn": 3600,
+    "tokenType": "Bearer",
+    "user": {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "email": "user@example.com",
+      "username": "johndoe",
+      "emailVerified": true,
+      "twoFactorEnabled": false
+    },
+    "requiresTwoFactor": false
+  },
+  "message": null,
+  "errors": null
+}
+```
+
+**Error Response (401 Unauthorized):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Invalid email or password.",
+  "errors": null
+}
+```
+
+**Error Response (403 Forbidden - Email Not Verified):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Email not verified. Please check your email.",
+  "errors": null
+}
+```
+
+**Error Response (423 Locked):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Account is locked due to too many failed login attempts.",
+  "errors": null
+}
+```
+
+**Authorization:** None (public endpoint)
+
+---
+
+### 5. Logout
+
+Ends current session and revokes refresh token.
+
+**Endpoint:** `POST /auth/logout`
+
+**Authorization:** Required (Bearer token)
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "Logged out.",
+  "message": "Session ended.",
+  "errors": null
+}
+```
+
+---
+
+### 6. Refresh Token
+
+Refreshes access token using refresh token. Rotates refresh token.
+
+**Endpoint:** `POST /auth/refresh-token`
+
+**Request Body:**
+
+```json
+{
+  "refreshToken": "abc123def456..."
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "new-refresh-token...",
+    "expiresIn": 3600,
+    "tokenType": "Bearer",
+    "user": {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "email": "user@example.com",
+      "username": "johndoe",
+      "emailVerified": true,
+      "twoFactorEnabled": false
+    },
+    "requiresTwoFactor": false
+  },
+  "message": null,
+  "errors": null
+}
+```
+
+**Error Response (401 Unauthorized):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Invalid refresh token.",
+  "errors": null
+}
+```
+
+**Authorization:** None (public endpoint)
+
+---
+
+### 7. Forgot Password
+
+Initiates password reset. Always returns 200 to prevent user enumeration.
+
+**Endpoint:** `POST /auth/forgot-password`
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "If an account with that email exists, a password reset link has been sent.",
+  "message": null,
+  "errors": null
+}
+```
+
+**Authorization:** None (public endpoint)
+
+---
+
+### 8. Reset Password
+
+Completes password reset using token from email. Invalidates all sessions.
+
+**Endpoint:** `POST /auth/reset-password`
+
+**Request Body:**
+
+```json
+{
+  "token": "reset-token-from-email",
+  "newPassword": "NewSecurePass123!@#",
+  "confirmPassword": "NewSecurePass123!@#"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "Password reset successfully.",
+  "message": "All active sessions have been invalidated. Please log in with your new password.",
+  "errors": null
+}
+```
+
+**Error Response (400 Bad Request):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Invalid or expired password reset token.",
+  "errors": null
+}
+```
+
+**Authorization:** None (public endpoint)
+
+---
+
+### 9. Change Password
+
+Changes password for authenticated user. Invalidates all other sessions.
+
+**Endpoint:** `POST /auth/change-password`
+
+**Authorization:** Required (Bearer token)
+
+**Request Body:**
+
+```json
+{
+  "currentPassword": "OldPass123!@#",
+  "newPassword": "NewPass123!@#",
+  "confirmPassword": "NewPass123!@#"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "Password changed successfully.",
+  "message": "All other active sessions have been invalidated.",
+  "errors": null
+}
+```
+
+**Error Response (400 Bad Request):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Current password is incorrect.",
+  "errors": null
+}
+```
+
+---
+
+### 10. Setup Two-Factor Authentication
+
+Initiates 2FA setup. Returns TOTP secret and QR code URI.
+
+**Endpoint:** `POST /auth/2fa/setup`
+
+**Authorization:** Required (Bearer token)
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "secret": "JBSWY3DPEHPK3PXP",
+    "qrCodeUri": "otpauth://totp/DainnUser:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=DainnUser"
+  },
+  "message": "Scan the QR code with your authenticator app and confirm with a code.",
+  "errors": null
+}
+```
+
+---
+
+### 11. Enable Two-Factor Authentication
+
+Confirms and activates 2FA. Returns backup codes.
+
+**Endpoint:** `POST /auth/2fa/enable`
+
+**Authorization:** Required (Bearer token)
+
+**Request Body:**
+
+```json
+{
+  "code": "123456"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "backupCodes": [
+      "12345678",
+      "23456789",
+      "34567890",
+      "45678901",
+      "56789012",
+      "67890123",
+      "78901234",
+      "89012345",
+      "90123456",
+      "01234567"
+    ]
+  },
+  "message": "Two-factor authentication enabled. Store these backup codes securely — they will not be shown again.",
+  "errors": null
+}
+```
+
+**Error Response (400 Bad Request):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "Invalid or expired two-factor code.",
+  "errors": null
+}
+```
+
+---
+
+### 12. Disable Two-Factor Authentication
+
+Disables 2FA. Requires valid TOTP or backup code.
+
+**Endpoint:** `POST /auth/2fa/disable`
+
+**Authorization:** Required (Bearer token)
+
+**Request Body:**
+
+```json
+{
+  "code": "123456"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "Two-factor authentication disabled.",
+  "message": null,
+  "errors": null
+}
+```
+
+---
+
+### 13. Complete Two-Factor Login
+
+Completes login requiring 2FA. Verifies TOTP or backup code.
+
+**Endpoint:** `POST /auth/2fa/login`
+
+**Authorization:** None (public endpoint)
+
+**Request Body:**
+
+```json
+{
+  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "code": "123456",
+  "rememberDevice": false
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "abc123def456...",
+    "expiresIn": 3600,
+    "tokenType": "Bearer",
+    "user": {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "email": "user@example.com",
+      "username": "johndoe",
+      "emailVerified": true,
+      "twoFactorEnabled": true
+    },
+    "requiresTwoFactor": false
+  },
+  "message": null,
+  "errors": null
+}
+```
+
+---
+
+### 14. Regenerate Backup Codes
+
+Regenerates 2FA backup codes. Requires valid TOTP code (not backup code).
+
+**Endpoint:** `POST /auth/2fa/backup-codes/regenerate`
+
+**Authorization:** Required (Bearer token)
+
+**Request Body:**
+
+```json
+{
+  "code": "123456"
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "backupCodes": [
+      "11111111",
+      "22222222",
+      "33333333",
+      "44444444",
+      "55555555",
+      "66666666",
+      "77777777",
+      "88888888",
+      "99999999",
+      "00000000"
+    ]
+  },
+  "message": "Backup codes regenerated. All previous codes are now invalid.",
+  "errors": null
+}
+```
+
+---
+
+### 15. Unlock Account (Admin)
+
+Manually unlocks locked user account. Admin only.
+
+**Endpoint:** `POST /auth/admin/unlock-account/{userId}`
+
+**Authorization:** Required (Bearer token, Administrator role)
+
+**Path Parameters:**
+- `userId` (required): User ID (GUID format)
+
+**Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": "Account unlocked.",
+  "message": "Failed login counters reset and lockout cleared.",
+  "errors": null
+}
+```
+
+**Error Response (404 Not Found):**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "User not found.",
+  "errors": null
+}
+```
+
+---
+
+## Profile Endpoints
+
+All profile endpoints require authentication via Bearer token.
+
+---
+
 ## Testing with cURL
 
 ### Authentication Endpoints
@@ -882,6 +1379,34 @@ curl -X POST https://localhost:5001/api/auth/register \
     "username": "testuser",
     "password": "Test123!@#",
     "confirmPassword": "Test123!@#"
+  }'
+```
+
+#### Login
+
+```bash
+curl -X POST https://localhost:5001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "Test123!@#"
+  }'
+```
+
+#### Logout
+
+```bash
+curl -X POST https://localhost:5001/api/auth/logout \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Refresh Token
+
+```bash
+curl -X POST https://localhost:5001/api/auth/refresh-token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "your-refresh-token"
   }'
 ```
 
@@ -904,6 +1429,100 @@ curl -X POST https://localhost:5001/api/auth/resend-verification \
   -d '{
     "email": "test@example.com"
   }'
+```
+
+#### Forgot Password
+
+```bash
+curl -X POST https://localhost:5001/api/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com"
+  }'
+```
+
+#### Reset Password
+
+```bash
+curl -X POST https://localhost:5001/api/auth/reset-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "reset-token-from-email",
+    "newPassword": "NewPass123!@#",
+    "confirmPassword": "NewPass123!@#"
+  }'
+```
+
+#### Change Password
+
+```bash
+curl -X POST https://localhost:5001/api/auth/change-password \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentPassword": "OldPass123!@#",
+    "newPassword": "NewPass123!@#",
+    "confirmPassword": "NewPass123!@#"
+  }'
+```
+
+#### Setup 2FA
+
+```bash
+curl -X POST https://localhost:5001/api/auth/2fa/setup \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Enable 2FA
+
+```bash
+curl -X POST https://localhost:5001/api/auth/2fa/enable \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "123456"
+  }'
+```
+
+#### Disable 2FA
+
+```bash
+curl -X POST https://localhost:5001/api/auth/2fa/disable \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "123456"
+  }'
+```
+
+#### Complete 2FA Login
+
+```bash
+curl -X POST https://localhost:5001/api/auth/2fa/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "code": "123456",
+    "rememberDevice": false
+  }'
+```
+
+#### Regenerate Backup Codes
+
+```bash
+curl -X POST https://localhost:5001/api/auth/2fa/backup-codes/regenerate \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "123456"
+  }'
+```
+
+#### Unlock Account (Admin)
+
+```bash
+curl -X POST https://localhost:5001/api/auth/admin/unlock-account/3fa85f64-5717-4562-b3fc-2c963f66afa6 \
+  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
 ```
 
 ### Profile Endpoints
@@ -1029,6 +1648,142 @@ curl -X DELETE https://localhost:5001/api/user/3fa85f64-5717-4562-b3fc-2c963f66a
 ---
 
 ## Testing with C#
+
+### Authentication Endpoints
+
+#### Register
+
+```csharp
+var registerDto = new RegisterDto
+{
+    Email = "test@example.com",
+    Username = "testuser",
+    Password = "Test123!@#",
+    ConfirmPassword = "Test123!@#"
+};
+
+var response = await client.PostAsJsonAsync("https://localhost:5001/api/auth/register", registerDto);
+var result = await response.Content.ReadFromJsonAsync<ApiResponse<RegisterResponse>>();
+```
+
+#### Login
+
+```csharp
+var loginDto = new LoginDto
+{
+    Email = "test@example.com",
+    Password = "Test123!@#"
+};
+
+var response = await client.PostAsJsonAsync("https://localhost:5001/api/auth/login", loginDto);
+var result = await response.Content.ReadFromJsonAsync<ApiResponse<LoginResponse>>();
+
+if (result.Success)
+{
+    var accessToken = result.Data.AccessToken;
+    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+}
+```
+
+#### Logout
+
+```csharp
+var response = await client.PostAsync("https://localhost:5001/api/auth/logout", null);
+var result = await response.Content.ReadFromJsonAsync<ApiResponse<string>>();
+```
+
+#### Refresh Token
+
+```csharp
+var refreshDto = new RefreshTokenDto
+{
+    RefreshToken = "your-refresh-token"
+};
+
+var response = await client.PostAsJsonAsync("https://localhost:5001/api/auth/refresh-token", refreshDto);
+var result = await response.Content.ReadFromJsonAsync<ApiResponse<LoginResponse>>();
+```
+
+#### Forgot Password
+
+```csharp
+var forgotPasswordDto = new ForgotPasswordDto
+{
+    Email = "test@example.com"
+};
+
+var response = await client.PostAsJsonAsync("https://localhost:5001/api/auth/forgot-password", forgotPasswordDto);
+var result = await response.Content.ReadFromJsonAsync<ApiResponse<string>>();
+```
+
+#### Reset Password
+
+```csharp
+var resetPasswordDto = new ResetPasswordDto
+{
+    Token = "reset-token-from-email",
+    NewPassword = "NewPass123!@#",
+    ConfirmPassword = "NewPass123!@#"
+};
+
+var response = await client.PostAsJsonAsync("https://localhost:5001/api/auth/reset-password", resetPasswordDto);
+var result = await response.Content.ReadFromJsonAsync<ApiResponse<string>>();
+```
+
+#### Change Password
+
+```csharp
+var changePasswordDto = new ChangePasswordDto
+{
+    CurrentPassword = "OldPass123!@#",
+    NewPassword = "NewPass123!@#",
+    ConfirmPassword = "NewPass123!@#"
+};
+
+var response = await client.PostAsJsonAsync("https://localhost:5001/api/auth/change-password", changePasswordDto);
+var result = await response.Content.ReadFromJsonAsync<ApiResponse<string>>();
+```
+
+#### Setup 2FA
+
+```csharp
+var response = await client.PostAsync("https://localhost:5001/api/auth/2fa/setup", null);
+var result = await response.Content.ReadFromJsonAsync<ApiResponse<TwoFactorSetupResponse>>();
+
+Console.WriteLine($"Secret: {result.Data.Secret}");
+Console.WriteLine($"QR Code URI: {result.Data.QrCodeUri}");
+```
+
+#### Enable 2FA
+
+```csharp
+var twoFactorCodeDto = new TwoFactorCodeDto
+{
+    Code = "123456"
+};
+
+var response = await client.PostAsJsonAsync("https://localhost:5001/api/auth/2fa/enable", twoFactorCodeDto);
+var result = await response.Content.ReadFromJsonAsync<ApiResponse<BackupCodesResponse>>();
+
+foreach (var code in result.Data.BackupCodes)
+{
+    Console.WriteLine($"Backup code: {code}");
+}
+```
+
+#### Complete 2FA Login
+
+```csharp
+var completeTwoFactorDto = new CompleteTwoFactorLoginDto
+{
+    UserId = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+    Code = "123456",
+    RememberDevice = false
+};
+
+var response = await client.PostAsJsonAsync("https://localhost:5001/api/auth/2fa/login", completeTwoFactorDto);
+var result = await response.Content.ReadFromJsonAsync<ApiResponse<LoginResponse>>();
+```
 
 ### Profile Endpoints
 
