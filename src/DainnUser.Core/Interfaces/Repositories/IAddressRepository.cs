@@ -16,26 +16,34 @@ public interface IAddressRepository : IRepository<UserAddress>
     Task<IEnumerable<UserAddress>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets an address by its identifier and verifies it belongs to the specified user.
+    /// Gets a specific address for a user.
     /// </summary>
+    /// <param name="userId">The user identifier.</param>
     /// <param name="addressId">The address identifier.</param>
-    /// <param name="userId">The user identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The address if found and belongs to the user, otherwise null.</returns>
-    Task<UserAddress?> GetByIdAndUserIdAsync(Guid addressId, Guid userId, CancellationToken cancellationToken = default);
+    /// <returns>The address if found and belongs to user, otherwise null.</returns>
+    Task<UserAddress?> GetByUserIdAndIdAsync(Guid userId, Guid addressId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets the default address for a specific user.
+    /// Clears the default flag for all addresses of a user.
     /// </summary>
     /// <param name="userId">The user identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The default address if one exists, otherwise null.</returns>
-    Task<UserAddress?> GetDefaultByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task ClearDefaultForUserAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Unsets the default flag for all addresses belonging to a user.
+    /// Gets the default address for a user.
     /// </summary>
     /// <param name="userId">The user identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task UnsetDefaultAddressesAsync(Guid userId, CancellationToken cancellationToken = default);
+    /// <returns>The default address if found, otherwise null.</returns>
+    Task<UserAddress?> GetDefaultForUserAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks if a user has any addresses.
+    /// </summary>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if user has addresses, otherwise false.</returns>
+    Task<bool> UserHasAddressesAsync(Guid userId, CancellationToken cancellationToken = default);
 }

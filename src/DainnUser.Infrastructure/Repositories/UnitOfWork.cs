@@ -17,6 +17,7 @@ public class UnitOfWork : IUnitOfWork
     private ILoginHistoryRepository? _loginHistories;
     private ISessionRepository? _sessions;
     private IActivityLogRepository? _activityLogs;
+    private IAddressRepository? _addresses;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UnitOfWork"/> class.
@@ -41,6 +42,9 @@ public class UnitOfWork : IUnitOfWork
 
     /// <inheritdoc/>
     public IActivityLogRepository ActivityLogs => _activityLogs ??= new ActivityLogRepository(_context);
+
+    /// <inheritdoc/>
+    public IAddressRepository Addresses => _addresses ??= new AddressRepository(_context);
 
     /// <inheritdoc/>
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
