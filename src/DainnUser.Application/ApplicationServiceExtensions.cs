@@ -37,6 +37,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IRecaptchaService, RecaptchaService>();
         services.AddScoped<IActivityService, ActivityService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
+        services.AddScoped<IAddressService, AddressService>();
 
         return services;
     }
