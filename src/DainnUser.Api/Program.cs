@@ -110,12 +110,12 @@ app.UseDainnUser();
 
 app.MapControllers();
 
-// OpenAPI YAML export endpoint
-app.MapGet("/openapi/v1.yaml", async (ISwaggerProvider swaggerProvider) =>
+// OpenAPI YAML export endpoint (exposed globally for API consumers and doc tooling)
+app.MapGet("/openapi/v1.yaml", (ISwaggerProvider swaggerProvider) =>
 {
     var openApiDocument = swaggerProvider.GetSwagger("v1");
     var yaml = openApiDocument.SerializeAsYaml(OpenApiSpecVersion.OpenApi3_0);
-    return Results.Content(yaml, "text/yaml");
+    return Results.Content(yaml, "application/yaml");
 });
 
 app.Run();
