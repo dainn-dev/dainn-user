@@ -438,4 +438,5 @@ Thumbs.db
 # DocFX
 docs/_site/
 docs/api/*.yml
+docs/api/.manifest
 docs/obj/
