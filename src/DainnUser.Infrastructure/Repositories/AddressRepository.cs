@@ -24,7 +24,7 @@ public class AddressRepository : Repository<UserAddress>, IAddressRepository
         return await _dbSet
             .Where(a => a.UserId == userId)
             .OrderByDescending(a => a.IsDefault)
-            .ThenBy(a => a.CreatedAt)
+            .ThenByDescending(a => a.CreatedAt)
             .ToListAsync(cancellationToken);
     }
 
