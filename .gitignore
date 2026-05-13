@@ -434,3 +434,8 @@ Thumbs.db
 # Claude Code specific
 .claude/memory/archive/*.md
 .claude/settings.local.json
+
+# DocFX
+docs/_site/
+docs/api/*.yml
+docs/obj/
