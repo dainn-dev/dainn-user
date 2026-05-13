@@ -29,14 +29,21 @@ public class AddressRepository : Repository<UserAddress>, IAddressRepository
     }
 
     /// <inheritdoc/>
-    public async Task<UserAddress?> GetByUserIdAndIdAsync(Guid userId, Guid addressId, CancellationToken cancellationToken = default)
+    public async Task<UserAddress?> GetByIdAndUserIdAsync(Guid addressId, Guid userId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .FirstOrDefaultAsync(a => a.UserId == userId && a.Id == addressId, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Id == addressId && a.UserId == userId, cancellationToken);
     }
 
     /// <inheritdoc/>
-    public async Task ClearDefaultForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<UserAddress?> GetDefaultByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .FirstOrDefaultAsync(a => a.UserId == userId && a.IsDefault, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task UnsetDefaultAddressesAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var defaultAddresses = await _dbSet
             .Where(a => a.UserId == userId && a.IsDefault)
@@ -47,18 +54,5 @@ public class AddressRepository : Repository<UserAddress>, IAddressRepository
             address.IsDefault = false;
             address.UpdatedAt = DateTime.UtcNow;
         }
-    }
-
-    /// <inheritdoc/>
-    public async Task<UserAddress?> GetDefaultForUserAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .FirstOrDefaultAsync(a => a.UserId == userId && a.IsDefault, cancellationToken);
-    }
-
-    /// <inheritdoc/>
-    public async Task<bool> UserHasAddressesAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return await _dbSet.AnyAsync(a => a.UserId == userId, cancellationToken);
     }
 }
