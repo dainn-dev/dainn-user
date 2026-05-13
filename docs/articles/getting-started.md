@@ -367,11 +367,11 @@ builder.Services.AddScoped<IValidator<RegisterDto>, CustomRegisterValidator>();
 
 ## Next Steps
 
-- [Configuration Guide](configuration.md) — Detailed configuration options
-- [API Reference](api-reference.md) — Complete API documentation
+- [Configuration Guide](../configuration.md) — Detailed configuration options
+- [API Reference](../api-reference.md) — Complete API documentation
 - [Security Guide](security.md) — Security best practices
-- [Migration Guide](migration-guide.md) — Upgrading between versions
-- [Samples](../samples/) — Complete sample applications
+- [Migration Guide](migrations.md) — Database migrations guide
+- [Samples](../../samples/) — Complete sample applications
 
 ## Troubleshooting
 
