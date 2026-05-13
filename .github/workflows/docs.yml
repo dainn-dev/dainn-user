@@ -1,0 +1,59 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - '.github/workflows/docs.yml'
+      - '*.sln'
+      - 'global.json'
+      - 'Directory.Build.props'
+      - 'Directory.Build.targets'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOCFX_VERSION: '2.77.0'
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore dainn-user.sln
+
+    - name: Build solution
+      run: dotnet build dainn-user.sln --configuration Release --no-restore
+
+    - name: Install DocFX
+      run: dotnet tool install --global docfx --version ${{ env.DOCFX_VERSION }}
+
+    - name: Build documentation
+      run: docfx build docs/docfx.json
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs/_site
