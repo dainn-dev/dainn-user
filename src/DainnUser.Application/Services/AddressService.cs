@@ -122,20 +122,19 @@ public class AddressService : IAddressService
         await EnsureUserExistsAsync(userId, ct);
         var address = await GetAddressForUserAsync(userId, addressId, ct);
 
-        _addressRepository.Remove(address);
-        await _unitOfWork.SaveChangesAsync(ct);
-
         if (address.IsDefault)
         {
             var remaining = await _addressRepository.GetByUserIdAsync(userId, ct);
-            var first = remaining.FirstOrDefault();
+            var first = remaining.FirstOrDefault(a => a.Id != addressId);
             if (first is not null)
             {
                 first.IsDefault = true;
                 first.UpdatedAt = DateTime.UtcNow;
-                await _unitOfWork.SaveChangesAsync(ct);
             }
         }
+
+        _addressRepository.Remove(address);
+        await _unitOfWork.SaveChangesAsync(ct);
     }
 
     /// <inheritdoc/>
