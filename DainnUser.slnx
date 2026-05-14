@@ -6,8 +6,10 @@
     <Project Path="src/DainnUser.Infrastructure/DainnUser.Infrastructure.csproj" />
     <Project Path="src/DainnUser.OpenIddict/DainnUser.OpenIddict.csproj" />
     <Project Path="src/DainnUser.Web/DainnUser.Web.csproj" />
+    <Project Path="src/DainnStripe/DainnStripe.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/DainnStripe.UnitTests/DainnStripe.UnitTests.csproj" />
     <Project Path="tests/DainnUser.IntegrationTests/DainnUser.IntegrationTests.csproj" />
     <Project Path="tests/DainnUser.SecurityTests/DainnUser.SecurityTests.csproj" />
     <Project Path="tests/DainnUser.UnitTests/DainnUser.UnitTests.csproj" />
