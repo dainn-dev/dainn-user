@@ -1,0 +1,563 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Troubleshooting Guide — DainnUser | DainnUser Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Troubleshooting Guide — DainnUser | DainnUser Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/troubleshooting.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="">
+            
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="troubleshooting-guide--dainnuser">Troubleshooting Guide — DainnUser</h1>
+
+<p>Common issues organized by category with symptom, root cause, solution, and prevention.</p>
+<hr>
+<h2 id="installsetup">Install/Setup</h2>
+<h3 id="issue-1-nuget-package-installation-failure">Issue 1: NuGet Package Installation Failure</h3>
+<p><strong>Symptom:</strong> <code>dotnet add package DainnUser</code> fails with <code>error: Unable to find package</code></p>
+<p><strong>Root Cause:</strong></p>
+<ul>
+<li>NuGet source not configured</li>
+<li>Package version does not exist</li>
+<li>Network connectivity issue</li>
+</ul>
+<p><strong>Solution:</strong></p>
+<pre><code class="lang-bash"># Check NuGet sources
+dotnet nuget list source
+
+# Add NuGet.org if missing
+dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
+
+# Search for available versions
+dotnet package search DainnUser --take 10
+
+# Install specific version
+dotnet add package DainnUser --version 1.0.0
+</code></pre>
+<p><strong>Prevention:</strong> Configure <code>NuGet.config</code> with official NuGet source.</p>
+<hr>
+<h3 id="issue-2-startup-configuration-validation-error">Issue 2: Startup Configuration Validation Error</h3>
+<p><strong>Symptom:</strong> <code>InvalidOperationException: DainnUser configuration validation failed.</code> at startup.</p>
+<p><strong>Root Cause:</strong> Missing or invalid required configuration.</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>Check all required fields in <code>appsettings.json</code>:
+<ul>
+<li><code>Database.ConnectionString</code></li>
+<li><code>Jwt.SecretKey</code> (min 32 characters)</li>
+<li><code>Jwt.Issuer</code></li>
+<li><code>Jwt.Audience</code></li>
+</ul>
+</li>
+<li>Verify password requirements are valid</li>
+<li>Verify database provider is supported</li>
+</ol>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SqlServer&quot;,
+      &quot;ConnectionString&quot;: &quot;Server=localhost;Database=MyApp;Trusted_Connection=True;&quot;
+    },
+    &quot;Jwt&quot;: {
+      &quot;SecretKey&quot;: &quot;at-least-32-characters-long-secure-key-here!&quot;,
+      &quot;Issuer&quot;: &quot;https://yourdomain.com&quot;,
+      &quot;Audience&quot;: &quot;https://yourdomain.com&quot;
+    }
+  }
+}
+</code></pre>
+<p><strong>Prevention:</strong> Use <code>appsettings.Development.json</code> with development-friendly defaults.</p>
+<hr>
+<h3 id="issue-3-missing-service-registration">Issue 3: Missing Service Registration</h3>
+<p><strong>Symptom:</strong> <code>System.InvalidOperationException: Unable to resolve service for type 'DainnUser.Core.Interfaces.Services.IAuthenticationService'</code></p>
+<p><strong>Root Cause:</strong> <code>AddDainnUser()</code> not called in <code>Program.cs</code>.</p>
+<p><strong>Solution:</strong></p>
+<pre><code class="lang-csharp">// Program.cs
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDainnUser(builder.Configuration);
+var app = builder.Build();
+app.UseDainnUser();
+app.Run();
+</code></pre>
+<p><strong>Prevention:</strong> Always call <code>AddDainnUser()</code> before <code>Build()</code> and <code>UseDainnUser()</code> after.</p>
+<hr>
+<h2 id="database--migrations">Database / Migrations</h2>
+<h3 id="issue-4-database-migrations-not-applying">Issue 4: Database Migrations Not Applying</h3>
+<p><strong>Symptom:</strong> App starts but tables do not exist. <code>SqlException: Invalid object name 'Users'</code>.</p>
+<p><strong>Root Cause:</strong></p>
+<ul>
+<li>Migrations not run</li>
+<li>Wrong database context targeted</li>
+<li>Connection string wrong</li>
+</ul>
+<p><strong>Solution:</strong></p>
+<pre><code class="lang-bash"># Verify connection string
+dotnet ef dbcontext info --project src/YourApp --context DainnUserDbContext
+
+# Apply migrations
+dotnet ef database update --project src/YourApp --context DainnUserDbContext
+
+# Check migration status
+dotnet ef migrations list --project src/YourApp --context DainnUserDbContext
+</code></pre>
+<p><strong>Prevention:</strong> Add auto-migration in development:</p>
+<pre><code class="lang-csharp">if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService&lt;DainnUserDbContext&gt;();
+    context.Database.Migrate();
+}
+</code></pre>
+<hr>
+<h3 id="issue-5-ef-core-inmemory-provider-collection-tracking-error">Issue 5: EF Core InMemory Provider Collection Tracking Error</h3>
+<p><strong>Symptom:</strong> Integration test fails with <code>DbUpdateConcurrencyException: Attempted to update or delete an entity that does not exist in the store.</code></p>
+<p><strong>Status:</strong> Known issue with EF Core InMemory provider. <strong>Production code is NOT affected.</strong></p>
+<p><strong>Root Cause:</strong> EF Core InMemory provider has known limitations with tracking modified collections when entities are loaded with navigation properties, modified, and saved in a single operation.</p>
+<p><strong>Solution (for tests):</strong> Use SQLite in-memory instead:</p>
+<pre><code class="lang-csharp">var connection = new SqliteConnection(&quot;DataSource=:memory:&quot;);
+connection.Open();
+
+var options = new DbContextOptionsBuilder&lt;DainnUserDbContext&gt;()
+    .UseSqlite(connection)
+    .Options;
+</code></pre>
+<p><strong>See:</strong> <code>docs/known-issues.md</code> for full details.</p>
+<hr>
+<h3 id="issue-6-database-connection-timeout">Issue 6: Database Connection Timeout</h3>
+<p><strong>Symptom:</strong> <code>Timeout expired. The timeout period elapsed prior to completion of the operation.</code></p>
+<p><strong>Root Cause:</strong></p>
+<ul>
+<li>Database server not reachable</li>
+<li>Firewall blocking connection</li>
+<li>DNS resolution failure</li>
+</ul>
+<p><strong>Solution:</strong></p>
+<pre><code class="lang-bash"># Test database connectivity
+ping your-db-server
+
+# Test port connectivity
+telnet your-db-server 1433  # SQL Server
+telnet your-db-server 5432  # PostgreSQL
+telnet your-db-server 3306  # MySQL
+
+# Check firewall rules
+</code></pre>
+<p>Add connection timeout to connection string:</p>
+<pre><code>&quot;ConnectionString&quot;: &quot;Server=localhost;Database=MyApp;Connection Timeout=30;&quot;
+</code></pre>
+<p><strong>Prevention:</strong> Use connection pooling and retry policies:</p>
+<pre><code class="lang-csharp">builder.Services.AddDbContext&lt;DainnUserDbContext&gt;(options =&gt;
+    options.UseSqlServer(connectionString, sqlOptions =&gt;
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorNumbersToAdd: null);
+    }));
+</code></pre>
+<hr>
+<h2 id="auth--jwt">Auth / JWT</h2>
+<h3 id="issue-7-jwt-authentication-not-working-401-unauthorized">Issue 7: JWT Authentication Not Working (401 Unauthorized)</h3>
+<p><strong>Symptom:</strong> All authenticated endpoints return <code>401 Unauthorized</code>.</p>
+<p><strong>Root Cause:</strong></p>
+<ol>
+<li><code>UseAuthentication()</code> called after <code>UseAuthorization()</code> or not called at all</li>
+<li>JWT secret key mismatch</li>
+<li>Token expired</li>
+<li>Issuer/Audience mismatch</li>
+</ol>
+<p><strong>Solution:</strong></p>
+<pre><code class="lang-csharp">// Order matters!
+app.UseRouting();
+
+app.UseAuthentication();  // MUST be before UseAuthorization
+app.UseAuthorization();
+
+app.MapControllers();
+</code></pre>
+<p>Verify JWT configuration:</p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Jwt&quot;: {
+      &quot;SecretKey&quot;: &quot;same-key-used-everywhere-min-32-characters&quot;,
+      &quot;Issuer&quot;: &quot;https://yourdomain.com&quot;,
+      &quot;Audience&quot;: &quot;https://yourdomain.com&quot;,
+      &quot;ExpirationMinutes&quot;: 60
+    }
+  }
+}
+</code></pre>
+<p><strong>Prevention:</strong> Keep JWT configuration consistent across all services.</p>
+<hr>
+<h3 id="issue-8-token-invalid-or-expired-error">Issue 8: &quot;Token invalid or expired&quot; Error</h3>
+<p><strong>Symptom:</strong> API returns <code>&quot;Invalid refresh token&quot;</code> or token errors.</p>
+<p><strong>Root Cause:</strong></p>
+<ul>
+<li>Token has expired</li>
+<li>Refresh token has been revoked</li>
+<li>Refresh token rotation: old refresh token reused</li>
+<li>Clock skew between client and server</li>
+</ul>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>Check token expiration time in response</li>
+<li>Use refresh token before access token expires</li>
+<li>Handle refresh token rotation flow properly:</li>
+</ol>
+<pre><code class="lang-csharp">public async Task&lt;string&gt; GetValidAccessToken()
+{
+    if (_accessTokenExpiry &gt; DateTime.UtcNow.AddMinutes(5))
+        return _accessToken;
+
+    var refreshResponse = await _httpClient.PostAsJsonAsync(
+        &quot;api/auth/refresh-token&quot;,
+        new { refreshToken = _refreshToken });
+
+    var result = await refreshResponse.Content.ReadFromJsonAsync&lt;ApiResponse&lt;LoginResponse&gt;&gt;();
+    _accessToken = result.Data.AccessToken;
+    _refreshToken = result.Data.RefreshToken; // Store new refresh token
+    return _accessToken;
+}
+</code></pre>
+<p><strong>Prevention:</strong> Implement automatic token refresh with a custom <code>DelegatingHandler</code>.</p>
+<hr>
+<h3 id="issue-9-account-locked-out">Issue 9: Account Locked Out</h3>
+<p><strong>Symptom:</strong> Login returns <code>423 Locked</code> with &quot;Account is locked due to too many failed login attempts.&quot;</p>
+<p><strong>Root Cause:</strong> User exceeded <code>MaxFailedAccessAttempts</code>.</p>
+<p><strong>Solution (User):</strong> Wait for lockout duration to expire (default 15 minutes).</p>
+<p><strong>Solution (Admin):</strong></p>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/admin/unlock-account/{userId} \
+  -H &quot;Authorization: Bearer YOUR_ADMIN_JWT_TOKEN&quot;
+</code></pre>
+<p>Or programmatically:</p>
+<pre><code class="lang-csharp">await _authService.UnlockAccountAsync(userId);
+</code></pre>
+<p><strong>Prevention:</strong> Configure appropriate lockout settings:</p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Security&quot;: {
+      &quot;Lockout&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;MaxFailedAccessAttempts&quot;: 5,
+        &quot;LockoutDurationMinutes&quot;: 15
+      }
+    }
+  }
+}
+</code></pre>
+<hr>
+<h2 id="email">Email</h2>
+<h3 id="issue-10-verification-email-not-sending">Issue 10: Verification Email Not Sending</h3>
+<p><strong>Symptom:</strong> User registers but never receives verification email.</p>
+<p><strong>Root Cause:</strong></p>
+<ul>
+<li>SMTP credentials incorrect</li>
+<li>Firewall blocking SMTP port (587/465)</li>
+<li>Gmail &quot;Less secure app access&quot; turned off</li>
+<li>MailHog not running (in development)</li>
+<li>Email service throws exception silently</li>
+</ul>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>Verify SMTP settings:</li>
+</ol>
+<pre><code class="lang-bash"># Test SMTP connectivity
+telnet smtp.gmail.com 587
+</code></pre>
+<ol start="2">
+<li>Check application logs:</li>
+</ol>
+<pre><code class="lang-csharp">// Add email-specific logging
+builder.Logging.AddFilter(&quot;DainnUser.Infrastructure.Services.EmailService&quot;, LogLevel.Debug);
+</code></pre>
+<ol start="3">
+<li><p>For Gmail: Use App Password (not account password)</p>
+<ul>
+<li>Enable 2-Step Verification</li>
+<li>Generate App Password at <a href="https://myaccount.google.com/apppasswords">https://myaccount.google.com/apppasswords</a></li>
+</ul>
+</li>
+<li><p>For development: Use MailHog</p>
+</li>
+</ol>
+<pre><code class="lang-bash"># Start MailHog
+docker run -d -p 1025:1025 -p 8025:8025 mailhog/mailhog
+</code></pre>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Email&quot;: {
+      &quot;SmtpHost&quot;: &quot;localhost&quot;,
+      &quot;SmtpPort&quot;: 1025,
+      &quot;SmtpUsername&quot;: &quot;&quot;,
+      &quot;SmtpPassword&quot;: &quot;&quot;,
+      &quot;FromEmail&quot;: &quot;dev@localhost&quot;,
+      &quot;EnableSsl&quot;: false
+    }
+  }
+}
+</code></pre>
+<p><strong>Prevention:</strong> Monitor email service health. Add health check endpoint.</p>
+<hr>
+<h3 id="issue-11-verification-token-invalid">Issue 11: Verification Token Invalid</h3>
+<p><strong>Symptom:</strong> Clicking email verification link shows &quot;Token may be invalid, expired, or already used.&quot;</p>
+<p><strong>Root Cause:</strong></p>
+<ul>
+<li>Token expired (24-hour window)</li>
+<li>URL mangled by email client (line breaks, encoding)</li>
+<li>User already verified</li>
+<li>Token revoked (resend-verification was called after initial send)</li>
+</ul>
+<p><strong>Solution:</strong></p>
+<ul>
+<li>User should call resend-verification endpoint:</li>
+</ul>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/resend-verification \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{&quot;email&quot;: &quot;user@example.com&quot;}'
+</code></pre>
+<ul>
+<li>Old tokens are revoked, new token is generated and sent</li>
+<li>Verify the link in the email was not broken across lines</li>
+</ul>
+<p><strong>Prevention:</strong> Include clear instructions in verification email. Add token expiration timestamp visible to users.</p>
+<hr>
+<h2 id="oauth--social-login">OAuth / Social Login</h2>
+<h3 id="issue-12-oauth-callback-error-redirect_uri_mismatch">Issue 12: OAuth Callback Error (redirect_uri_mismatch)</h3>
+<p><strong>Symptom:</strong> Google/Facebook OAuth shows &quot;redirect_uri_mismatch&quot; error.</p>
+<p><strong>Root Cause:</strong> Callback URL registered with OAuth provider does not match actual callback URL.</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>Check the exact callback URL used:</li>
+</ol>
+<pre><code>https://yourdomain.com/signin-google
+</code></pre>
+<ol start="2">
+<li><p>Register the exact URL in the OAuth provider console:</p>
+<ul>
+<li><strong>Google:</strong> <a href="https://console.cloud.google.com/apis/credentials">https://console.cloud.google.com/apis/credentials</a></li>
+<li><strong>Facebook:</strong> <a href="https://developers.facebook.com/apps/">https://developers.facebook.com/apps/</a></li>
+<li><strong>GitHub:</strong> <a href="https://github.com/settings/developers">https://github.com/settings/developers</a></li>
+<li><strong>Microsoft:</strong> <a href="https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps">https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps</a></li>
+</ul>
+</li>
+<li><p>Ensure HTTPS is configured and the domain matches exactly</p>
+</li>
+</ol>
+<p><strong>Prevention:</strong> Use environment-specific OAuth apps (development vs production).</p>
+<hr>
+<h3 id="issue-13-oauth-login-fails-with-500">Issue 13: OAuth Login Fails with 500</h3>
+<p><strong>Symptom:</strong> <code>500 Internal Server Error</code> during social login.</p>
+<p><strong>Root Cause:</strong></p>
+<ul>
+<li>OAuth credentials not configured or invalid</li>
+<li><code>Enabled</code> flag not set to <code>true</code></li>
+<li>UserService or SocialLoginService not registered</li>
+</ul>
+<p><strong>Solution:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;OAuth&quot;: {
+      &quot;Google&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;your-google-client-id&quot;,
+        &quot;ClientSecret&quot;: &quot;your-google-client-secret&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<p>Ensure social login is enabled in code:</p>
+<pre><code class="lang-csharp">builder.Services.AddDainnUser(builder.Configuration, options =&gt;
+{
+    options.EnableSocialLogin = true;
+});
+</code></pre>
+<p><strong>Prevention:</strong> Test OAuth configuration by checking <code>/signin-{provider}</code> routes are registered at startup.</p>
+<hr>
+<h2 id="performance">Performance</h2>
+<h3 id="issue-14-slow-user-list-queries">Issue 14: Slow User List Queries</h3>
+<p><strong>Symptom:</strong> <code>/api/user</code> endpoint takes &gt; 2 seconds with many users.</p>
+<p><strong>Root Cause:</strong> N+1 queries loading roles or profile data. Missing database indexes.</p>
+<p><strong>Solution:</strong>
+Add database indexes:</p>
+<pre><code class="lang-sql">-- Email index (already likely exists via unique constraint)
+CREATE INDEX IX_Users_Status ON Users(Status);
+
+-- Login history index
+CREATE INDEX IX_LoginHistory_UserId ON LoginHistory(UserId, Timestamp);
+
+-- Session index
+CREATE INDEX IX_UserSessions_UserId ON UserSessions(UserId);
+</code></pre>
+<p>Optimize query code:</p>
+<pre><code class="lang-csharp">// Bad: N+1 queries
+var users = await _context.Users.ToListAsync();
+foreach (var user in users)
+{
+    user.Roles = await _context.UserRoles.Where(r =&gt; r.UserId == user.Id).ToListAsync();
+}
+
+// Good: Eager loading
+var users = await _context.Users
+    .Include(u =&gt; u.Roles)
+    .OrderBy(u =&gt; u.Username)
+    .Skip((page - 1) * pageSize)
+    .Take(pageSize)
+    .ToListAsync();
+</code></pre>
+<p><strong>Prevention:</strong> Use eager loading, pagination, and database indexes.</p>
+<hr>
+<h3 id="issue-15-high-memory-usage-under-load">Issue 15: High Memory Usage Under Load</h3>
+<p><strong>Symptom:</strong> Memory grows over time. GC pressure.</p>
+<p><strong>Root Cause:</strong></p>
+<ul>
+<li>Entity tracking on read-only queries</li>
+<li>Large file uploads held in memory</li>
+<li>Missing <code>IAsyncEnumerable</code> for streaming</li>
+</ul>
+<p><strong>Solution:</strong></p>
+<pre><code class="lang-csharp">// Use AsNoTracking for read-only queries
+var user = await _context.Users
+    .AsNoTracking()
+    .FirstOrDefaultAsync(u =&gt; u.Id == userId);
+
+// Stream file uploads
+app.Use(async (context, next) =&gt;
+{
+    var maxRequestBodySize = app.Configuration
+        .GetValue&lt;long&gt;(&quot;DainnUser:Storage:MaxFileSizeMB&quot;) * 1024 * 1024;
+    context.Request.EnableBuffering(maxRequestBodySize);
+    await next();
+});
+</code></pre>
+<p><strong>Prevention:</strong> Profile memory usage. Add GC.Collect() monitoring via <code>DOTNET_GCConserveMemory=9</code>.</p>
+<hr>
+<h2 id="general-troubleshooting-checklist">General Troubleshooting Checklist</h2>
+<ol>
+<li><strong>Check configuration:</strong> <code>app.UseDainnUser()</code> called? <code>AddDainnUser()</code> registered?</li>
+<li><strong>Check logs:</strong> Enable <code>Information</code> level logging for DainnUser namespace</li>
+<li><strong>Check connectivity:</strong> Database, SMTP, OAuth providers reachable?</li>
+<li><strong>Check migrations:</strong> <code>dotnet ef database update</code> run?</li>
+<li><strong>Check middleware order:</strong> Authentication before Authorization</li>
+<li><strong>Check HTTPS:</strong> OAuth callbacks require HTTPS in production</li>
+<li><strong>Check environment:</strong> Correct <code>appsettings.{Environment}.json</code> loaded?</li>
+<li><strong>Check JWT secret:</strong> Same across all services? Min 32 characters?</li>
+<li><strong>Check feature flags:</strong> Required features enabled?</li>
+<li><strong>Check NuGet version:</strong> Compatible version installed?</li>
+</ol>
+<hr>
+<h2 id="logging">Logging</h2>
+<p>Enable detailed logging for troubleshooting:</p>
+<pre><code class="lang-json">{
+  &quot;Logging&quot;: {
+    &quot;LogLevel&quot;: {
+      &quot;Default&quot;: &quot;Information&quot;,
+      &quot;DainnUser&quot;: &quot;Debug&quot;,
+      &quot;DainnUser.Infrastructure&quot;: &quot;Debug&quot;,
+      &quot;Microsoft.EntityFrameworkCore&quot;: &quot;Warning&quot;
+    }
+  }
+}
+</code></pre>
+<p>For structured logging:</p>
+<pre><code class="lang-csharp">_logger.LogWarning(&quot;Failed login attempt for user {Email} from {IpAddress}&quot;,
+    email, HttpContext.Connection.RemoteIpAddress);
+</code></pre>
+<hr>
+<h2 id="see-also">See Also</h2>
+<ul>
+<li><a href="configuration.html">Configuration Reference</a></li>
+<li><a href="faq.html">FAQ</a></li>
+<li><a href="security.html">Security Guide</a></li>
+<li><a href="../../docs/known-issues.md">Known Issues</a></li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/troubleshooting.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          © 2026 DainnUser. Licensed under MIT.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

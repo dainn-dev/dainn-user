@@ -1,0 +1,1167 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Code Examples — DainnUser | DainnUser Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Code Examples — DainnUser | DainnUser Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/code-examples.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="">
+            
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="code-examples--dainnuser">Code Examples — DainnUser</h1>
+
+<p>Cookbook scenarios with complete C# examples.</p>
+<blockquote>
+<p>Examples assume DainnUser services are registered with <code>builder.Services.AddDainnUser(builder.Configuration);</code> and middleware is configured with <code>app.UseDainnUser();</code>.</p>
+</blockquote>
+<hr>
+<h2 id="common-setup">Common Setup</h2>
+<p>Use this setup for controller examples.</p>
+<pre><code class="lang-csharp">using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using DainnUser.Api.DTOs;
+using DainnUser.Application.DTOs.Authentication;
+using DainnUser.Core.Interfaces.Services;
+using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddDainnUser(builder.Configuration, options =&gt;
+{
+    options.EnableSocialLogin = true;
+    options.EnableTwoFactor = true;
+    options.RequireEmailVerification = true;
+    options.EnableAccountLockout = true;
+    options.EnableSessionManagement = true;
+    options.EnableActivityLogging = true;
+});
+
+var app = builder.Build();
+
+app.UseHttpsRedirection();
+app.UseDainnUser();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();
+</code></pre>
+<hr>
+<h2 id="1-register-user-and-verify-email">1. Register User and Verify Email</h2>
+<p>Complete registration and email verification flow.</p>
+<pre><code class="lang-csharp">using DainnUser.Application.DTOs.Authentication;
+using DainnUser.Core.Interfaces.Services;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route(&quot;api/account&quot;)]
+public class AccountRegistrationController : ControllerBase
+{
+    private readonly IAuthenticationService _authenticationService;
+    private readonly ILogger&lt;AccountRegistrationController&gt; _logger;
+
+    public AccountRegistrationController(
+        IAuthenticationService authenticationService,
+        ILogger&lt;AccountRegistrationController&gt; logger)
+    {
+        _authenticationService = authenticationService;
+        _logger = logger;
+    }
+
+    [HttpPost(&quot;register&quot;)]
+    public async Task&lt;IActionResult&gt; Register(
+        [FromBody] RegisterRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.Password != request.ConfirmPassword)
+        {
+            return BadRequest(new { message = &quot;Passwords do not match.&quot; });
+        }
+
+        try
+        {
+            var userId = await _authenticationService.RegisterAsync(
+                request.Email,
+                request.Username,
+                request.Password,
+                cancellationToken);
+
+            _logger.LogInformation(&quot;User registered: {UserId}&quot;, userId);
+
+            return Created($&quot;/api/users/{userId}&quot;, new
+            {
+                userId,
+                message = &quot;Registration successful. Please check your email to verify your account.&quot;
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost(&quot;verify-email&quot;)]
+    public async Task&lt;IActionResult&gt; VerifyEmail(
+        [FromBody] VerifyEmailRequest request,
+        CancellationToken cancellationToken)
+    {
+        var verified = await _authenticationService.VerifyEmailAsync(
+            request.UserId,
+            request.Token,
+            cancellationToken);
+
+        if (!verified)
+        {
+            return BadRequest(new
+            {
+                message = &quot;Email verification failed. Token may be invalid, expired, or already used.&quot;
+            });
+        }
+
+        return Ok(new { message = &quot;Email verified successfully.&quot; });
+    }
+
+    [HttpPost(&quot;resend-verification&quot;)]
+    public async Task&lt;IActionResult&gt; ResendVerification(
+        [FromBody] ResendVerificationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var sent = await _authenticationService.ResendVerificationEmailAsync(
+            request.Email,
+            cancellationToken);
+
+        if (!sent)
+        {
+            return BadRequest(new
+            {
+                message = &quot;Failed to resend verification email. User may not exist or email is already verified.&quot;
+            });
+        }
+
+        return Ok(new { message = &quot;Verification email sent.&quot; });
+    }
+}
+
+public sealed record RegisterRequest(
+    string Email,
+    string Username,
+    string Password,
+    string ConfirmPassword);
+
+public sealed record VerifyEmailRequest(Guid UserId, string Token);
+public sealed record ResendVerificationRequest(string Email);
+</code></pre>
+<hr>
+<h2 id="2-login-and-store-tokens">2. Login and Store Tokens</h2>
+<p>API controller login plus typed client token handling.</p>
+<pre><code class="lang-csharp">using DainnUser.Application.DTOs.Authentication;
+using DainnUser.Core.Interfaces.Services;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route(&quot;api/account&quot;)]
+public class LoginController : ControllerBase
+{
+    private readonly IAuthenticationService _authenticationService;
+
+    public LoginController(IAuthenticationService authenticationService)
+    {
+        _authenticationService = authenticationService;
+    }
+
+    [HttpPost(&quot;login&quot;)]
+    public async Task&lt;IActionResult&gt; Login(
+        [FromBody] LoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _authenticationService.LoginAsync(
+            request.Email,
+            request.Password,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+
+        if (result.RequiresTwoFactor)
+        {
+            return Ok(new
+            {
+                requiresTwoFactor = true,
+                userId = result.User.Id,
+                message = &quot;Two-factor authentication required.&quot;
+            });
+        }
+
+        return Ok(new
+        {
+            accessToken = result.AccessToken,
+            refreshToken = result.RefreshToken,
+            expiresIn = result.ExpiresIn,
+            tokenType = &quot;Bearer&quot;,
+            user = result.User
+        });
+    }
+}
+
+public sealed record LoginRequest(string Email, string Password);
+
+public class DainnUserApiClient
+{
+    private readonly HttpClient _httpClient;
+    private string? _accessToken;
+    private string? _refreshToken;
+    private DateTime _accessTokenExpiresAt;
+
+    public DainnUserApiClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task LoginAsync(string email, string password)
+    {
+        var response = await _httpClient.PostAsJsonAsync(&quot;api/auth/login&quot;, new
+        {
+            email,
+            password
+        });
+
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;LoginResponse&gt;&gt;();
+        if (result?.Data is null)
+        {
+            throw new InvalidOperationException(&quot;Login response was empty.&quot;);
+        }
+
+        _accessToken = result.Data.AccessToken;
+        _refreshToken = result.Data.RefreshToken;
+        _accessTokenExpiresAt = DateTime.UtcNow.AddSeconds(result.Data.ExpiresIn);
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(&quot;Bearer&quot;, _accessToken);
+    }
+}
+</code></pre>
+<hr>
+<h2 id="3-refresh-tokens-automatically">3. Refresh Tokens Automatically</h2>
+<p>Use <code>DelegatingHandler</code> to refresh access tokens before expiry.</p>
+<pre><code class="lang-csharp">using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+
+public interface ITokenStore
+{
+    string? AccessToken { get; set; }
+    string? RefreshToken { get; set; }
+    DateTime AccessTokenExpiresAt { get; set; }
+}
+
+public class InMemoryTokenStore : ITokenStore
+{
+    public string? AccessToken { get; set; }
+    public string? RefreshToken { get; set; }
+    public DateTime AccessTokenExpiresAt { get; set; }
+}
+
+public class RefreshTokenHandler : DelegatingHandler
+{
+    private readonly ITokenStore _tokenStore;
+    private readonly IHttpClientFactory _httpClientFactory;
+
+    public RefreshTokenHandler(ITokenStore tokenStore, IHttpClientFactory httpClientFactory)
+    {
+        _tokenStore = tokenStore;
+        _httpClientFactory = httpClientFactory;
+    }
+
+    protected override async Task&lt;HttpResponseMessage&gt; SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(_tokenStore.AccessToken) &amp;&amp;
+            _tokenStore.AccessTokenExpiresAt &lt;= DateTime.UtcNow.AddMinutes(5))
+        {
+            await RefreshAccessTokenAsync(cancellationToken);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_tokenStore.AccessToken))
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue(&quot;Bearer&quot;, _tokenStore.AccessToken);
+        }
+
+        var response = await base.SendAsync(request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized &amp;&amp;
+            !string.IsNullOrWhiteSpace(_tokenStore.RefreshToken))
+        {
+            await RefreshAccessTokenAsync(cancellationToken);
+            request.Headers.Authorization = new AuthenticationHeaderValue(&quot;Bearer&quot;, _tokenStore.AccessToken);
+            response.Dispose();
+            return await base.SendAsync(request, cancellationToken);
+        }
+
+        return response;
+    }
+
+    private async Task RefreshAccessTokenAsync(CancellationToken cancellationToken)
+    {
+        var client = _httpClientFactory.CreateClient(&quot;DainnUserAnonymous&quot;);
+        var response = await client.PostAsJsonAsync(&quot;api/auth/refresh-token&quot;, new
+        {
+            refreshToken = _tokenStore.RefreshToken
+        }, cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;LoginResponse&gt;&gt;(cancellationToken);
+        if (result?.Data is null)
+        {
+            throw new InvalidOperationException(&quot;Refresh token response was empty.&quot;);
+        }
+
+        _tokenStore.AccessToken = result.Data.AccessToken;
+        _tokenStore.RefreshToken = result.Data.RefreshToken; // Store rotated refresh token
+        _tokenStore.AccessTokenExpiresAt = DateTime.UtcNow.AddSeconds(result.Data.ExpiresIn);
+    }
+}
+
+// Program.cs
+builder.Services.AddSingleton&lt;ITokenStore, InMemoryTokenStore&gt;();
+builder.Services.AddTransient&lt;RefreshTokenHandler&gt;();
+builder.Services.AddHttpClient(&quot;DainnUserAnonymous&quot;, client =&gt;
+{
+    client.BaseAddress = new Uri(&quot;https://localhost:5001/&quot;);
+});
+builder.Services.AddHttpClient(&quot;DainnUser&quot;, client =&gt;
+{
+    client.BaseAddress = new Uri(&quot;https://localhost:5001/&quot;);
+}).AddHttpMessageHandler&lt;RefreshTokenHandler&gt;();
+</code></pre>
+<hr>
+<h2 id="4-social-login-google">4. Social Login (Google)</h2>
+<p>Configure Google OAuth and expose endpoints.</p>
+<pre><code class="lang-csharp">// appsettings.json
+/*
+{
+  &quot;DainnUser&quot;: {
+    &quot;Features&quot;: {
+      &quot;EnableSocialLogin&quot;: true
+    },
+    &quot;OAuth&quot;: {
+      &quot;Google&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;your-google-client-id&quot;,
+        &quot;ClientSecret&quot;: &quot;your-google-client-secret&quot;,
+        &quot;CallbackPath&quot;: &quot;/signin-google&quot;
+      }
+    }
+  }
+}
+*/
+
+using DainnUser.Core.Interfaces.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route(&quot;api/social&quot;)]
+public class SocialLoginController : ControllerBase
+{
+    private readonly ISocialLoginService _socialLoginService;
+
+    public SocialLoginController(ISocialLoginService socialLoginService)
+    {
+        _socialLoginService = socialLoginService;
+    }
+
+    [HttpGet(&quot;google&quot;)]
+    public IActionResult GoogleLogin([FromQuery] string? returnUrl = &quot;/&quot;)
+    {
+        var properties = new AuthenticationProperties
+        {
+            RedirectUri = Url.Action(nameof(GoogleCallback), new { returnUrl })
+        };
+
+        return Challenge(properties, &quot;Google&quot;);
+    }
+
+    [HttpGet(&quot;google/callback&quot;)]
+    public async Task&lt;IActionResult&gt; GoogleCallback(
+        [FromQuery] string? returnUrl,
+        CancellationToken cancellationToken)
+    {
+        var result = await HttpContext.AuthenticateAsync(&quot;Google&quot;);
+        if (!result.Succeeded)
+        {
+            return Unauthorized(new { message = &quot;Google authentication failed.&quot; });
+        }
+
+        var email = result.Principal?.FindFirst(ClaimTypes.Email)?.Value;
+        var name = result.Principal?.FindFirst(ClaimTypes.Name)?.Value;
+        var providerKey = result.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(providerKey))
+        {
+            return BadRequest(new { message = &quot;Google account did not provide required claims.&quot; });
+        }
+
+        var loginResult = await _socialLoginService.LoginAsync(
+            provider: &quot;Google&quot;,
+            providerKey: providerKey,
+            email: email,
+            displayName: name,
+            cancellationToken: cancellationToken);
+
+        return Ok(new
+        {
+            accessToken = loginResult.AccessToken,
+            refreshToken = loginResult.RefreshToken,
+            expiresIn = loginResult.ExpiresIn,
+            returnUrl = returnUrl ?? &quot;/&quot;
+        });
+    }
+}
+</code></pre>
+<hr>
+<h2 id="5-password-reset-flow">5. Password Reset Flow</h2>
+<p>Forgot-password and reset-password endpoints.</p>
+<pre><code class="lang-csharp">using DainnUser.Core.Interfaces.Services;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route(&quot;api/account&quot;)]
+public class PasswordResetController : ControllerBase
+{
+    private readonly IAuthenticationService _authenticationService;
+    private readonly ILogger&lt;PasswordResetController&gt; _logger;
+
+    public PasswordResetController(
+        IAuthenticationService authenticationService,
+        ILogger&lt;PasswordResetController&gt; logger)
+    {
+        _authenticationService = authenticationService;
+        _logger = logger;
+    }
+
+    [HttpPost(&quot;forgot-password&quot;)]
+    public async Task&lt;IActionResult&gt; ForgotPassword(
+        [FromBody] ForgotPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        // Always returns OK to prevent user enumeration.
+        await _authenticationService.ForgotPasswordAsync(request.Email, cancellationToken);
+
+        _logger.LogInformation(&quot;Password reset requested for {Email}&quot;, request.Email);
+
+        return Ok(new
+        {
+            message = &quot;If an account with that email exists, a password reset link has been sent.&quot;
+        });
+    }
+
+    [HttpPost(&quot;reset-password&quot;)]
+    public async Task&lt;IActionResult&gt; ResetPassword(
+        [FromBody] ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.NewPassword != request.ConfirmPassword)
+        {
+            return BadRequest(new { message = &quot;Passwords do not match.&quot; });
+        }
+
+        var reset = await _authenticationService.ResetPasswordAsync(
+            request.Token,
+            request.NewPassword,
+            cancellationToken);
+
+        if (!reset)
+        {
+            return BadRequest(new { message = &quot;Invalid or expired password reset token.&quot; });
+        }
+
+        return Ok(new
+        {
+            message = &quot;Password reset successfully. All active sessions have been invalidated.&quot;
+        });
+    }
+}
+
+public sealed record ForgotPasswordRequest(string Email);
+public sealed record ResetPasswordRequest(string Token, string NewPassword, string ConfirmPassword);
+</code></pre>
+<hr>
+<h2 id="6-two-factor-authentication-setup">6. Two-Factor Authentication Setup</h2>
+<p>Setup, enable, and complete 2FA login.</p>
+<pre><code class="lang-csharp">using DainnUser.Core.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+[ApiController]
+[Route(&quot;api/account/2fa&quot;)]
+public class TwoFactorController : ControllerBase
+{
+    private readonly ITwoFactorService _twoFactorService;
+    private readonly IAuthenticationService _authenticationService;
+
+    public TwoFactorController(
+        ITwoFactorService twoFactorService,
+        IAuthenticationService authenticationService)
+    {
+        _twoFactorService = twoFactorService;
+        _authenticationService = authenticationService;
+    }
+
+    [Authorize]
+    [HttpPost(&quot;setup&quot;)]
+    public async Task&lt;IActionResult&gt; Setup(CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        var result = await _twoFactorService.SetupAsync(userId, cancellationToken);
+
+        return Ok(new
+        {
+            secret = result.Secret,
+            qrCodeUri = result.QrCodeUri,
+            message = &quot;Scan QR code with your authenticator app and confirm with a code.&quot;
+        });
+    }
+
+    [Authorize]
+    [HttpPost(&quot;enable&quot;)]
+    public async Task&lt;IActionResult&gt; Enable(
+        [FromBody] TwoFactorCodeRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        var backupCodes = await _twoFactorService.EnableAsync(userId, request.Code, cancellationToken);
+
+        return Ok(new
+        {
+            backupCodes,
+            message = &quot;Two-factor authentication enabled. Store backup codes securely.&quot;
+        });
+    }
+
+    [AllowAnonymous]
+    [HttpPost(&quot;login&quot;)]
+    public async Task&lt;IActionResult&gt; CompleteLogin(
+        [FromBody] CompleteTwoFactorLoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _authenticationService.CompleteTwoFactorLoginAsync(
+            request.UserId,
+            request.Code,
+            request.RememberDevice,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+
+        return Ok(new
+        {
+            accessToken = result.AccessToken,
+            refreshToken = result.RefreshToken,
+            expiresIn = result.ExpiresIn,
+            tokenType = &quot;Bearer&quot;
+        });
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(value, out var userId)
+            ? userId
+            : throw new UnauthorizedAccessException(&quot;Invalid user identifier.&quot;);
+    }
+}
+
+public sealed record TwoFactorCodeRequest(string Code);
+public sealed record CompleteTwoFactorLoginRequest(Guid UserId, string Code, bool RememberDevice);
+</code></pre>
+<hr>
+<h2 id="7-session-management">7. Session Management</h2>
+<p>List, revoke one, or revoke all user sessions.</p>
+<pre><code class="lang-csharp">using DainnUser.Core.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+[ApiController]
+[Authorize]
+[Route(&quot;api/sessions&quot;)]
+public class SessionsController : ControllerBase
+{
+    private readonly ISessionService _sessionService;
+
+    public SessionsController(ISessionService sessionService)
+    {
+        _sessionService = sessionService;
+    }
+
+    [HttpGet]
+    public async Task&lt;IActionResult&gt; List(CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        var sessions = await _sessionService.GetActiveSessionsAsync(userId, cancellationToken);
+
+        return Ok(sessions.Select(session =&gt; new
+        {
+            session.Id,
+            session.IpAddress,
+            session.UserAgent,
+            session.CreatedAt,
+            session.LastActivityAt,
+            session.ExpiresAt
+        }));
+    }
+
+    [HttpDelete(&quot;{sessionId:guid}&quot;)]
+    public async Task&lt;IActionResult&gt; Revoke(
+        Guid sessionId,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        await _sessionService.RevokeAsync(sessionId, userId, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpDelete]
+    public async Task&lt;IActionResult&gt; RevokeAll(CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        await _sessionService.RevokeAllAsync(userId, cancellationToken);
+        return NoContent();
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.Parse(value!);
+    }
+}
+</code></pre>
+<hr>
+<h2 id="8-avatar-upload">8. Avatar Upload</h2>
+<p>Secure avatar upload with size and content-type validation.</p>
+<pre><code class="lang-csharp">using DainnUser.Core.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+[ApiController]
+[Authorize]
+[Route(&quot;api/profile/avatar&quot;)]
+public class AvatarController : ControllerBase
+{
+    private static readonly HashSet&lt;string&gt; AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        &quot;image/jpeg&quot;,
+        &quot;image/png&quot;,
+        &quot;image/gif&quot;,
+        &quot;image/webp&quot;
+    };
+
+    private readonly IAvatarService _avatarService;
+
+    public AvatarController(IAvatarService avatarService)
+    {
+        _avatarService = avatarService;
+    }
+
+    [HttpPost]
+    [RequestSizeLimit(5 * 1024 * 1024)]
+    public async Task&lt;IActionResult&gt; Upload(
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = &quot;File is required.&quot; });
+        }
+
+        if (file.Length &gt; 5 * 1024 * 1024)
+        {
+            return BadRequest(new { message = &quot;File size must not exceed 5MB.&quot; });
+        }
+
+        if (!AllowedContentTypes.Contains(file.ContentType))
+        {
+            return BadRequest(new { message = &quot;Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.&quot; });
+        }
+
+        await using var stream = file.OpenReadStream();
+        var userId = GetCurrentUserId();
+        var avatarUrl = await _avatarService.UploadAsync(
+            userId,
+            stream,
+            file.FileName,
+            file.ContentType,
+            cancellationToken);
+
+        return Ok(new
+        {
+            avatarUrl,
+            message = &quot;Avatar uploaded successfully.&quot;
+        });
+    }
+
+    [HttpDelete]
+    public async Task&lt;IActionResult&gt; Delete(CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        await _avatarService.DeleteAsync(userId, cancellationToken);
+        return Ok(new { message = &quot;Avatar deleted successfully.&quot; });
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.Parse(value!);
+    }
+}
+</code></pre>
+<hr>
+<h2 id="9-admin-create-user">9. Admin Create User</h2>
+<p>Administrator creates user and assigns roles.</p>
+<pre><code class="lang-csharp">using DainnUser.Core.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Authorize(Roles = &quot;Administrator&quot;)]
+[Route(&quot;api/admin/users&quot;)]
+public class AdminUsersController : ControllerBase
+{
+    private readonly IUserManagementService _userManagementService;
+    private readonly IRoleService _roleService;
+    private readonly ILogger&lt;AdminUsersController&gt; _logger;
+
+    public AdminUsersController(
+        IUserManagementService userManagementService,
+        IRoleService roleService,
+        ILogger&lt;AdminUsersController&gt; logger)
+    {
+        _userManagementService = userManagementService;
+        _roleService = roleService;
+        _logger = logger;
+    }
+
+    [HttpPost]
+    public async Task&lt;IActionResult&gt; Create(
+        [FromBody] AdminCreateUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.Password != request.ConfirmPassword)
+        {
+            return BadRequest(new { message = &quot;Passwords do not match.&quot; });
+        }
+
+        var user = await _userManagementService.CreateUserAsync(
+            request.Email,
+            request.Username,
+            request.Password,
+            emailVerified: request.EmailVerified,
+            cancellationToken);
+
+        foreach (var roleName in request.Roles.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            await _roleService.AddUserToRoleAsync(user.Id, roleName, cancellationToken);
+        }
+
+        _logger.LogInformation(&quot;Administrator {AdminId} created user {UserId}&quot;,
+            User.Identity?.Name,
+            user.Id);
+
+        return Created($&quot;/api/admin/users/{user.Id}&quot;, new
+        {
+            user.Id,
+            user.Email,
+            user.Username,
+            roles = request.Roles,
+            message = &quot;User created successfully.&quot;
+        });
+    }
+}
+
+public sealed record AdminCreateUserRequest(
+    string Email,
+    string Username,
+    string Password,
+    string ConfirmPassword,
+    bool EmailVerified,
+    IReadOnlyList&lt;string&gt; Roles);
+</code></pre>
+<hr>
+<h2 id="10-admin-lock-and-unlock-user">10. Admin Lock and Unlock User</h2>
+<p>Administrative account lock and unlock endpoints.</p>
+<pre><code class="lang-csharp">using DainnUser.Core.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+[ApiController]
+[Authorize(Roles = &quot;Administrator&quot;)]
+[Route(&quot;api/admin/users&quot;)]
+public class AdminLockController : ControllerBase
+{
+    private readonly IUserManagementService _userManagementService;
+    private readonly ILogger&lt;AdminLockController&gt; _logger;
+
+    public AdminLockController(
+        IUserManagementService userManagementService,
+        ILogger&lt;AdminLockController&gt; logger)
+    {
+        _userManagementService = userManagementService;
+        _logger = logger;
+    }
+
+    [HttpPost(&quot;{userId:guid}/lock&quot;)]
+    public async Task&lt;IActionResult&gt; Lock(
+        Guid userId,
+        [FromBody] LockUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (userId == currentUserId)
+        {
+            return BadRequest(new { message = &quot;Cannot lock your own account.&quot; });
+        }
+
+        await _userManagementService.LockUserAsync(
+            userId,
+            request.Reason,
+            cancellationToken);
+
+        _logger.LogWarning(&quot;Administrator {AdminId} locked user {UserId}. Reason: {Reason}&quot;,
+            currentUserId,
+            userId,
+            request.Reason);
+
+        return Ok(new { message = &quot;User locked successfully.&quot; });
+    }
+
+    [HttpPost(&quot;{userId:guid}/unlock&quot;)]
+    public async Task&lt;IActionResult&gt; Unlock(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        await _userManagementService.UnlockUserAsync(userId, cancellationToken);
+
+        _logger.LogInformation(&quot;Administrator {AdminId} unlocked user {UserId}&quot;,
+            GetCurrentUserId(),
+            userId);
+
+        return Ok(new { message = &quot;User unlocked successfully.&quot; });
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.Parse(value!);
+    }
+}
+
+public sealed record LockUserRequest(string Reason);
+</code></pre>
+<hr>
+<h2 id="11-custom-registration-validation">11. Custom Registration Validation</h2>
+<p>Restrict registration to company emails and validate username policy.</p>
+<pre><code class="lang-csharp">using DainnUser.Application.DTOs.Authentication;
+using FluentValidation;
+
+public class CompanyRegisterValidator : AbstractValidator&lt;RegisterDto&gt;
+{
+    public CompanyRegisterValidator()
+    {
+        RuleFor(x =&gt; x.Email)
+            .NotEmpty()
+            .EmailAddress()
+            .MaximumLength(255)
+            .Must(BeCompanyEmail)
+            .WithMessage(&quot;Only @mycompany.com email addresses are allowed.&quot;);
+
+        RuleFor(x =&gt; x.Username)
+            .NotEmpty()
+            .MinimumLength(3)
+            .MaximumLength(50)
+            .Matches(&quot;^[a-zA-Z][a-zA-Z0-9_-]*$&quot;)
+            .WithMessage(&quot;Username must start with a letter and contain only letters, numbers, underscore, or dash.&quot;);
+
+        RuleFor(x =&gt; x.Password)
+            .NotEmpty()
+            .MinimumLength(12)
+            .Matches(&quot;[A-Z]&quot;).WithMessage(&quot;Password must contain at least one uppercase letter.&quot;)
+            .Matches(&quot;[a-z]&quot;).WithMessage(&quot;Password must contain at least one lowercase letter.&quot;)
+            .Matches(&quot;[0-9]&quot;).WithMessage(&quot;Password must contain at least one digit.&quot;)
+            .Matches(&quot;[^a-zA-Z0-9]&quot;).WithMessage(&quot;Password must contain at least one special character.&quot;);
+
+        RuleFor(x =&gt; x.ConfirmPassword)
+            .Equal(x =&gt; x.Password)
+            .WithMessage(&quot;Passwords do not match.&quot;);
+    }
+
+    private static bool BeCompanyEmail(string email)
+    {
+        return email.EndsWith(&quot;@mycompany.com&quot;, StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+// Program.cs: replace default validator
+builder.Services.AddScoped&lt;IValidator&lt;RegisterDto&gt;, CompanyRegisterValidator&gt;();
+</code></pre>
+<hr>
+<h2 id="12-custom-email-service">12. Custom Email Service</h2>
+<p>Replace default SMTP email service with SendGrid or custom provider.</p>
+<pre><code class="lang-csharp">using DainnUser.Core.Interfaces.Services;
+using Microsoft.Extensions.Options;
+using SendGrid;
+using SendGrid.Helpers.Mail;
+
+public class SendGridEmailOptions
+{
+    public string ApiKey { get; set; } = string.Empty;
+    public string FromEmail { get; set; } = string.Empty;
+    public string FromName { get; set; } = &quot;DainnUser&quot;;
+}
+
+public class SendGridEmailService : IEmailService
+{
+    private readonly ISendGridClient _client;
+    private readonly SendGridEmailOptions _options;
+    private readonly ILogger&lt;SendGridEmailService&gt; _logger;
+
+    public SendGridEmailService(
+        ISendGridClient client,
+        IOptions&lt;SendGridEmailOptions&gt; options,
+        ILogger&lt;SendGridEmailService&gt; logger)
+    {
+        _client = client;
+        _options = options.Value;
+        _logger = logger;
+    }
+
+    public async Task SendEmailAsync(
+        string to,
+        string subject,
+        string htmlBody,
+        CancellationToken cancellationToken = default)
+    {
+        var from = new EmailAddress(_options.FromEmail, _options.FromName);
+        var recipient = new EmailAddress(to);
+        var message = MailHelper.CreateSingleEmail(
+            from,
+            recipient,
+            subject,
+            plainTextContent: null,
+            htmlContent: htmlBody);
+
+        var response = await _client.SendEmailAsync(message, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Body.ReadAsStringAsync(cancellationToken);
+            _logger.LogError(&quot;SendGrid failed with status {StatusCode}: {Body}&quot;,
+                response.StatusCode,
+                body);
+            throw new InvalidOperationException(&quot;Email delivery failed.&quot;);
+        }
+    }
+}
+
+// Program.cs
+builder.Services.Configure&lt;SendGridEmailOptions&gt;(
+    builder.Configuration.GetSection(&quot;DainnUser:Email:SendGrid&quot;));
+builder.Services.AddSingleton&lt;ISendGridClient&gt;(sp =&gt;
+{
+    var options = sp.GetRequiredService&lt;IOptions&lt;SendGridEmailOptions&gt;&gt;().Value;
+    return new SendGridClient(options.ApiKey);
+});
+builder.Services.AddScoped&lt;IEmailService, SendGridEmailService&gt;();
+</code></pre>
+<hr>
+<h2 id="13-custom-user-entity">13. Custom User Entity</h2>
+<p>Extend default user with business fields.</p>
+<pre><code class="lang-csharp">using DainnUser.Core.Entities;
+using DainnUser.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+public class MyAppUser : User
+{
+    public string? CompanyName { get; set; }
+    public string? Department { get; set; }
+    public DateTime? HireDate { get; set; }
+    public string? EmployeeId { get; set; }
+}
+
+public class MyAppUserConfiguration : IEntityTypeConfiguration&lt;MyAppUser&gt;
+{
+    public void Configure(EntityTypeBuilder&lt;MyAppUser&gt; builder)
+    {
+        builder.Property(x =&gt; x.CompanyName)
+            .HasMaxLength(200);
+
+        builder.Property(x =&gt; x.Department)
+            .HasMaxLength(100);
+
+        builder.Property(x =&gt; x.EmployeeId)
+            .HasMaxLength(50);
+
+        builder.HasIndex(x =&gt; x.EmployeeId)
+            .IsUnique()
+            .HasFilter(&quot;EmployeeId IS NOT NULL&quot;);
+    }
+}
+
+// Program.cs
+builder.Services.AddDainnUser&lt;MyAppUser&gt;(builder.Configuration);
+</code></pre>
+<hr>
+<h2 id="14-activity-audit-query">14. Activity Audit Query</h2>
+<p>Show recent user security activity.</p>
+<pre><code class="lang-csharp">using DainnUser.Core.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+[ApiController]
+[Authorize]
+[Route(&quot;api/activity&quot;)]
+public class ActivityController : ControllerBase
+{
+    private readonly IActivityService _activityService;
+
+    public ActivityController(IActivityService activityService)
+    {
+        _activityService = activityService;
+    }
+
+    [HttpGet(&quot;recent&quot;)]
+    public async Task&lt;IActionResult&gt; GetRecentActivity(
+        [FromQuery] int days = 30,
+        CancellationToken cancellationToken = default)
+    {
+        days = Math.Clamp(days, 1, 90);
+        var userId = GetCurrentUserId();
+
+        var activities = await _activityService.GetActivityLogAsync(
+            userId,
+            startDate: DateTime.UtcNow.AddDays(-days),
+            endDate: DateTime.UtcNow,
+            cancellationToken: cancellationToken);
+
+        return Ok(activities.Select(activity =&gt; new
+        {
+            activity.Id,
+            activity.Action,
+            activity.IpAddress,
+            activity.UserAgent,
+            activity.CreatedAt
+        }));
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.Parse(value!);
+    }
+}
+</code></pre>
+<hr>
+<h2 id="see-also">See Also</h2>
+<ul>
+<li><a href="getting-started.html">Getting Started</a></li>
+<li><a href="api-endpoints.html">API Endpoints</a></li>
+<li><a href="configuration.html">Configuration Reference</a></li>
+<li><a href="security.html">Security Guide</a></li>
+<li><a href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/code-examples.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          © 2026 DainnUser. Licensed under MIT.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

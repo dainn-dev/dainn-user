@@ -1,0 +1,429 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Getting Started with DainnUser | DainnUser Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Getting Started with DainnUser | DainnUser Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/getting-started.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="">
+            
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="getting-started-with-dainnuser">Getting Started with DainnUser</h1>
+
+<p>Quick start guide để integrate DainnUser library vào .NET application của bạn.</p>
+<h2 id="installation">Installation</h2>
+<h3 id="via-nuget-package-manager">Via NuGet Package Manager</h3>
+<pre><code class="lang-bash"># Install meta-package (includes all components)
+dotnet add package DainnUser
+
+# Or install specific packages
+dotnet add package DainnUser.Core
+dotnet add package DainnUser.Infrastructure
+dotnet add package DainnUser.Application
+dotnet add package DainnUser.Api
+dotnet add package DainnUser.Web
+</code></pre>
+<h3 id="via-package-manager-console">Via Package Manager Console</h3>
+<pre><code class="lang-powershell">Install-Package DainnUser
+</code></pre>
+<h2 id="basic-setup">Basic Setup</h2>
+<h3 id="1-configure-appsettingsjson">1. Configure appsettings.json</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SqlServer&quot;,
+      &quot;ConnectionString&quot;: &quot;Server=localhost;Database=MyApp;Trusted_Connection=True;&quot;
+    },
+    &quot;Jwt&quot;: {
+      &quot;SecretKey&quot;: &quot;your-secret-key-min-32-characters-long&quot;,
+      &quot;Issuer&quot;: &quot;https://yourdomain.com&quot;,
+      &quot;Audience&quot;: &quot;https://yourdomain.com&quot;,
+      &quot;ExpirationMinutes&quot;: 60
+    },
+    &quot;Email&quot;: {
+      &quot;Provider&quot;: &quot;Smtp&quot;,
+      &quot;SmtpHost&quot;: &quot;smtp.gmail.com&quot;,
+      &quot;SmtpPort&quot;: 587,
+      &quot;SmtpUsername&quot;: &quot;your-email@gmail.com&quot;,
+      &quot;SmtpPassword&quot;: &quot;your-password&quot;,
+      &quot;FromEmail&quot;: &quot;noreply@yourdomain.com&quot;,
+      &quot;FromName&quot;: &quot;Your App&quot;
+    },
+    &quot;Security&quot;: {
+      &quot;RequireEmailVerification&quot;: true,
+      &quot;EnableTwoFactor&quot;: true,
+      &quot;PasswordRequirements&quot;: {
+        &quot;RequiredLength&quot;: 12
+      }
+    }
+  }
+}
+</code></pre>
+<h3 id="2-register-services-in-programcs">2. Register Services in Program.cs</h3>
+<pre><code class="lang-csharp">using DainnUser.Api.Extensions;
+using DainnUser.Infrastructure.Extensions;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add DainnUser services
+builder.Services.AddDainnUser(builder.Configuration, options =&gt;
+{
+    // Optional: customize options
+    options.EnableSocialLogin = true;
+    options.EnableTwoFactor = true;
+});
+
+// Add controllers
+builder.Services.AddControllers();
+
+var app = builder.Build();
+
+// Use DainnUser middleware
+app.UseDainnUser();
+
+// Standard middleware
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
+</code></pre>
+<h3 id="3-run-migrations">3. Run Migrations</h3>
+<pre><code class="lang-bash"># Apply database migrations
+dotnet ef database update --project src/YourApp --context DainnUserDbContext
+</code></pre>
+<h2 id="quick-examples">Quick Examples</h2>
+<h3 id="register-a-new-user">Register a New User</h3>
+<pre><code class="lang-csharp">[ApiController]
+[Route(&quot;api/[controller]&quot;)]
+public class AccountController : ControllerBase
+{
+    private readonly IAuthenticationService _authService;
+
+    public AccountController(IAuthenticationService authService)
+    {
+        _authService = authService;
+    }
+
+    [HttpPost(&quot;register&quot;)]
+    public async Task&lt;IActionResult&gt; Register([FromBody] RegisterDto dto)
+    {
+        var result = await _authService.RegisterAsync(dto);
+        
+        if (result.Succeeded)
+            return Ok(new { message = &quot;Registration successful. Please check your email.&quot; });
+        
+        return BadRequest(result.Errors);
+    }
+}
+</code></pre>
+<h3 id="login">Login</h3>
+<pre><code class="lang-csharp">[HttpPost(&quot;login&quot;)]
+public async Task&lt;IActionResult&gt; Login([FromBody] LoginDto dto)
+{
+    var result = await _authService.LoginAsync(dto);
+    
+    if (result.Succeeded)
+        return Ok(new 
+        { 
+            token = result.Token,
+            refreshToken = result.RefreshToken,
+            user = result.User
+        });
+    
+    return Unauthorized(new { message = &quot;Invalid credentials&quot; });
+}
+</code></pre>
+<h3 id="get-current-user-profile">Get Current User Profile</h3>
+<pre><code class="lang-csharp">[Authorize]
+[HttpGet(&quot;profile&quot;)]
+public async Task&lt;IActionResult&gt; GetProfile()
+{
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var profile = await _profileService.GetProfileAsync(userId);
+    
+    return Ok(profile);
+}
+</code></pre>
+<h3 id="enable-2fa">Enable 2FA</h3>
+<pre><code class="lang-csharp">[Authorize]
+[HttpPost(&quot;2fa/enable&quot;)]
+public async Task&lt;IActionResult&gt; EnableTwoFactor()
+{
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var result = await _twoFactorService.EnableAsync(userId);
+    
+    return Ok(new 
+    { 
+        qrCodeUrl = result.QrCodeUrl,
+        manualEntryKey = result.ManualEntryKey
+    });
+}
+</code></pre>
+<h2 id="using-with-razor-pages--mvc">Using with Razor Pages / MVC</h2>
+<h3 id="1-add-dainnuserweb-package">1. Add DainnUser.Web Package</h3>
+<pre><code class="lang-bash">dotnet add package DainnUser.Web
+</code></pre>
+<h3 id="2-register-services">2. Register Services</h3>
+<pre><code class="lang-csharp">builder.Services.AddDainnUser(builder.Configuration);
+builder.Services.AddDainnUserWeb(); // Add web components
+</code></pre>
+<h3 id="3-use-components-in-views">3. Use Components in Views</h3>
+<pre><code class="lang-razor">@using DainnUser.Web.Components
+
+&lt;DainnUser.Web.Components.LoginForm 
+    OnSubmit=&quot;HandleLogin&quot;
+    EnableSocialLogin=&quot;true&quot; /&gt;
+</code></pre>
+<h2 id="using-with-blazor">Using with Blazor</h2>
+<pre><code class="lang-razor">@page &quot;/login&quot;
+@using DainnUser.Web.Components
+@using DainnUser.Web.Models
+
+&lt;LoginForm 
+    OnSubmit=&quot;@HandleLogin&quot;
+    EnableSocialLogin=&quot;true&quot;
+    EnableRememberMe=&quot;true&quot; /&gt;
+
+@code {
+    private async Task HandleLogin(LoginFormModel model)
+    {
+        // Call your API or application service, then navigate on success.
+        NavigationManager.NavigateTo(&quot;/dashboard&quot;);
+    }
+}
+</code></pre>
+<h2 id="configuration-options">Configuration Options</h2>
+<h3 id="enabledisable-features">Enable/Disable Features</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Features&quot;: {
+      &quot;EnableRegistration&quot;: true,
+      &quot;EnableSocialLogin&quot;: true,
+      &quot;EnableTwoFactor&quot;: true,
+      &quot;EnableEmailVerification&quot;: true,
+      &quot;EnablePhoneVerification&quot;: false,
+      &quot;EnableRecaptcha&quot;: true
+    }
+  }
+}
+</code></pre>
+<h3 id="social-login-setup">Social Login Setup</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;OAuth&quot;: {
+      &quot;Google&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;your-google-client-id&quot;,
+        &quot;ClientSecret&quot;: &quot;your-google-client-secret&quot;
+      },
+      &quot;Facebook&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;AppId&quot;: &quot;your-facebook-app-id&quot;,
+        &quot;AppSecret&quot;: &quot;your-facebook-app-secret&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<h3 id="database-provider-setup">Database Provider Setup</h3>
+<p><strong>SQL Server:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SqlServer&quot;,
+      &quot;ConnectionString&quot;: &quot;Server=localhost;Database=MyApp;Trusted_Connection=True;&quot;
+    }
+  }
+}
+</code></pre>
+<p><strong>PostgreSQL:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;PostgreSQL&quot;,
+      &quot;ConnectionString&quot;: &quot;Host=localhost;Database=myapp;Username=postgres;Password=password&quot;
+    }
+  }
+}
+</code></pre>
+<p><strong>MySQL:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;MySQL&quot;,
+      &quot;ConnectionString&quot;: &quot;Server=localhost;Database=myapp;User=root;Password=password;&quot;
+    }
+  }
+}
+</code></pre>
+<p><strong>SQLite:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SQLite&quot;,
+      &quot;ConnectionString&quot;: &quot;Data Source=myapp.db&quot;
+    }
+  }
+}
+</code></pre>
+<h2 id="customization">Customization</h2>
+<h3 id="override-default-services">Override Default Services</h3>
+<pre><code class="lang-csharp">builder.Services.AddDainnUser(builder.Configuration);
+
+// Override email service with custom implementation
+builder.Services.AddScoped&lt;IEmailService, MyCustomEmailService&gt;();
+</code></pre>
+<h3 id="extend-user-entity">Extend User Entity</h3>
+<pre><code class="lang-csharp">public class MyApplicationUser : DainnUser.Core.Entities.User
+{
+    public string CompanyName { get; set; }
+    public string Department { get; set; }
+}
+
+// Register custom user
+builder.Services.AddDainnUser&lt;MyApplicationUser&gt;(builder.Configuration);
+</code></pre>
+<h3 id="custom-validation-rules">Custom Validation Rules</h3>
+<pre><code class="lang-csharp">public class CustomRegisterValidator : AbstractValidator&lt;RegisterDto&gt;
+{
+    public CustomRegisterValidator()
+    {
+        // Add custom rules
+        RuleFor(x =&gt; x.Email)
+            .Must(BeCompanyEmail)
+            .WithMessage(&quot;Only company emails are allowed&quot;);
+    }
+    
+    private bool BeCompanyEmail(string email)
+    {
+        return email.EndsWith(&quot;@mycompany.com&quot;);
+    }
+}
+
+// Register custom validator
+builder.Services.AddScoped&lt;IValidator&lt;RegisterDto&gt;, CustomRegisterValidator&gt;();
+</code></pre>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li><a href="../configuration.md">Configuration Guide</a> — Detailed configuration options</li>
+<li><a href="../api-reference.md">API Reference</a> — Complete API documentation</li>
+<li><a href="security.html">Security Guide</a> — Security best practices</li>
+<li><a href="migrations.html">Migration Guide</a> — Database migrations guide</li>
+<li><a href="../../samples/">Samples</a> — Complete sample applications</li>
+</ul>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<p><strong>Issue: Database migrations not applying</strong></p>
+<pre><code class="lang-bash"># Ensure you're targeting the correct project
+dotnet ef database update --project src/YourApp --context DainnUserDbContext
+</code></pre>
+<p><strong>Issue: JWT authentication not working</strong></p>
+<pre><code class="lang-csharp">// Ensure UseAuthentication() is called before UseAuthorization()
+app.UseAuthentication();
+app.UseAuthorization();
+</code></pre>
+<p><strong>Issue: Email not sending</strong></p>
+<ul>
+<li>Check SMTP credentials in appsettings.json</li>
+<li>Verify firewall allows SMTP port (587/465)</li>
+<li>Check email service logs</li>
+</ul>
+<h2 id="support">Support</h2>
+<ul>
+<li>GitHub Issues: <a href="https://github.com/yourorg/dainnuser/issues">https://github.com/yourorg/dainnuser/issues</a></li>
+<li>Documentation: <a href="https://docs.dainnuser.com">https://docs.dainnuser.com</a></li>
+<li>Email: support@dainnuser.com</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/getting-started.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          © 2026 DainnUser. Licensed under MIT.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

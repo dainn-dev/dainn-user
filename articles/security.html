@@ -1,0 +1,488 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Security Guide — DainnUser | DainnUser Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Security Guide — DainnUser | DainnUser Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/security.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="">
+            
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="security-guide--dainnuser">Security Guide — DainnUser</h1>
+
+<p>Best practices và security features của DainnUser library.</p>
+<h2 id="owasp-top-10-compliance">OWASP Top 10 Compliance</h2>
+<p>DainnUser được thiết kế để comply với OWASP Top 10 2021 out-of-the-box.</p>
+<h3 id="a01-broken-access-control-">A01: Broken Access Control ✓</h3>
+<p><strong>Built-in Protection:</strong></p>
+<ul>
+<li>Role-Based Access Control (RBAC)</li>
+<li>Policy-based authorization</li>
+<li>Resource ownership validation</li>
+<li>Automatic authorization checks</li>
+</ul>
+<p><strong>Usage:</strong></p>
+<pre><code class="lang-csharp">[Authorize(Roles = &quot;Admin&quot;)]
+public async Task&lt;IActionResult&gt; DeleteUser(int id)
+{
+    // Additional ownership check
+    if (!await _authService.CanDeleteUserAsync(User, id))
+        return Forbid();
+    
+    await _userService.DeleteAsync(id);
+    return NoContent();
+}
+</code></pre>
+<h3 id="a02-cryptographic-failures-">A02: Cryptographic Failures ✓</h3>
+<p><strong>Built-in Protection:</strong></p>
+<ul>
+<li>PBKDF2/Argon2 password hashing</li>
+<li>Secure token generation</li>
+<li>Data Protection API integration</li>
+<li>TLS/HTTPS enforcement</li>
+</ul>
+<p><strong>Configuration:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Security&quot;: {
+      &quot;PasswordHasher&quot;: &quot;Argon2&quot;, // or &quot;PBKDF2&quot;
+      &quot;RequireHttps&quot;: true
+    }
+  }
+}
+</code></pre>
+<h3 id="a03-injection-">A03: Injection ✓</h3>
+<p><strong>Built-in Protection:</strong></p>
+<ul>
+<li>Parameterized queries (EF Core)</li>
+<li>Input validation (FluentValidation)</li>
+<li>Output encoding</li>
+<li>SQL injection prevention</li>
+</ul>
+<p><strong>All database queries use EF Core parameterization:</strong></p>
+<pre><code class="lang-csharp">// Safe - parameterized by EF Core
+var user = await _context.Users
+    .Where(u =&gt; u.Email == email)
+    .FirstOrDefaultAsync();
+</code></pre>
+<h3 id="a04-insecure-design-">A04: Insecure Design ✓</h3>
+<p><strong>Built-in Protection:</strong></p>
+<ul>
+<li>Secure by default configuration</li>
+<li>Rate limiting</li>
+<li>Account lockout</li>
+<li>Session timeout</li>
+<li>Brute force protection</li>
+</ul>
+<p><strong>Configuration:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Security&quot;: {
+      &quot;Lockout&quot;: {
+        &quot;MaxFailedAccessAttempts&quot;: 5,
+        &quot;LockoutDurationMinutes&quot;: 15
+      },
+      &quot;RateLimiting&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;MaxRequestsPerMinute&quot;: 60
+      }
+    }
+  }
+}
+</code></pre>
+<h3 id="a05-security-misconfiguration-">A05: Security Misconfiguration ✓</h3>
+<p><strong>Built-in Protection:</strong></p>
+<ul>
+<li>Secure defaults</li>
+<li>Configuration validation on startup</li>
+<li>Security headers</li>
+<li>Error message sanitization</li>
+</ul>
+<p><strong>Security Headers:</strong></p>
+<pre><code class="lang-csharp">app.Use(async (context, next) =&gt;
+{
+    context.Response.Headers.Add(&quot;X-Content-Type-Options&quot;, &quot;nosniff&quot;);
+    context.Response.Headers.Add(&quot;X-Frame-Options&quot;, &quot;DENY&quot;);
+    context.Response.Headers.Add(&quot;X-XSS-Protection&quot;, &quot;1; mode=block&quot;);
+    context.Response.Headers.Add(&quot;Referrer-Policy&quot;, &quot;no-referrer&quot;);
+    await next();
+});
+</code></pre>
+<h3 id="a06-vulnerable-and-outdated-components-">A06: Vulnerable and Outdated Components ✓</h3>
+<p><strong>Best Practices:</strong></p>
+<ul>
+<li>Keep DainnUser updated</li>
+<li>Regular dependency audits</li>
+<li>Automated vulnerability scanning</li>
+</ul>
+<p><strong>Check for vulnerabilities:</strong></p>
+<pre><code class="lang-bash">dotnet list package --vulnerable --include-transitive
+</code></pre>
+<h3 id="a07-identification-and-authentication-failures-">A07: Identification and Authentication Failures ✓</h3>
+<p><strong>Built-in Protection:</strong></p>
+<ul>
+<li>Strong password requirements</li>
+<li>2FA support (TOTP)</li>
+<li>Session management</li>
+<li>Login history tracking</li>
+<li>Credential stuffing protection</li>
+</ul>
+<p><strong>Password Requirements:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Security&quot;: {
+      &quot;PasswordRequirements&quot;: {
+        &quot;RequireDigit&quot;: true,
+        &quot;RequireLowercase&quot;: true,
+        &quot;RequireUppercase&quot;: true,
+        &quot;RequireNonAlphanumeric&quot;: true,
+        &quot;RequiredLength&quot;: 12,
+        &quot;RequiredUniqueChars&quot;: 4
+      }
+    }
+  }
+}
+</code></pre>
+<h3 id="a08-software-and-data-integrity-failures-">A08: Software and Data Integrity Failures ✓</h3>
+<p><strong>Built-in Protection:</strong></p>
+<ul>
+<li>Signed NuGet packages</li>
+<li>Integrity checks</li>
+<li>Audit logging</li>
+</ul>
+<h3 id="a09-security-logging-and-monitoring-failures-">A09: Security Logging and Monitoring Failures ✓</h3>
+<p><strong>Built-in Protection:</strong></p>
+<ul>
+<li>Login attempt logging</li>
+<li>Failed authorization logging</li>
+<li>Activity tracking</li>
+<li>Audit trail</li>
+</ul>
+<p><strong>Logging:</strong></p>
+<pre><code class="lang-csharp">// Automatic logging of security events
+_logger.LogWarning(&quot;Failed login attempt for user {Email} from {IpAddress}&quot;, 
+    email, ipAddress);
+</code></pre>
+<h3 id="a10-server-side-request-forgery-ssrf-">A10: Server-Side Request Forgery (SSRF) ✓</h3>
+<p><strong>Built-in Protection:</strong></p>
+<ul>
+<li>URL validation</li>
+<li>Whitelist external domains</li>
+<li>Input sanitization</li>
+</ul>
+<h2 id="authentication-security">Authentication Security</h2>
+<h3 id="jwt-token-security">JWT Token Security</h3>
+<p><strong>Best Practices:</strong></p>
+<ul>
+<li>Short expiration time (15-60 minutes)</li>
+<li>Use refresh tokens</li>
+<li>Rotate refresh tokens</li>
+<li>Store tokens securely (HttpOnly cookies)</li>
+</ul>
+<p><strong>Configuration:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Jwt&quot;: {
+      &quot;ExpirationMinutes&quot;: 15,
+      &quot;RefreshTokenExpirationDays&quot;: 7,
+      &quot;RotateRefreshTokens&quot;: true
+    }
+  }
+}
+</code></pre>
+<h3 id="two-factor-authentication-2fa">Two-Factor Authentication (2FA)</h3>
+<p><strong>Enable 2FA:</strong></p>
+<pre><code class="lang-csharp">var result = await _twoFactorService.EnableAsync(userId);
+// User scans QR code with authenticator app
+</code></pre>
+<p><strong>Verify 2FA:</strong></p>
+<pre><code class="lang-csharp">var isValid = await _twoFactorService.VerifyAsync(userId, code);
+</code></pre>
+<h3 id="social-login-security">Social Login Security</h3>
+<p><strong>OAuth Configuration:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;OAuth&quot;: {
+      &quot;Google&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;...&quot;,
+        &quot;ClientSecret&quot;: &quot;...&quot;,
+        &quot;CallbackPath&quot;: &quot;/signin-google&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<p><strong>Security Notes:</strong></p>
+<ul>
+<li>Always use HTTPS for OAuth callbacks</li>
+<li>Validate state parameter</li>
+<li>Verify token signatures</li>
+<li>Use PKCE for mobile apps</li>
+</ul>
+<h2 id="session-management">Session Management</h2>
+<h3 id="secure-session-configuration">Secure Session Configuration</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Session&quot;: {
+      &quot;TimeoutMinutes&quot;: 30,
+      &quot;SlidingExpiration&quot;: true,
+      &quot;MaxActiveSessions&quot;: 5
+    }
+  }
+}
+</code></pre>
+<h3 id="session-revocation">Session Revocation</h3>
+<pre><code class="lang-csharp">// Revoke specific session
+await _sessionService.RevokeAsync(sessionId);
+
+// Revoke all sessions for user
+await _sessionService.RevokeAllAsync(userId);
+</code></pre>
+<h2 id="input-validation">Input Validation</h2>
+<h3 id="fluentvalidation-rules">FluentValidation Rules</h3>
+<pre><code class="lang-csharp">public class RegisterDtoValidator : AbstractValidator&lt;RegisterDto&gt;
+{
+    public RegisterDtoValidator()
+    {
+        RuleFor(x =&gt; x.Email)
+            .NotEmpty()
+            .EmailAddress()
+            .MaximumLength(255);
+        
+        RuleFor(x =&gt; x.Password)
+            .NotEmpty()
+            .MinimumLength(12)
+            .Matches(@&quot;[A-Z]&quot;).WithMessage(&quot;Must contain uppercase&quot;)
+            .Matches(@&quot;[a-z]&quot;).WithMessage(&quot;Must contain lowercase&quot;)
+            .Matches(@&quot;[0-9]&quot;).WithMessage(&quot;Must contain digit&quot;)
+            .Matches(@&quot;[\W]&quot;).WithMessage(&quot;Must contain special character&quot;);
+        
+        RuleFor(x =&gt; x.Username)
+            .NotEmpty()
+            .MinimumLength(3)
+            .MaximumLength(50)
+            .Matches(@&quot;^[a-zA-Z0-9_-]+$&quot;)
+            .WithMessage(&quot;Username can only contain letters, numbers, underscore, and dash&quot;);
+    }
+}
+</code></pre>
+<h2 id="rate-limiting">Rate Limiting</h2>
+<h3 id="configuration">Configuration</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;RateLimiting&quot;: {
+      &quot;Enabled&quot;: true,
+      &quot;Rules&quot;: [
+        {
+          &quot;Endpoint&quot;: &quot;/api/auth/login&quot;,
+          &quot;MaxRequests&quot;: 5,
+          &quot;WindowSeconds&quot;: 60
+        },
+        {
+          &quot;Endpoint&quot;: &quot;/api/auth/register&quot;,
+          &quot;MaxRequests&quot;: 3,
+          &quot;WindowSeconds&quot;: 300
+        }
+      ]
+    }
+  }
+}
+</code></pre>
+<h2 id="csrf-protection">CSRF Protection</h2>
+<h3 id="enable-anti-forgery-tokens">Enable Anti-Forgery Tokens</h3>
+<pre><code class="lang-csharp">builder.Services.AddAntiforgery(options =&gt;
+{
+    options.HeaderName = &quot;X-CSRF-TOKEN&quot;;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+});
+</code></pre>
+<h3 id="use-in-controllers">Use in Controllers</h3>
+<pre><code class="lang-csharp">[ValidateAntiForgeryToken]
+[HttpPost]
+public async Task&lt;IActionResult&gt; UpdateProfile([FromBody] ProfileDto dto)
+{
+    // ...
+}
+</code></pre>
+<h2 id="xss-protection">XSS Protection</h2>
+<h3 id="output-encoding">Output Encoding</h3>
+<p>DainnUser automatically encodes output. For custom views:</p>
+<pre><code class="lang-razor">@* Automatic encoding *@
+&lt;p&gt;@Model.UserInput&lt;/p&gt;
+
+@* Raw HTML (use with caution) *@
+&lt;p&gt;@Html.Raw(Model.TrustedHtml)&lt;/p&gt;
+</code></pre>
+<h3 id="content-security-policy">Content Security Policy</h3>
+<pre><code class="lang-csharp">app.Use(async (context, next) =&gt;
+{
+    context.Response.Headers.Add(&quot;Content-Security-Policy&quot;, 
+        &quot;default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'&quot;);
+    await next();
+});
+</code></pre>
+<h2 id="secure-cookie-configuration">Secure Cookie Configuration</h2>
+<pre><code class="lang-csharp">services.ConfigureApplicationCookie(options =&gt;
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.ExpireTimeSpan = TimeSpan.FromHours(1);
+    options.SlidingExpiration = true;
+});
+</code></pre>
+<h2 id="audit-logging">Audit Logging</h2>
+<h3 id="enable-audit-trail">Enable Audit Trail</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Audit&quot;: {
+      &quot;Enabled&quot;: true,
+      &quot;LogLevel&quot;: &quot;Information&quot;,
+      &quot;IncludeIpAddress&quot;: true,
+      &quot;IncludeUserAgent&quot;: true
+    }
+  }
+}
+</code></pre>
+<h3 id="query-audit-logs">Query Audit Logs</h3>
+<pre><code class="lang-csharp">var logs = await _activityService.GetActivityLogAsync(userId, 
+    startDate: DateTime.UtcNow.AddDays(-30),
+    endDate: DateTime.UtcNow);
+</code></pre>
+<h2 id="security-testing">Security Testing</h2>
+<h3 id="run-security-tests">Run Security Tests</h3>
+<pre><code class="lang-bash">dotnet test tests/DainnUser.SecurityTests/
+</code></pre>
+<h3 id="owasp-zap-scanning">OWASP ZAP Scanning</h3>
+<pre><code class="lang-bash"># Start your app
+dotnet run
+
+# Run ZAP scan
+zap-cli quick-scan --self-contained http://localhost:5000
+</code></pre>
+<h2 id="security-checklist">Security Checklist</h2>
+<p>Before deploying to production:</p>
+<ul>
+<li>[ ] HTTPS enforced</li>
+<li>[ ] Strong password requirements configured</li>
+<li>[ ] 2FA enabled for admin accounts</li>
+<li>[ ] Rate limiting configured</li>
+<li>[ ] Session timeout configured</li>
+<li>[ ] CSRF protection enabled</li>
+<li>[ ] Security headers configured</li>
+<li>[ ] Audit logging enabled</li>
+<li>[ ] Dependencies up to date</li>
+<li>[ ] Security tests passing</li>
+<li>[ ] Secrets not in source control</li>
+<li>[ ] Database connection strings encrypted</li>
+<li>[ ] Error messages don't leak sensitive info</li>
+<li>[ ] CORS properly configured</li>
+<li>[ ] File upload validation (if applicable)</li>
+</ul>
+<h2 id="reporting-security-issues">Reporting Security Issues</h2>
+<p>If you discover a security vulnerability in DainnUser:</p>
+<ol>
+<li><strong>DO NOT</strong> open a public GitHub issue</li>
+<li>Email security@dainnuser.com with details</li>
+<li>Include steps to reproduce</li>
+<li>We'll respond within 48 hours</li>
+</ol>
+<h2 id="security-updates">Security Updates</h2>
+<p>Subscribe to security advisories:</p>
+<ul>
+<li>GitHub Security Advisories</li>
+<li>NuGet package updates</li>
+<li>Security mailing list: security-announce@dainnuser.com</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/security.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          © 2026 DainnUser. Licensed under MIT.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

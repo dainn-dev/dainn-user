@@ -1,0 +1,1374 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Configuration Reference — DainnUser | DainnUser Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Configuration Reference — DainnUser | DainnUser Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/configuration.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="">
+            
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="configuration-reference--dainnuser">Configuration Reference — DainnUser</h1>
+
+<p>Complete configuration guide for DainnUser library.</p>
+<h2 id="overview">Overview</h2>
+<p>DainnUser configuration is managed through <code>appsettings.json</code> and can be overridden via environment variables. All settings are under the <code>DainnUser</code> root key.</p>
+<p><strong>Configuration Hierarchy:</strong></p>
+<ol>
+<li><code>appsettings.json</code> (default values)</li>
+<li><code>appsettings.{Environment}.json</code> (environment-specific)</li>
+<li>Environment variables (highest priority)</li>
+<li>Code-based configuration via <code>AddDainnUser()</code> options</li>
+</ol>
+<hr>
+<h2 id="database-configuration">Database Configuration</h2>
+<p>Configure database provider and connection string.</p>
+<h3 id="schema">Schema</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SqlServer&quot;,
+      &quot;ConnectionString&quot;: &quot;Server=localhost;Database=MyApp;Trusted_Connection=True;&quot;
+    }
+  }
+}
+</code></pre>
+<h3 id="properties">Properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Provider</code></td>
+<td>string</td>
+<td>Yes</td>
+<td><code>&quot;SqlServer&quot;</code></td>
+<td>Database provider: <code>SqlServer</code>, <code>PostgreSQL</code>, <code>MySQL</code>, <code>SQLite</code></td>
+</tr>
+<tr>
+<td><code>ConnectionString</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>-</td>
+<td>Database connection string</td>
+</tr>
+</tbody>
+</table>
+<h3 id="examples">Examples</h3>
+<p><strong>SQL Server:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SqlServer&quot;,
+      &quot;ConnectionString&quot;: &quot;Server=localhost;Database=MyApp;Trusted_Connection=True;TrustServerCertificate=True;&quot;
+    }
+  }
+}
+</code></pre>
+<p><strong>PostgreSQL:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;PostgreSQL&quot;,
+      &quot;ConnectionString&quot;: &quot;Host=localhost;Database=myapp;Username=postgres;Password=password;Port=5432&quot;
+    }
+  }
+}
+</code></pre>
+<p><strong>MySQL:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;MySQL&quot;,
+      &quot;ConnectionString&quot;: &quot;Server=localhost;Database=myapp;User=root;Password=password;Port=3306&quot;
+    }
+  }
+}
+</code></pre>
+<p><strong>SQLite (Development):</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SQLite&quot;,
+      &quot;ConnectionString&quot;: &quot;Data Source=dainnuser.db&quot;
+    }
+  }
+}
+</code></pre>
+<h3 id="environment-variables">Environment Variables</h3>
+<pre><code class="lang-bash">DainnUser__Database__Provider=PostgreSQL
+DainnUser__Database__ConnectionString=&quot;Host=localhost;Database=myapp;Username=postgres;Password=password&quot;
+</code></pre>
+<hr>
+<h2 id="jwt-configuration">JWT Configuration</h2>
+<p>Configure JSON Web Token authentication.</p>
+<h3 id="schema-1">Schema</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Jwt&quot;: {
+      &quot;SecretKey&quot;: &quot;your-secret-key-min-32-characters-long&quot;,
+      &quot;Issuer&quot;: &quot;https://yourdomain.com&quot;,
+      &quot;Audience&quot;: &quot;https://yourdomain.com&quot;,
+      &quot;ExpirationMinutes&quot;: 60,
+      &quot;RefreshTokenExpirationDays&quot;: 7,
+      &quot;RotateRefreshTokens&quot;: true
+    }
+  }
+}
+</code></pre>
+<h3 id="properties-1">Properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SecretKey</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>-</td>
+<td>Secret key for signing tokens (min 32 characters)</td>
+</tr>
+<tr>
+<td><code>Issuer</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>-</td>
+<td>Token issuer (your domain)</td>
+</tr>
+<tr>
+<td><code>Audience</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>-</td>
+<td>Token audience (your domain)</td>
+</tr>
+<tr>
+<td><code>ExpirationMinutes</code></td>
+<td>int</td>
+<td>No</td>
+<td><code>60</code></td>
+<td>Access token expiration (15-60 recommended)</td>
+</tr>
+<tr>
+<td><code>RefreshTokenExpirationDays</code></td>
+<td>int</td>
+<td>No</td>
+<td><code>7</code></td>
+<td>Refresh token expiration (7-30 recommended)</td>
+</tr>
+<tr>
+<td><code>RotateRefreshTokens</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Rotate refresh tokens on use (recommended)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="security-notes">Security Notes</h3>
+<ul>
+<li><strong>SecretKey:</strong> Must be at least 32 characters. Use cryptographically secure random string.</li>
+<li><strong>ExpirationMinutes:</strong> Shorter is more secure (15-60 minutes). Use refresh tokens for longer sessions.</li>
+<li><strong>RotateRefreshTokens:</strong> Always <code>true</code> in production for security.</li>
+</ul>
+<h3 id="example">Example</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Jwt&quot;: {
+      &quot;SecretKey&quot;: &quot;a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6&quot;,
+      &quot;Issuer&quot;: &quot;https://api.myapp.com&quot;,
+      &quot;Audience&quot;: &quot;https://myapp.com&quot;,
+      &quot;ExpirationMinutes&quot;: 15,
+      &quot;RefreshTokenExpirationDays&quot;: 7,
+      &quot;RotateRefreshTokens&quot;: true
+    }
+  }
+}
+</code></pre>
+<h3 id="environment-variables-1">Environment Variables</h3>
+<pre><code class="lang-bash">DainnUser__Jwt__SecretKey=&quot;your-secret-key-here&quot;
+DainnUser__Jwt__Issuer=&quot;https://yourdomain.com&quot;
+DainnUser__Jwt__Audience=&quot;https://yourdomain.com&quot;
+DainnUser__Jwt__ExpirationMinutes=15
+</code></pre>
+<hr>
+<h2 id="email-configuration">Email Configuration</h2>
+<p>Configure email provider for verification, password reset, and notifications.</p>
+<h3 id="schema-2">Schema</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Email&quot;: {
+      &quot;Provider&quot;: &quot;Smtp&quot;,
+      &quot;SmtpHost&quot;: &quot;smtp.gmail.com&quot;,
+      &quot;SmtpPort&quot;: 587,
+      &quot;SmtpUsername&quot;: &quot;your-email@gmail.com&quot;,
+      &quot;SmtpPassword&quot;: &quot;your-app-password&quot;,
+      &quot;FromEmail&quot;: &quot;noreply@yourdomain.com&quot;,
+      &quot;FromName&quot;: &quot;Your App&quot;,
+      &quot;EnableSsl&quot;: true
+    }
+  }
+}
+</code></pre>
+<h3 id="properties-2">Properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Provider</code></td>
+<td>string</td>
+<td>Yes</td>
+<td><code>&quot;Smtp&quot;</code></td>
+<td>Email provider: <code>Smtp</code>, <code>SendGrid</code>, <code>Mailgun</code></td>
+</tr>
+<tr>
+<td><code>SmtpHost</code></td>
+<td>string</td>
+<td>Yes*</td>
+<td>-</td>
+<td>SMTP server hostname</td>
+</tr>
+<tr>
+<td><code>SmtpPort</code></td>
+<td>int</td>
+<td>Yes*</td>
+<td><code>587</code></td>
+<td>SMTP server port (587 for TLS, 465 for SSL)</td>
+</tr>
+<tr>
+<td><code>SmtpUsername</code></td>
+<td>string</td>
+<td>No</td>
+<td>-</td>
+<td>SMTP authentication username</td>
+</tr>
+<tr>
+<td><code>SmtpPassword</code></td>
+<td>string</td>
+<td>No</td>
+<td>-</td>
+<td>SMTP authentication password</td>
+</tr>
+<tr>
+<td><code>FromEmail</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>-</td>
+<td>Sender email address</td>
+</tr>
+<tr>
+<td><code>FromName</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>&quot;DainnUser&quot;</code></td>
+<td>Sender display name</td>
+</tr>
+<tr>
+<td><code>EnableSsl</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Enable SSL/TLS encryption</td>
+</tr>
+</tbody>
+</table>
+<p>*Required for SMTP provider</p>
+<h3 id="examples-1">Examples</h3>
+<p><strong>Gmail (Production):</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Email&quot;: {
+      &quot;Provider&quot;: &quot;Smtp&quot;,
+      &quot;SmtpHost&quot;: &quot;smtp.gmail.com&quot;,
+      &quot;SmtpPort&quot;: 587,
+      &quot;SmtpUsername&quot;: &quot;your-email@gmail.com&quot;,
+      &quot;SmtpPassword&quot;: &quot;your-app-password&quot;,
+      &quot;FromEmail&quot;: &quot;noreply@yourdomain.com&quot;,
+      &quot;FromName&quot;: &quot;My App&quot;,
+      &quot;EnableSsl&quot;: true
+    }
+  }
+}
+</code></pre>
+<p><strong>MailHog (Development):</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Email&quot;: {
+      &quot;Provider&quot;: &quot;Smtp&quot;,
+      &quot;SmtpHost&quot;: &quot;localhost&quot;,
+      &quot;SmtpPort&quot;: 1025,
+      &quot;SmtpUsername&quot;: &quot;&quot;,
+      &quot;SmtpPassword&quot;: &quot;&quot;,
+      &quot;FromEmail&quot;: &quot;dev@localhost&quot;,
+      &quot;FromName&quot;: &quot;DainnUser Dev&quot;,
+      &quot;EnableSsl&quot;: false
+    }
+  }
+}
+</code></pre>
+<p><strong>SendGrid:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Email&quot;: {
+      &quot;Provider&quot;: &quot;SendGrid&quot;,
+      &quot;ApiKey&quot;: &quot;your-sendgrid-api-key&quot;,
+      &quot;FromEmail&quot;: &quot;noreply@yourdomain.com&quot;,
+      &quot;FromName&quot;: &quot;My App&quot;
+    }
+  }
+}
+</code></pre>
+<h3 id="environment-variables-2">Environment Variables</h3>
+<pre><code class="lang-bash">DainnUser__Email__SmtpHost=&quot;smtp.gmail.com&quot;
+DainnUser__Email__SmtpPort=587
+DainnUser__Email__SmtpUsername=&quot;your-email@gmail.com&quot;
+DainnUser__Email__SmtpPassword=&quot;your-app-password&quot;
+DainnUser__Email__FromEmail=&quot;noreply@yourdomain.com&quot;
+</code></pre>
+<hr>
+<h2 id="sms-configuration">SMS Configuration</h2>
+<p>Configure SMS provider for two-factor authentication.</p>
+<h3 id="schema-3">Schema</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Sms&quot;: {
+      &quot;Provider&quot;: &quot;Twilio&quot;,
+      &quot;AccountSid&quot;: &quot;your-twilio-account-sid&quot;,
+      &quot;AuthToken&quot;: &quot;your-twilio-auth-token&quot;,
+      &quot;FromPhoneNumber&quot;: &quot;+1234567890&quot;
+    }
+  }
+}
+</code></pre>
+<h3 id="properties-3">Properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Provider</code></td>
+<td>string</td>
+<td>Yes</td>
+<td><code>&quot;Twilio&quot;</code></td>
+<td>SMS provider: <code>Twilio</code>, <code>Nexmo</code></td>
+</tr>
+<tr>
+<td><code>AccountSid</code></td>
+<td>string</td>
+<td>Yes*</td>
+<td>-</td>
+<td>Twilio account SID</td>
+</tr>
+<tr>
+<td><code>AuthToken</code></td>
+<td>string</td>
+<td>Yes*</td>
+<td>-</td>
+<td>Twilio auth token</td>
+</tr>
+<tr>
+<td><code>FromPhoneNumber</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>-</td>
+<td>Sender phone number (E.164 format)</td>
+</tr>
+</tbody>
+</table>
+<p>*Required for Twilio provider</p>
+<h3 id="example-1">Example</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Sms&quot;: {
+      &quot;Provider&quot;: &quot;Twilio&quot;,
+      &quot;AccountSid&quot;: &quot;ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&quot;,
+      &quot;AuthToken&quot;: &quot;your-auth-token&quot;,
+      &quot;FromPhoneNumber&quot;: &quot;+15551234567&quot;
+    }
+  }
+}
+</code></pre>
+<h3 id="environment-variables-3">Environment Variables</h3>
+<pre><code class="lang-bash">DainnUser__Sms__Provider=&quot;Twilio&quot;
+DainnUser__Sms__AccountSid=&quot;ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&quot;
+DainnUser__Sms__AuthToken=&quot;your-auth-token&quot;
+DainnUser__Sms__FromPhoneNumber=&quot;+15551234567&quot;
+</code></pre>
+<hr>
+<h2 id="storage-configuration">Storage Configuration</h2>
+<p>Configure file storage for avatars and uploads.</p>
+<h3 id="schema-4">Schema</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Storage&quot;: {
+      &quot;Provider&quot;: &quot;Local&quot;,
+      &quot;LocalPath&quot;: &quot;wwwroot/uploads/avatars&quot;,
+      &quot;MaxFileSizeMB&quot;: 5,
+      &quot;AllowedExtensions&quot;: [&quot;.jpg&quot;, &quot;.jpeg&quot;, &quot;.png&quot;, &quot;.gif&quot;, &quot;.webp&quot;]
+    }
+  }
+}
+</code></pre>
+<h3 id="properties-4">Properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Provider</code></td>
+<td>string</td>
+<td>Yes</td>
+<td><code>&quot;Local&quot;</code></td>
+<td>Storage provider: <code>Local</code>, <code>AzureBlob</code>, <code>S3</code></td>
+</tr>
+<tr>
+<td><code>LocalPath</code></td>
+<td>string</td>
+<td>Yes*</td>
+<td><code>&quot;wwwroot/uploads&quot;</code></td>
+<td>Local storage path</td>
+</tr>
+<tr>
+<td><code>MaxFileSizeMB</code></td>
+<td>int</td>
+<td>No</td>
+<td><code>5</code></td>
+<td>Max file size in MB</td>
+</tr>
+<tr>
+<td><code>AllowedExtensions</code></td>
+<td>string[]</td>
+<td>No</td>
+<td><code>[&quot;.jpg&quot;, &quot;.jpeg&quot;, &quot;.png&quot;, &quot;.gif&quot;, &quot;.webp&quot;]</code></td>
+<td>Allowed file extensions</td>
+</tr>
+</tbody>
+</table>
+<p>*Required for Local provider</p>
+<h3 id="examples-2">Examples</h3>
+<p><strong>Local Storage:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Storage&quot;: {
+      &quot;Provider&quot;: &quot;Local&quot;,
+      &quot;LocalPath&quot;: &quot;wwwroot/uploads/avatars&quot;,
+      &quot;MaxFileSizeMB&quot;: 5,
+      &quot;AllowedExtensions&quot;: [&quot;.jpg&quot;, &quot;.jpeg&quot;, &quot;.png&quot;, &quot;.gif&quot;, &quot;.webp&quot;]
+    }
+  }
+}
+</code></pre>
+<p><strong>Azure Blob Storage:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Storage&quot;: {
+      &quot;Provider&quot;: &quot;AzureBlob&quot;,
+      &quot;ConnectionString&quot;: &quot;DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=...&quot;,
+      &quot;ContainerName&quot;: &quot;avatars&quot;,
+      &quot;MaxFileSizeMB&quot;: 5,
+      &quot;AllowedExtensions&quot;: [&quot;.jpg&quot;, &quot;.jpeg&quot;, &quot;.png&quot;, &quot;.gif&quot;, &quot;.webp&quot;]
+    }
+  }
+}
+</code></pre>
+<p><strong>AWS S3:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Storage&quot;: {
+      &quot;Provider&quot;: &quot;S3&quot;,
+      &quot;BucketName&quot;: &quot;my-app-avatars&quot;,
+      &quot;Region&quot;: &quot;us-east-1&quot;,
+      &quot;AccessKey&quot;: &quot;your-access-key&quot;,
+      &quot;SecretKey&quot;: &quot;your-secret-key&quot;,
+      &quot;MaxFileSizeMB&quot;: 5,
+      &quot;AllowedExtensions&quot;: [&quot;.jpg&quot;, &quot;.jpeg&quot;, &quot;.png&quot;, &quot;.gif&quot;, &quot;.webp&quot;]
+    }
+  }
+}
+</code></pre>
+<hr>
+<h2 id="oauth-configuration">OAuth Configuration</h2>
+<p>Configure social login providers.</p>
+<h3 id="schema-5">Schema</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;OAuth&quot;: {
+      &quot;Google&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;your-google-client-id&quot;,
+        &quot;ClientSecret&quot;: &quot;your-google-client-secret&quot;,
+        &quot;CallbackPath&quot;: &quot;/signin-google&quot;
+      },
+      &quot;Facebook&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;AppId&quot;: &quot;your-facebook-app-id&quot;,
+        &quot;AppSecret&quot;: &quot;your-facebook-app-secret&quot;,
+        &quot;CallbackPath&quot;: &quot;/signin-facebook&quot;
+      },
+      &quot;GitHub&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;your-github-client-id&quot;,
+        &quot;ClientSecret&quot;: &quot;your-github-client-secret&quot;,
+        &quot;CallbackPath&quot;: &quot;/signin-github&quot;
+      },
+      &quot;Microsoft&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;your-microsoft-client-id&quot;,
+        &quot;ClientSecret&quot;: &quot;your-microsoft-client-secret&quot;,
+        &quot;CallbackPath&quot;: &quot;/signin-microsoft&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<h3 id="properties-per-provider">Properties (per provider)</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Enabled</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>false</code></td>
+<td>Enable this OAuth provider</td>
+</tr>
+<tr>
+<td><code>ClientId</code> / <code>AppId</code></td>
+<td>string</td>
+<td>Yes*</td>
+<td>-</td>
+<td>OAuth client ID</td>
+</tr>
+<tr>
+<td><code>ClientSecret</code> / <code>AppSecret</code></td>
+<td>string</td>
+<td>Yes*</td>
+<td>-</td>
+<td>OAuth client secret</td>
+</tr>
+<tr>
+<td><code>CallbackPath</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>/signin-{provider}</code></td>
+<td>OAuth callback path</td>
+</tr>
+</tbody>
+</table>
+<p>*Required if <code>Enabled</code> is <code>true</code></p>
+<h3 id="example-2">Example</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;OAuth&quot;: {
+      &quot;Google&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;123456789-abcdefghijklmnop.apps.googleusercontent.com&quot;,
+        &quot;ClientSecret&quot;: &quot;GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx&quot;,
+        &quot;CallbackPath&quot;: &quot;/signin-google&quot;
+      },
+      &quot;Facebook&quot;: {
+        &quot;Enabled&quot;: false
+      },
+      &quot;GitHub&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;Iv1.1234567890abcdef&quot;,
+        &quot;ClientSecret&quot;: &quot;1234567890abcdef1234567890abcdef12345678&quot;,
+        &quot;CallbackPath&quot;: &quot;/signin-github&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<h3 id="environment-variables-4">Environment Variables</h3>
+<pre><code class="lang-bash">DainnUser__OAuth__Google__Enabled=true
+DainnUser__OAuth__Google__ClientId=&quot;your-client-id&quot;
+DainnUser__OAuth__Google__ClientSecret=&quot;your-client-secret&quot;
+</code></pre>
+<hr>
+<h2 id="recaptcha-configuration">reCAPTCHA Configuration</h2>
+<p>Configure Google reCAPTCHA for bot protection.</p>
+<h3 id="schema-6">Schema</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Recaptcha&quot;: {
+      &quot;Enabled&quot;: true,
+      &quot;SiteKey&quot;: &quot;your-recaptcha-site-key&quot;,
+      &quot;SecretKey&quot;: &quot;your-recaptcha-secret-key&quot;,
+      &quot;Version&quot;: &quot;v3&quot;,
+      &quot;MinimumScore&quot;: 0.5
+    }
+  }
+}
+</code></pre>
+<h3 id="properties-5">Properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Enabled</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>false</code></td>
+<td>Enable reCAPTCHA</td>
+</tr>
+<tr>
+<td><code>SiteKey</code></td>
+<td>string</td>
+<td>Yes*</td>
+<td>-</td>
+<td>reCAPTCHA site key</td>
+</tr>
+<tr>
+<td><code>SecretKey</code></td>
+<td>string</td>
+<td>Yes*</td>
+<td>-</td>
+<td>reCAPTCHA secret key</td>
+</tr>
+<tr>
+<td><code>Version</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>&quot;v3&quot;</code></td>
+<td>reCAPTCHA version: <code>v2</code>, <code>v3</code></td>
+</tr>
+<tr>
+<td><code>MinimumScore</code></td>
+<td>double</td>
+<td>No</td>
+<td><code>0.5</code></td>
+<td>Minimum score for v3 (0.0-1.0)</td>
+</tr>
+</tbody>
+</table>
+<p>*Required if <code>Enabled</code> is <code>true</code></p>
+<h3 id="example-3">Example</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Recaptcha&quot;: {
+      &quot;Enabled&quot;: true,
+      &quot;SiteKey&quot;: &quot;6LcXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&quot;,
+      &quot;SecretKey&quot;: &quot;6LcXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&quot;,
+      &quot;Version&quot;: &quot;v3&quot;,
+      &quot;MinimumScore&quot;: 0.5
+    }
+  }
+}
+</code></pre>
+<hr>
+<h2 id="security-configuration">Security Configuration</h2>
+<p>Configure security features and password requirements.</p>
+<h3 id="schema-7">Schema</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Security&quot;: {
+      &quot;RequireEmailVerification&quot;: true,
+      &quot;RequireHttps&quot;: true,
+      &quot;PasswordHasher&quot;: &quot;Argon2&quot;,
+      &quot;PasswordRequirements&quot;: {
+        &quot;RequireDigit&quot;: true,
+        &quot;RequireLowercase&quot;: true,
+        &quot;RequireUppercase&quot;: true,
+        &quot;RequireNonAlphanumeric&quot;: true,
+        &quot;RequiredLength&quot;: 12,
+        &quot;RequiredUniqueChars&quot;: 4
+      },
+      &quot;Lockout&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;MaxFailedAccessAttempts&quot;: 5,
+        &quot;LockoutDurationMinutes&quot;: 15
+      },
+      &quot;RateLimiting&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;MaxRequestsPerMinute&quot;: 60,
+        &quot;Rules&quot;: [
+          {
+            &quot;Endpoint&quot;: &quot;/api/auth/login&quot;,
+            &quot;MaxRequests&quot;: 5,
+            &quot;WindowSeconds&quot;: 60
+          },
+          {
+            &quot;Endpoint&quot;: &quot;/api/auth/register&quot;,
+            &quot;MaxRequests&quot;: 3,
+            &quot;WindowSeconds&quot;: 300
+          }
+        ]
+      }
+    }
+  }
+}
+</code></pre>
+<h3 id="properties-6">Properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RequireEmailVerification</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Require email verification before login</td>
+</tr>
+<tr>
+<td><code>RequireHttps</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Enforce HTTPS (always <code>true</code> in production)</td>
+</tr>
+<tr>
+<td><code>PasswordHasher</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>&quot;Argon2&quot;</code></td>
+<td>Password hasher: <code>Argon2</code>, <code>PBKDF2</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="password-requirements">Password Requirements</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RequireDigit</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Require at least one digit</td>
+</tr>
+<tr>
+<td><code>RequireLowercase</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Require at least one lowercase letter</td>
+</tr>
+<tr>
+<td><code>RequireUppercase</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Require at least one uppercase letter</td>
+</tr>
+<tr>
+<td><code>RequireNonAlphanumeric</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Require at least one special character</td>
+</tr>
+<tr>
+<td><code>RequiredLength</code></td>
+<td>int</td>
+<td>No</td>
+<td><code>12</code></td>
+<td>Minimum password length (8-128)</td>
+</tr>
+<tr>
+<td><code>RequiredUniqueChars</code></td>
+<td>int</td>
+<td>No</td>
+<td><code>4</code></td>
+<td>Minimum unique characters</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lockout-configuration">Lockout Configuration</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Enabled</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Enable account lockout</td>
+</tr>
+<tr>
+<td><code>MaxFailedAccessAttempts</code></td>
+<td>int</td>
+<td>No</td>
+<td><code>5</code></td>
+<td>Max failed login attempts before lockout</td>
+</tr>
+<tr>
+<td><code>LockoutDurationMinutes</code></td>
+<td>int</td>
+<td>No</td>
+<td><code>15</code></td>
+<td>Lockout duration in minutes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rate-limiting">Rate Limiting</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Enabled</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Enable rate limiting</td>
+</tr>
+<tr>
+<td><code>MaxRequestsPerMinute</code></td>
+<td>int</td>
+<td>No</td>
+<td><code>60</code></td>
+<td>Global max requests per minute per IP</td>
+</tr>
+<tr>
+<td><code>Rules</code></td>
+<td>array</td>
+<td>No</td>
+<td><code>[]</code></td>
+<td>Endpoint-specific rate limit rules</td>
+</tr>
+</tbody>
+</table>
+<h3 id="example-4">Example</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Security&quot;: {
+      &quot;RequireEmailVerification&quot;: true,
+      &quot;RequireHttps&quot;: true,
+      &quot;PasswordHasher&quot;: &quot;Argon2&quot;,
+      &quot;PasswordRequirements&quot;: {
+        &quot;RequireDigit&quot;: true,
+        &quot;RequireLowercase&quot;: true,
+        &quot;RequireUppercase&quot;: true,
+        &quot;RequireNonAlphanumeric&quot;: true,
+        &quot;RequiredLength&quot;: 12,
+        &quot;RequiredUniqueChars&quot;: 4
+      },
+      &quot;Lockout&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;MaxFailedAccessAttempts&quot;: 5,
+        &quot;LockoutDurationMinutes&quot;: 15
+      },
+      &quot;RateLimiting&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;MaxRequestsPerMinute&quot;: 60,
+        &quot;Rules&quot;: [
+          {
+            &quot;Endpoint&quot;: &quot;/api/auth/login&quot;,
+            &quot;MaxRequests&quot;: 5,
+            &quot;WindowSeconds&quot;: 60
+          }
+        ]
+      }
+    }
+  }
+}
+</code></pre>
+<hr>
+<h2 id="session-configuration">Session Configuration</h2>
+<p>Configure session management.</p>
+<h3 id="schema-8">Schema</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Session&quot;: {
+      &quot;Enabled&quot;: true,
+      &quot;TimeoutMinutes&quot;: 30,
+      &quot;SlidingExpiration&quot;: true,
+      &quot;MaxActiveSessions&quot;: 5
+    }
+  }
+}
+</code></pre>
+<h3 id="properties-7">Properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Enabled</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Enable session management</td>
+</tr>
+<tr>
+<td><code>TimeoutMinutes</code></td>
+<td>int</td>
+<td>No</td>
+<td><code>30</code></td>
+<td>Session timeout in minutes</td>
+</tr>
+<tr>
+<td><code>SlidingExpiration</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Reset timeout on activity</td>
+</tr>
+<tr>
+<td><code>MaxActiveSessions</code></td>
+<td>int</td>
+<td>No</td>
+<td><code>5</code></td>
+<td>Max concurrent sessions per user (0 = unlimited)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="example-5">Example</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Session&quot;: {
+      &quot;Enabled&quot;: true,
+      &quot;TimeoutMinutes&quot;: 30,
+      &quot;SlidingExpiration&quot;: true,
+      &quot;MaxActiveSessions&quot;: 5
+    }
+  }
+}
+</code></pre>
+<hr>
+<h2 id="feature-flags">Feature Flags</h2>
+<p>Enable or disable features.</p>
+<h3 id="schema-9">Schema</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Features&quot;: {
+      &quot;EnableRegistration&quot;: true,
+      &quot;EnableSocialLogin&quot;: true,
+      &quot;EnableTwoFactor&quot;: true,
+      &quot;EnableEmailVerification&quot;: true,
+      &quot;EnablePhoneVerification&quot;: false,
+      &quot;EnableRecaptcha&quot;: true,
+      &quot;EnableAccountLockout&quot;: true,
+      &quot;EnableSessionManagement&quot;: true,
+      &quot;EnableActivityLogging&quot;: true
+    }
+  }
+}
+</code></pre>
+<h3 id="properties-8">Properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EnableRegistration</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Allow new user registration</td>
+</tr>
+<tr>
+<td><code>EnableSocialLogin</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>false</code></td>
+<td>Enable OAuth social login</td>
+</tr>
+<tr>
+<td><code>EnableTwoFactor</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>false</code></td>
+<td>Enable 2FA functionality</td>
+</tr>
+<tr>
+<td><code>EnableEmailVerification</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Require email verification</td>
+</tr>
+<tr>
+<td><code>EnablePhoneVerification</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>false</code></td>
+<td>Enable phone verification</td>
+</tr>
+<tr>
+<td><code>EnableRecaptcha</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>false</code></td>
+<td>Enable reCAPTCHA</td>
+</tr>
+<tr>
+<td><code>EnableAccountLockout</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Enable account lockout</td>
+</tr>
+<tr>
+<td><code>EnableSessionManagement</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Enable session tracking</td>
+</tr>
+<tr>
+<td><code>EnableActivityLogging</code></td>
+<td>bool</td>
+<td>No</td>
+<td><code>true</code></td>
+<td>Enable activity audit logs</td>
+</tr>
+</tbody>
+</table>
+<h3 id="example-6">Example</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Features&quot;: {
+      &quot;EnableRegistration&quot;: true,
+      &quot;EnableSocialLogin&quot;: true,
+      &quot;EnableTwoFactor&quot;: true,
+      &quot;EnableEmailVerification&quot;: true,
+      &quot;EnableRecaptcha&quot;: true,
+      &quot;EnableAccountLockout&quot;: true,
+      &quot;EnableSessionManagement&quot;: true,
+      &quot;EnableActivityLogging&quot;: true
+    }
+  }
+}
+</code></pre>
+<hr>
+<h2 id="complete-configuration-example">Complete Configuration Example</h2>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;PostgreSQL&quot;,
+      &quot;ConnectionString&quot;: &quot;Host=localhost;Database=myapp;Username=postgres;Password=password&quot;
+    },
+    &quot;Jwt&quot;: {
+      &quot;SecretKey&quot;: &quot;a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6&quot;,
+      &quot;Issuer&quot;: &quot;https://api.myapp.com&quot;,
+      &quot;Audience&quot;: &quot;https://myapp.com&quot;,
+      &quot;ExpirationMinutes&quot;: 15,
+      &quot;RefreshTokenExpirationDays&quot;: 7,
+      &quot;RotateRefreshTokens&quot;: true
+    },
+    &quot;Email&quot;: {
+      &quot;Provider&quot;: &quot;Smtp&quot;,
+      &quot;SmtpHost&quot;: &quot;smtp.gmail.com&quot;,
+      &quot;SmtpPort&quot;: 587,
+      &quot;SmtpUsername&quot;: &quot;noreply@myapp.com&quot;,
+      &quot;SmtpPassword&quot;: &quot;app-password-here&quot;,
+      &quot;FromEmail&quot;: &quot;noreply@myapp.com&quot;,
+      &quot;FromName&quot;: &quot;My App&quot;,
+      &quot;EnableSsl&quot;: true
+    },
+    &quot;Storage&quot;: {
+      &quot;Provider&quot;: &quot;Local&quot;,
+      &quot;LocalPath&quot;: &quot;wwwroot/uploads/avatars&quot;,
+      &quot;MaxFileSizeMB&quot;: 5,
+      &quot;AllowedExtensions&quot;: [&quot;.jpg&quot;, &quot;.jpeg&quot;, &quot;.png&quot;, &quot;.gif&quot;, &quot;.webp&quot;]
+    },
+    &quot;OAuth&quot;: {
+      &quot;Google&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;your-google-client-id&quot;,
+        &quot;ClientSecret&quot;: &quot;your-google-client-secret&quot;
+      }
+    },
+    &quot;Security&quot;: {
+      &quot;RequireEmailVerification&quot;: true,
+      &quot;RequireHttps&quot;: true,
+      &quot;PasswordHasher&quot;: &quot;Argon2&quot;,
+      &quot;PasswordRequirements&quot;: {
+        &quot;RequireDigit&quot;: true,
+        &quot;RequireLowercase&quot;: true,
+        &quot;RequireUppercase&quot;: true,
+        &quot;RequireNonAlphanumeric&quot;: true,
+        &quot;RequiredLength&quot;: 12,
+        &quot;RequiredUniqueChars&quot;: 4
+      },
+      &quot;Lockout&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;MaxFailedAccessAttempts&quot;: 5,
+        &quot;LockoutDurationMinutes&quot;: 15
+      },
+      &quot;RateLimiting&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;MaxRequestsPerMinute&quot;: 60
+      }
+    },
+    &quot;Session&quot;: {
+      &quot;Enabled&quot;: true,
+      &quot;TimeoutMinutes&quot;: 30,
+      &quot;SlidingExpiration&quot;: true,
+      &quot;MaxActiveSessions&quot;: 5
+    },
+    &quot;Features&quot;: {
+      &quot;EnableRegistration&quot;: true,
+      &quot;EnableSocialLogin&quot;: true,
+      &quot;EnableTwoFactor&quot;: true,
+      &quot;EnableEmailVerification&quot;: true,
+      &quot;EnableRecaptcha&quot;: false,
+      &quot;EnableAccountLockout&quot;: true,
+      &quot;EnableSessionManagement&quot;: true,
+      &quot;EnableActivityLogging&quot;: true
+    }
+  }
+}
+</code></pre>
+<hr>
+<h2 id="environment-specific-configuration">Environment-Specific Configuration</h2>
+<h3 id="development">Development</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SQLite&quot;,
+      &quot;ConnectionString&quot;: &quot;Data Source=dainnuser.db&quot;
+    },
+    &quot;Email&quot;: {
+      &quot;SmtpHost&quot;: &quot;localhost&quot;,
+      &quot;SmtpPort&quot;: 1025,
+      &quot;EnableSsl&quot;: false
+    },
+    &quot;Security&quot;: {
+      &quot;RequireHttps&quot;: false,
+      &quot;PasswordRequirements&quot;: {
+        &quot;RequiredLength&quot;: 8
+      }
+    }
+  }
+}
+</code></pre>
+<h3 id="production">Production</h3>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;PostgreSQL&quot;,
+      &quot;ConnectionString&quot;: &quot;Host=prod-db.example.com;Database=myapp;Username=appuser;Password=***&quot;
+    },
+    &quot;Security&quot;: {
+      &quot;RequireHttps&quot;: true,
+      &quot;RequireEmailVerification&quot;: true,
+      &quot;PasswordRequirements&quot;: {
+        &quot;RequiredLength&quot;: 12
+      },
+      &quot;RateLimiting&quot;: {
+        &quot;Enabled&quot;: true
+      }
+    }
+  }
+}
+</code></pre>
+<hr>
+<h2 id="code-based-configuration">Code-Based Configuration</h2>
+<p>Override settings in <code>Program.cs</code>:</p>
+<pre><code class="lang-csharp">builder.Services.AddDainnUser(builder.Configuration, options =&gt;
+{
+    options.EnableSocialLogin = true;
+    options.EnableTwoFactor = true;
+    options.RequireEmailVerification = true;
+    options.EnableAccountLockout = true;
+    options.EnableSessionManagement = true;
+    options.EnableActivityLogging = true;
+});
+</code></pre>
+<hr>
+<h2 id="validation">Validation</h2>
+<p>DainnUser validates configuration on startup. Invalid configuration throws <code>InvalidOperationException</code> with details.</p>
+<p><strong>Common validation errors:</strong></p>
+<ul>
+<li>Missing required fields (Database.ConnectionString, Jwt.SecretKey)</li>
+<li>Invalid JWT secret key (&lt; 32 characters)</li>
+<li>Invalid database provider</li>
+<li>Invalid password requirements (RequiredLength &lt; 8)</li>
+<li>OAuth enabled but missing credentials</li>
+</ul>
+<hr>
+<h2 id="see-also">See Also</h2>
+<ul>
+<li><a href="getting-started.html">Getting Started</a></li>
+<li><a href="security.html">Security Guide</a></li>
+<li><a href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/configuration.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          © 2026 DainnUser. Licensed under MIT.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

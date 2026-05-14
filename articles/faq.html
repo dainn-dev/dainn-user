@@ -1,0 +1,637 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Frequently Asked Questions — DainnUser | DainnUser Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Frequently Asked Questions — DainnUser | DainnUser Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/faq.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="">
+            
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="frequently-asked-questions--dainnuser">Frequently Asked Questions — DainnUser</h1>
+
+<p>Common questions organized by category.</p>
+<hr>
+<h2 id="general">General</h2>
+<h3 id="q1-what-is-dainnuser">Q1: What is DainnUser?</h3>
+<p>DainnUser is a .NET class library providing comprehensive user management features: authentication, authorization, profile management, and security. It is distributed via NuGet and can be integrated into any .NET application.</p>
+<p><strong>Key Features:</strong></p>
+<ul>
+<li>JWT-based authentication with refresh tokens</li>
+<li>Email verification and password reset flows</li>
+<li>Two-factor authentication (2FA/TOTP)</li>
+<li>Social login (Google, Facebook, GitHub, Microsoft)</li>
+<li>Role-based access control (RBAC)</li>
+<li>Profile management with avatar uploads</li>
+<li>Session management and activity logging</li>
+<li>OWASP Top 10 compliance built-in</li>
+</ul>
+<p><strong>Documentation:</strong> <a href="architecture.html">Architecture</a> | <a href="security.html">Security Guide</a></p>
+<hr>
+<h3 id="q2-which-net-versions-are-supported">Q2: Which .NET versions are supported?</h3>
+<p>DainnUser requires .NET 8.0 or later. It supports the current LTS version of .NET.</p>
+<p><strong>Verification:</strong></p>
+<pre><code class="lang-bash">dotnet --version
+# Should output 8.0 or higher
+</code></pre>
+<hr>
+<h3 id="q3-which-databases-are-supported">Q3: Which databases are supported?</h3>
+<p>DainnUser supports any EF Core-compatible database through the provider model:</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Package</th>
+<th>Connection String Key</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SQL Server</td>
+<td>Microsoft.EntityFrameworkCore.SqlServer</td>
+<td><code>Server=...</code></td>
+</tr>
+<tr>
+<td>PostgreSQL</td>
+<td>Npgsql.EntityFrameworkCore.PostgreSQL</td>
+<td><code>Host=...</code></td>
+</tr>
+<tr>
+<td>MySQL</td>
+<td>Pomelo.EntityFrameworkCore.MySql</td>
+<td><code>Server=...</code></td>
+</tr>
+<tr>
+<td>SQLite</td>
+<td>Microsoft.EntityFrameworkCore.Sqlite</td>
+<td><code>Data Source=...</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>See:</strong> <a href="configuration.html#database-configuration">Configuration Reference</a></p>
+<hr>
+<h3 id="q4-how-do-i-get-started-quickly">Q4: How do I get started quickly?</h3>
+<ol>
+<li><strong>Install via NuGet:</strong></li>
+</ol>
+<pre><code class="lang-bash">dotnet add package DainnUser
+</code></pre>
+<ol start="2">
+<li><strong>Configure appsettings.json:</strong></li>
+</ol>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SQLite&quot;,
+      &quot;ConnectionString&quot;: &quot;Data Source=dainnuser.db&quot;
+    },
+    &quot;Jwt&quot;: {
+      &quot;SecretKey&quot;: &quot;your-secret-key-min-32-characters-long&quot;,
+      &quot;Issuer&quot;: &quot;https://yourdomain.com&quot;,
+      &quot;Audience&quot;: &quot;https://yourdomain.com&quot;
+    }
+  }
+}
+</code></pre>
+<ol start="3">
+<li><strong>Register services:</strong></li>
+</ol>
+<pre><code class="lang-csharp">builder.Services.AddDainnUser(builder.Configuration);
+</code></pre>
+<ol start="4">
+<li><strong>Use middleware:</strong></li>
+</ol>
+<pre><code class="lang-csharp">app.UseDainnUser();
+</code></pre>
+<ol start="5">
+<li><strong>Run migrations:</strong></li>
+</ol>
+<pre><code class="lang-bash">dotnet ef database update
+</code></pre>
+<p><strong>Full Guide:</strong> <a href="getting-started.html">Getting Started</a></p>
+<hr>
+<h2 id="installation">Installation</h2>
+<h3 id="q5-why-does-dotnet-add-package-dainnuser-fail">Q5: Why does <code>dotnet add package DainnUser</code> fail?</h3>
+<p>Common causes and solutions:</p>
+<ol>
+<li><strong>NuGet source not configured:</strong></li>
+</ol>
+<pre><code class="lang-bash">dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
+</code></pre>
+<ol start="2">
+<li><p><strong>Package name typo:</strong> Use exact name <code>DainnUser</code> (case-sensitive).</p>
+</li>
+<li><p><strong>Version not available:</strong> Check available versions:</p>
+</li>
+</ol>
+<pre><code class="lang-bash">dotnet package search DainnUser --take 10
+</code></pre>
+<ol start="4">
+<li><strong>Network connectivity:</strong> Check your internet connection and proxy settings.</li>
+</ol>
+<p><strong>See:</strong> <a href="troubleshooting.html#issue-1-nuget-package-installation-failure">Troubleshooting - Issue 1</a></p>
+<hr>
+<h3 id="q6-do-i-need-all-dainnuser-packages">Q6: Do I need all DainnUser packages?</h3>
+<p>No. DainnUser is structured as a meta-package that references all components. You can install individual packages if you only need specific functionality:</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>When to Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DainnUser</code></td>
+<td>Complete package (all features)</td>
+</tr>
+<tr>
+<td><code>DainnUser.Core</code></td>
+<td>Domain models and interfaces only</td>
+</tr>
+<tr>
+<td><code>DainnUser.Application</code></td>
+<td>Business logic services</td>
+</tr>
+<tr>
+<td><code>DainnUser.Api</code></td>
+<td>REST API controllers</td>
+</tr>
+<tr>
+<td><code>DainnUser.Web</code></td>
+<td>Razor/Blazor components</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Recommendation:</strong> Use the meta-package <code>DainnUser</code> for simplicity.</p>
+<hr>
+<h2 id="configuration">Configuration</h2>
+<h3 id="q7-what-configuration-is-required">Q7: What configuration is required?</h3>
+<p><strong>Minimum required settings:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SqlServer&quot;,
+      &quot;ConnectionString&quot;: &quot;...&quot;
+    },
+    &quot;Jwt&quot;: {
+      &quot;SecretKey&quot;: &quot;min-32-characters&quot;,
+      &quot;Issuer&quot;: &quot;...&quot;,
+      &quot;Audience&quot;: &quot;...&quot;
+    }
+  }
+}
+</code></pre>
+<p>All other settings have sensible defaults.</p>
+<p><strong>See:</strong> <a href="configuration.html">Configuration Reference</a></p>
+<hr>
+<h3 id="q8-how-do-i-use-environment-variables-for-configuration">Q8: How do I use environment variables for configuration?</h3>
+<p>Use double underscore (<code>__</code>) as the path separator:</p>
+<pre><code class="lang-bash"># Example environment variables
+DainnUser__Database__Provider=PostgreSQL
+DainnUser__Database__ConnectionString=&quot;Host=localhost;Database=myapp&quot;
+DainnUser__Jwt__SecretKey=&quot;your-secret-key&quot;
+DainnUser__Jwt__Issuer=&quot;https://yourdomain.com&quot;
+</code></pre>
+<p><strong>Note:</strong> Environment variables take precedence over <code>appsettings.json</code>.</p>
+<hr>
+<h3 id="q9-can-i-customize-dainnuser-behavior-in-code">Q9: Can I customize DainnUser behavior in code?</h3>
+<p>Yes. Pass options to <code>AddDainnUser()</code>:</p>
+<pre><code class="lang-csharp">builder.Services.AddDainnUser(builder.Configuration, options =&gt;
+{
+    options.EnableSocialLogin = true;
+    options.EnableTwoFactor = true;
+    options.RequireEmailVerification = true;
+    options.EnableAccountLockout = true;
+    options.EnableSessionManagement = true;
+    options.EnableActivityLogging = true;
+});
+</code></pre>
+<p><strong>See:</strong> <a href="configuration.html#feature-flags">Features Configuration</a></p>
+<hr>
+<h2 id="features">Features</h2>
+<h3 id="q10-how-does-email-verification-work">Q10: How does email verification work?</h3>
+<ol>
+<li>User registers with email</li>
+<li>System generates a verification token (valid 24 hours)</li>
+<li>Email is sent with verification link containing token</li>
+<li>User clicks link → token validated → account activated</li>
+<li>User can now login</li>
+</ol>
+<p><strong>Verification Flow:</strong></p>
+<pre><code class="lang-csharp">// Registration generates token
+var userId = await _authService.RegisterAsync(email, username, password);
+
+// Email verification validates token
+await _authService.VerifyEmailAsync(userId, token);
+
+// Resend verification if needed (revokes old token, generates new)
+await _authService.ResendVerificationEmailAsync(email);
+</code></pre>
+<p><strong>See:</strong> <a href="api-endpoints.html#2-verify-email">API Endpoints - Verify Email</a></p>
+<hr>
+<h3 id="q11-how-do-i-enable-two-factor-authentication-2fa">Q11: How do I enable two-factor authentication (2FA)?</h3>
+<p><strong>Step 1: Setup 2FA</strong></p>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/2fa/setup \
+  -H &quot;Authorization: Bearer YOUR_TOKEN&quot;
+</code></pre>
+<p>Returns QR code URI and secret. User scans with authenticator app (Google Authenticator, Authy, etc.).</p>
+<p><strong>Step 2: Enable 2FA</strong></p>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/2fa/enable \
+  -H &quot;Authorization: Bearer YOUR_TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{&quot;code&quot;: &quot;123456&quot;}'
+</code></pre>
+<p>Returns 10 backup codes. User must save these securely.</p>
+<p><strong>See:</strong> <a href="api-endpoints.html#10-setup-two-factor-authentication">API Endpoints - 2FA</a></p>
+<hr>
+<h3 id="q12-how-does-social-login-work">Q12: How does social login work?</h3>
+<ol>
+<li>User clicks social login button (Google, Facebook, etc.)</li>
+<li>Redirect to OAuth provider authorization page</li>
+<li>User grants permission</li>
+<li>OAuth provider redirects back with authorization code</li>
+<li>DainnUser exchanges code for access token</li>
+<li>User info retrieved and user account created/linked</li>
+<li>JWT token issued to user</li>
+</ol>
+<p><strong>Configuration:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;OAuth&quot;: {
+      &quot;Google&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;...&quot;,
+        &quot;ClientSecret&quot;: &quot;...&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<p><strong>See:</strong> <a href="configuration.html#oauth-configuration">OAuth Configuration</a></p>
+<hr>
+<h3 id="q13-how-do-i-customize-user-entity">Q13: How do I customize user entity?</h3>
+<p>Extend the base <code>User</code> class:</p>
+<pre><code class="lang-csharp">// Your custom user entity
+public class MyAppUser : DainnUser.Core.Entities.User
+{
+    public string CompanyName { get; set; }
+    public string Department { get; set; }
+    public DateTime? HireDate { get; set; }
+}
+
+// Register custom user
+builder.Services.AddDainnUser&lt;MyAppUser&gt;(builder.Configuration);
+</code></pre>
+<p><strong>See:</strong> <a href="getting-started.html#extend-user-entity">Getting Started - Extend User Entity</a></p>
+<hr>
+<h2 id="security">Security</h2>
+<h3 id="q14-how-are-passwords-stored">Q14: How are passwords stored?</h3>
+<p>DainnUser uses ASP.NET Core Identity's password hasher (default: PBKDF2, configurable to Argon2).</p>
+<p><strong>Password hashing uses:</strong></p>
+<ul>
+<li>Per-user unique salt</li>
+<li>Configurable work factor (iterations)</li>
+<li>Secure hash algorithm (PBKDF2-SHA256 or Argon2)</li>
+</ul>
+<p><strong>Configuration:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Security&quot;: {
+      &quot;PasswordHasher&quot;: &quot;Argon2&quot;,
+      &quot;PasswordRequirements&quot;: {
+        &quot;RequiredLength&quot;: 12,
+        &quot;RequireDigit&quot;: true,
+        &quot;RequireLowercase&quot;: true,
+        &quot;RequireUppercase&quot;: true,
+        &quot;RequireNonAlphanumeric&quot;: true
+      }
+    }
+  }
+}
+</code></pre>
+<p><strong>See:</strong> <a href="security.html">Security Guide</a></p>
+<hr>
+<h3 id="q15-how-does-account-lockout-work">Q15: How does account lockout work?</h3>
+<p>After <code>MaxFailedAccessAttempts</code> failed login attempts, the account is locked for <code>LockoutDurationMinutes</code>.</p>
+<p><strong>Default configuration:</strong></p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Security&quot;: {
+      &quot;Lockout&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;MaxFailedAccessAttempts&quot;: 5,
+        &quot;LockoutDurationMinutes&quot;: 15
+      }
+    }
+  }
+}
+</code></pre>
+<p><strong>Unlock via admin:</strong></p>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/admin/unlock-account/{userId} \
+  -H &quot;Authorization: Bearer ADMIN_TOKEN&quot;
+</code></pre>
+<p><strong>See:</strong> <a href="troubleshooting.html#issue-9-account-locked-out">Troubleshooting - Issue 9</a></p>
+<hr>
+<h3 id="q16-is-dainnuser-owasp-compliant">Q16: Is DainnUser OWASP compliant?</h3>
+<p>Yes. DainnUser is designed with OWASP Top 10 2021 compliance built-in:</p>
+<table>
+<thead>
+<tr>
+<th>OWASP Category</th>
+<th>Protection</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A01: Broken Access Control</td>
+<td>RBAC, policy-based authorization</td>
+</tr>
+<tr>
+<td>A02: Cryptographic Failures</td>
+<td>PBKDF2/Argon2, secure token generation</td>
+</tr>
+<tr>
+<td>A03: Injection</td>
+<td>Parameterized queries (EF Core), FluentValidation</td>
+</tr>
+<tr>
+<td>A04: Insecure Design</td>
+<td>Secure defaults, rate limiting, lockout</td>
+</tr>
+<tr>
+<td>A05: Security Misconfiguration</td>
+<td>Secure defaults, validation on startup</td>
+</tr>
+<tr>
+<td>A06: Vulnerable Components</td>
+<td>Regular dependency audits</td>
+</tr>
+<tr>
+<td>A07: Identification Failures</td>
+<td>Strong passwords, 2FA, session management</td>
+</tr>
+<tr>
+<td>A08: Data Integrity Failures</td>
+<td>Signed packages, audit logging</td>
+</tr>
+<tr>
+<td>A09: Logging Failures</td>
+<td>Login history, activity tracking</td>
+</tr>
+<tr>
+<td>A10: SSRF</td>
+<td>URL validation, input sanitization</td>
+</tr>
+</tbody>
+</table>
+<p><strong>See:</strong> <a href="security.html">Security Guide</a> | <a href="security.html#owasp-top-10-compliance">OWASP Top 10</a></p>
+<hr>
+<h2 id="deployment">Deployment</h2>
+<h3 id="q17-how-do-i-deploy-to-production">Q17: How do I deploy to production?</h3>
+<p><strong>Prerequisites:</strong></p>
+<ol>
+<li>HTTPS enabled (required for OAuth)</li>
+<li>Production database configured</li>
+<li>Environment variables set for secrets</li>
+<li>Health check endpoint added</li>
+</ol>
+<p><strong>Production checklist:</strong></p>
+<pre><code class="lang-bash"># Environment variables (never commit secrets!)
+export DainnUser__Jwt__SecretKey=&quot;production-secret-key-here&quot;
+export DainnUser__Database__ConnectionString=&quot;Server=prod-db;Database=myapp;User=app;Password=***&quot;
+
+# Run in production mode
+dotnet run --configuration Production
+
+# Or use container
+docker run -e DainnUser__Jwt__SecretKey=&quot;...&quot; myapp
+</code></pre>
+<p><strong>Health check:</strong></p>
+<pre><code class="lang-csharp">app.MapGet(&quot;/health&quot;, () =&gt; Results.Ok(new { status = &quot;healthy&quot; }));
+</code></pre>
+<p><strong>See:</strong> <a href="security.html#security-checklist">Security Guide - Checklist</a></p>
+<hr>
+<h3 id="q18-can-i-use-docker-with-dainnuser">Q18: Can I use Docker with DainnUser?</h3>
+<p>Yes. Create a <code>Dockerfile</code>:</p>
+<pre><code class="lang-dockerfile">FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY --from=build /app/publish .
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENTRYPOINT [&quot;dotnet&quot;, &quot;MyApp.dll&quot;]
+</code></pre>
+<p>Build and run:</p>
+<pre><code class="lang-bash">docker build -t myapp .
+docker run -d -p 8080:8080 \
+  -e DainnUser__Jwt__SecretKey=&quot;your-secret-key&quot; \
+  -e DainnUser__Database__ConnectionString=&quot;Host=db;Database=myapp&quot; \
+  myapp
+</code></pre>
+<hr>
+<h2 id="customization">Customization</h2>
+<h3 id="q19-how-do-i-add-custom-validation-rules">Q19: How do I add custom validation rules?</h3>
+<p>Create a custom validator:</p>
+<pre><code class="lang-csharp">public class CustomRegisterValidator : AbstractValidator&lt;RegisterDto&gt;
+{
+    public CustomRegisterValidator()
+    {
+        RuleFor(x =&gt; x.Email)
+            .Must(BeCompanyEmail)
+            .WithMessage(&quot;Only company emails are allowed&quot;);
+
+        RuleFor(x =&gt; x.Username)
+            .Matches(@&quot;^[a-zA-Z][a-zA-Z0-9]*$&quot;)
+            .WithMessage(&quot;Username must start with a letter and contain only alphanumeric characters&quot;);
+    }
+
+    private bool BeCompanyEmail(string email)
+    {
+        return email.EndsWith(&quot;@mycompany.com&quot;);
+    }
+}
+
+// Register custom validator
+builder.Services.AddScoped&lt;IValidator&lt;RegisterDto&gt;, CustomRegisterValidator&gt;();
+</code></pre>
+<p><strong>See:</strong> <a href="getting-started.html#custom-validation-rules">Getting Started - Custom Validation</a></p>
+<hr>
+<h3 id="q20-how-do-i-override-default-services">Q20: How do I override default services?</h3>
+<p>Replace DainnUser services with your own implementation:</p>
+<pre><code class="lang-csharp">// Override email service
+builder.Services.AddScoped&lt;IEmailService, MyCustomEmailService&gt;();
+
+// Custom email service implementation
+public class MyCustomEmailService : IEmailService
+{
+    public async Task SendAsync(EmailMessage message)
+    {
+        // Your custom implementation
+        await _emailClient.SendAsync(message);
+    }
+}
+</code></pre>
+<p><strong>Overrideable services:</strong></p>
+<ul>
+<li><code>IEmailService</code> - Email sending</li>
+<li><code>ISmsService</code> - SMS sending</li>
+<li><code>IStorageService</code> - File storage</li>
+<li><code>IValidator&lt;T&gt;</code> - Validation rules</li>
+</ul>
+<hr>
+<h2 id="performance">Performance</h2>
+<h3 id="q21-how-do-i-improve-query-performance">Q21: How do I improve query performance?</h3>
+<ol>
+<li><strong>Use pagination for lists:</strong></li>
+</ol>
+<pre><code class="lang-csharp">var users = await _userService.GetUsersAsync(page: 1, pageSize: 20);
+</code></pre>
+<ol start="2">
+<li><strong>Use AsNoTracking for read-only queries:</strong></li>
+</ol>
+<pre><code class="lang-csharp">var user = await _context.Users
+    .AsNoTracking()
+    .FirstOrDefaultAsync(u =&gt; u.Email == email);
+</code></pre>
+<ol start="3">
+<li><strong>Add database indexes:</strong></li>
+</ol>
+<pre><code class="lang-sql">CREATE INDEX IX_Users_Email ON Users(Email);
+CREATE INDEX IX_Users_Status ON Users(Status);
+</code></pre>
+<ol start="4">
+<li><strong>Enable response compression:</strong></li>
+</ol>
+<pre><code class="lang-csharp">builder.Services.AddResponseCompression(options =&gt;
+{
+    options.EnableForHttps = true;
+});
+</code></pre>
+<p><strong>See:</strong> <a href="troubleshooting.html#issue-14-slow-user-list-queries">Troubleshooting - Issue 14</a></p>
+<hr>
+<h3 id="q22-how-do-i-handle-rate-limiting">Q22: How do I handle rate limiting?</h3>
+<p>DainnUser includes built-in rate limiting:</p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Security&quot;: {
+      &quot;RateLimiting&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;MaxRequestsPerMinute&quot;: 60,
+        &quot;Rules&quot;: [
+          {
+            &quot;Endpoint&quot;: &quot;/api/auth/login&quot;,
+            &quot;MaxRequests&quot;: 5,
+            &quot;WindowSeconds&quot;: 60
+          },
+          {
+            &quot;Endpoint&quot;: &quot;/api/auth/register&quot;,
+            &quot;MaxRequests&quot;: 3,
+            &quot;WindowSeconds&quot;: 300
+          }
+        ]
+      }
+    }
+  }
+}
+</code></pre>
+<p><strong>See:</strong> <a href="configuration.html#security-configuration">Configuration Reference - Rate Limiting</a></p>
+<hr>
+<h2 id="see-also">See Also</h2>
+<ul>
+<li><a href="getting-started.html">Getting Started</a></li>
+<li><a href="configuration.html">Configuration Reference</a></li>
+<li><a href="api-endpoints.html">API Endpoints</a></li>
+<li><a href="troubleshooting.html">Troubleshooting</a></li>
+<li><a href="code-examples.html">Code Examples</a></li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/faq.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          © 2026 DainnUser. Licensed under MIT.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

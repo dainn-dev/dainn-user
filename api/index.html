@@ -1,0 +1,174 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>API Reference | DainnUser Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="API Reference | DainnUser Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/dainn-dev/dainn-user/blob/master/docs/api/index.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="">
+            
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="api-reference">API Reference</h1>
+
+<p>This section contains the auto-generated API reference documentation for DainnUser. The documentation is generated from XML comments in the source code and provides detailed information about all public types, methods, properties, and events.</p>
+<h2 id="how-to-read-api-documentation">How to Read API Documentation</h2>
+<p>The API reference is organized by namespace. Each namespace contains related types (classes, interfaces, enums, etc.) that work together to provide specific functionality.</p>
+<h3 id="understanding-the-structure">Understanding the Structure</h3>
+<ul>
+<li><strong>Namespaces</strong>: Logical groupings of related types</li>
+<li><strong>Classes</strong>: Implementation types that provide functionality</li>
+<li><strong>Interfaces</strong>: Contracts that define behavior</li>
+<li><strong>Enums</strong>: Named constants for type-safe values</li>
+<li><strong>Methods</strong>: Operations that can be performed</li>
+<li><strong>Properties</strong>: Data members that can be read or written</li>
+</ul>
+<h3 id="code-examples">Code Examples</h3>
+<p>Most API members include code examples showing common usage patterns. These examples are designed to help you understand how to use the API in real-world scenarios.</p>
+<h2 id="main-namespaces">Main Namespaces</h2>
+<h3 id="dainnusercore">DainnUser.Core</h3>
+<p>The core domain layer containing entities, interfaces, and domain logic. This namespace defines the fundamental building blocks of the library.</p>
+<p><strong>Key Types:</strong></p>
+<ul>
+<li>Domain entities (User, Role, UserToken, etc.)</li>
+<li>Repository interfaces</li>
+<li>Domain exceptions</li>
+<li>Enums and constants</li>
+</ul>
+<p><a href="DainnUser.Core.yml">Browse DainnUser.Core API →</a></p>
+<h3 id="dainnuserapplication">DainnUser.Application</h3>
+<p>The application layer containing business logic, services, DTOs, and validators. This is where the main functionality is implemented.</p>
+<p><strong>Key Types:</strong></p>
+<ul>
+<li>Service interfaces and implementations</li>
+<li>Data Transfer Objects (DTOs)</li>
+<li>FluentValidation validators</li>
+<li>Application-level exceptions</li>
+</ul>
+<p><a href="DainnUser.Application.yml">Browse DainnUser.Application API →</a></p>
+<h3 id="dainnuserinfrastructure">DainnUser.Infrastructure</h3>
+<p>The infrastructure layer containing Entity Framework Core implementations, external service integrations, and data access logic.</p>
+<p><strong>Key Types:</strong></p>
+<ul>
+<li>DbContext and entity configurations</li>
+<li>Repository implementations</li>
+<li>Email and storage providers</li>
+<li>JWT token services</li>
+</ul>
+<p><a href="DainnUser.Infrastructure.yml">Browse DainnUser.Infrastructure API →</a></p>
+<h3 id="dainnuserapi">DainnUser.Api</h3>
+<p>The API layer containing controllers, middleware, filters, and extension methods for ASP.NET Core integration.</p>
+<p><strong>Key Types:</strong></p>
+<ul>
+<li>API controllers</li>
+<li>Custom middleware</li>
+<li>Action filters</li>
+<li>Service registration extensions</li>
+</ul>
+<p><a href="DainnUser.Api.yml">Browse DainnUser.Api API →</a></p>
+<h3 id="dainnuserweb">DainnUser.Web</h3>
+<p>The web layer containing Razor components, tag helpers, and view models for web UI integration.</p>
+<p><strong>Key Types:</strong></p>
+<ul>
+<li>Razor/Blazor components</li>
+<li>Tag helpers</li>
+<li>View models</li>
+<li>UI utilities</li>
+</ul>
+<p><a href="DainnUser.Web.yml">Browse DainnUser.Web API →</a></p>
+<h2 id="additional-resources">Additional Resources</h2>
+<ul>
+<li><a href="../articles/getting-started.html">Getting Started Guide</a></li>
+<li><a href="../articles/configuration.html">Configuration Reference</a></li>
+<li><a href="../articles/code-examples.html">Code Examples</a></li>
+<li><a href="../articles/architecture.html">Architecture Overview</a></li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/dainn-dev/dainn-user/blob/master/docs/api/index.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          © 2026 DainnUser. Licensed under MIT.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

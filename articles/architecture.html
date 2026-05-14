@@ -1,0 +1,490 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Architecture — DainnUser | DainnUser Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Architecture — DainnUser | DainnUser Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/architecture.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="">
+            
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="architecture--dainnuser">Architecture — DainnUser</h1>
+
+<h2 id="overview">Overview</h2>
+<p>DainnUser là một .NET class library được thiết kế theo Clean Architecture principles, cung cấp đầy đủ tính năng user management cho các ứng dụng .NET. Library hỗ trợ multiple database providers thông qua Entity Framework Core và có thể được customize dễ dàng theo business logic của từng ứng dụng.</p>
+<p><strong>Core Philosophy:</strong></p>
+<ul>
+<li><strong>Separation of Concerns:</strong> Mỗi layer có responsibility rõ ràng</li>
+<li><strong>Dependency Inversion:</strong> Core domain không phụ thuộc vào infrastructure</li>
+<li><strong>Extensibility:</strong> Dễ dàng extend và override behaviors</li>
+<li><strong>Security First:</strong> OWASP Top 10 compliance built-in</li>
+<li><strong>Configuration Over Code:</strong> Enable/disable features qua appsettings.json</li>
+</ul>
+<h2 id="system-diagram">System Diagram</h2>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│                     Consumer Application                     │
+│                  (Web API / MVC / Blazor)                    │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         │ Install via NuGet
+                         │
+┌────────────────────────▼────────────────────────────────────┐
+│                    DainnUser Library                         │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │         Presentation Layer                         │    │
+│  │  ┌──────────────────┐  ┌──────────────────┐      │    │
+│  │  │  DainnUser.Api   │  │  DainnUser.Web   │      │    │
+│  │  │  - Controllers   │  │  - Components    │      │    │
+│  │  │  - DTOs          │  │  - Pages         │      │    │
+│  │  │  - Filters       │  │  - ViewModels    │      │    │
+│  │  └──────────────────┘  └──────────────────┘      │    │
+│  └────────────────┬───────────────┬───────────────────┘    │
+│                   │               │                         │
+│  ┌────────────────▼───────────────▼───────────────────┐    │
+│  │         Application Layer                          │    │
+│  │         DainnUser.Application                      │    │
+│  │  - Services (Business Logic)                       │    │
+│  │  - DTOs &amp; Mappings                                 │    │
+│  │  - Validators (FluentValidation)                   │    │
+│  │  - Interfaces                                      │    │
+│  └────────────────┬───────────────────────────────────┘    │
+│                   │                                         │
+│  ┌────────────────▼───────────────────────────────────┐    │
+│  │         Infrastructure Layer                       │    │
+│  │         DainnUser.Infrastructure                   │    │
+│  │  - EF Core DbContext                               │    │
+│  │  - Repositories                                    │    │
+│  │  - Identity Integration                            │    │
+│  │  - External Services (Email, SMS, Storage)         │    │
+│  └────────────────┬───────────────────────────────────┘    │
+│                   │                                         │
+│  ┌────────────────▼───────────────────────────────────┐    │
+│  │         Core/Domain Layer                          │    │
+│  │         DainnUser.Core                             │    │
+│  │  - Entities (User, Role, etc.)                     │    │
+│  │  - Interfaces (IRepository, IService)              │    │
+│  │  - Enums &amp; Constants                               │    │
+│  │  - Domain Exceptions                               │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+└──────────────────────────┬───────────────────────────────────┘
+                           │
+                           │ EF Core Provider
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+   ┌────▼────┐      ┌─────▼─────┐      ┌────▼────┐
+   │SQL Server│      │PostgreSQL │      │  MySQL  │
+   └──────────┘      └───────────┘      └─────────┘
+</code></pre>
+<h2 id="components">Components</h2>
+<h3 id="dainnusercore">DainnUser.Core</h3>
+<p><strong>Location:</strong> <code>src/DainnUser.Core/</code></p>
+<p><strong>Role:</strong> Domain layer chứa business entities và core interfaces. Không có dependencies external.</p>
+<p><strong>Key files:</strong></p>
+<ul>
+<li><code>Entities/User.cs</code> — Core user entity</li>
+<li><code>Entities/Role.cs</code> — RBAC role entity</li>
+<li><code>Entities/UserProfile.cs</code> — Extended profile data</li>
+<li><code>Entities/LoginHistory.cs</code> — Audit trail</li>
+<li><code>Entities/UserSession.cs</code> — Session management</li>
+<li><code>Interfaces/IUserRepository.cs</code> — Repository contracts</li>
+<li><code>Interfaces/IUserService.cs</code> — Service contracts</li>
+<li><code>Enums/UserStatus.cs</code> — User status enum</li>
+<li><code>Enums/LoginProvider.cs</code> — OAuth provider enum</li>
+<li><code>Exceptions/DainnUserException.cs</code> — Base exception</li>
+</ul>
+<p><strong>Principles:</strong></p>
+<ul>
+<li>Pure domain logic</li>
+<li>No infrastructure concerns</li>
+<li>Framework-agnostic</li>
+<li>Highly testable</li>
+</ul>
+<h3 id="dainnuserinfrastructure">DainnUser.Infrastructure</h3>
+<p><strong>Location:</strong> <code>src/DainnUser.Infrastructure/</code></p>
+<p><strong>Role:</strong> Infrastructure implementations — database, external services, ASP.NET Core Identity integration.</p>
+<p><strong>Key files:</strong></p>
+<ul>
+<li><code>Data/DainnUserDbContext.cs</code> — EF Core DbContext</li>
+<li><code>Data/EntityConfigurations/</code> — Fluent API configurations</li>
+<li><code>Repositories/UserRepository.cs</code> — User repository implementation</li>
+<li><code>Repositories/RoleRepository.cs</code> — Role repository implementation</li>
+<li><code>Identity/ApplicationUser.cs</code> — ASP.NET Core Identity user</li>
+<li><code>Identity/ApplicationRole.cs</code> — ASP.NET Core Identity role</li>
+<li><code>Services/EmailService.cs</code> — Email sending</li>
+<li><code>Services/SmsService.cs</code> — SMS sending (2FA)</li>
+<li><code>Services/StorageService.cs</code> — Avatar/file storage</li>
+<li><code>Migrations/</code> — EF Core migrations</li>
+</ul>
+<p><strong>Dependencies:</strong></p>
+<ul>
+<li>DainnUser.Core</li>
+<li>Entity Framework Core</li>
+<li>ASP.NET Core Identity</li>
+<li>External service SDKs (SendGrid, Twilio, Azure Storage, etc.)</li>
+</ul>
+<h3 id="dainnuserapplication">DainnUser.Application</h3>
+<p><strong>Location:</strong> <code>src/DainnUser.Application/</code></p>
+<p><strong>Role:</strong> Business logic layer — orchestrates domain và infrastructure để implement use cases.</p>
+<p><strong>Key files:</strong></p>
+<ul>
+<li><code>Services/AuthenticationService.cs</code> — Login, register, password reset</li>
+<li><code>Services/TwoFactorService.cs</code> — 2FA logic</li>
+<li><code>Services/ProfileService.cs</code> — Profile management</li>
+<li><code>Services/SessionService.cs</code> — Session management</li>
+<li><code>Services/ActivityService.cs</code> — Activity logging</li>
+<li><code>DTOs/Auth/RegisterDto.cs</code> — Registration DTO</li>
+<li><code>DTOs/Auth/LoginDto.cs</code> — Login DTO</li>
+<li><code>DTOs/Profile/ProfileDto.cs</code> — Profile DTO</li>
+<li><code>Validators/RegisterDtoValidator.cs</code> — FluentValidation validators</li>
+<li><code>Mappings/MappingProfile.cs</code> — AutoMapper profiles</li>
+</ul>
+<p><strong>Dependencies:</strong></p>
+<ul>
+<li>DainnUser.Core</li>
+<li>DainnUser.Infrastructure</li>
+<li>FluentValidation</li>
+<li>AutoMapper</li>
+</ul>
+<h3 id="dainnuserapi">DainnUser.Api</h3>
+<p><strong>Location:</strong> <code>src/DainnUser.Api/</code></p>
+<p><strong>Role:</strong> API layer — controllers, middleware, filters cho RESTful API.</p>
+<p><strong>Key files:</strong></p>
+<ul>
+<li><code>Controllers/AuthController.cs</code> — Authentication endpoints</li>
+<li><code>Controllers/ProfileController.cs</code> — Profile endpoints</li>
+<li><code>Controllers/UserController.cs</code> — User management (admin)</li>
+<li><code>Controllers/SessionController.cs</code> — Session management</li>
+<li><code>Middleware/RateLimitingMiddleware.cs</code> — Rate limiting</li>
+<li><code>Middleware/ExceptionHandlingMiddleware.cs</code> — Global error handling</li>
+<li><code>Filters/ValidateModelAttribute.cs</code> — Model validation filter</li>
+<li><code>Extensions/ServiceCollectionExtensions.cs</code> — DI registration</li>
+</ul>
+<p><strong>Dependencies:</strong></p>
+<ul>
+<li>DainnUser.Application</li>
+<li>ASP.NET Core MVC</li>
+</ul>
+<h3 id="dainnuserweb">DainnUser.Web</h3>
+<p><strong>Location:</strong> <code>src/DainnUser.Web/</code></p>
+<p><strong>Role:</strong> Web UI components — Razor Pages, Blazor components, tag helpers.</p>
+<p><strong>Key files:</strong></p>
+<ul>
+<li><code>Components/LoginForm.razor</code> — Login form component</li>
+<li><code>Components/RegisterForm.razor</code> — Registration form</li>
+<li><code>Components/ProfileEditor.razor</code> — Profile editor</li>
+<li><code>Pages/Account/Login.cshtml</code> — Login page (Razor)</li>
+<li><code>Pages/Account/Register.cshtml</code> — Registration page</li>
+<li><code>TagHelpers/UserAvatarTagHelper.cs</code> — Avatar tag helper</li>
+<li><code>ViewModels/LoginViewModel.cs</code> — View models</li>
+</ul>
+<p><strong>Dependencies:</strong></p>
+<ul>
+<li>DainnUser.Application</li>
+<li>ASP.NET Core Razor Pages / Blazor</li>
+</ul>
+<h2 id="data-flow">Data Flow</h2>
+<h3 id="authentication-flow">Authentication Flow</h3>
+<pre><code>User → Login Request
+  ↓
+API Controller (DainnUser.Api)
+  ↓
+AuthenticationService (DainnUser.Application)
+  ↓ Validate credentials
+UserRepository (DainnUser.Infrastructure)
+  ↓ Query database
+EF Core → Database
+  ↓ Return user
+AuthenticationService
+  ↓ Generate JWT token
+  ↓ Log login history
+  ↓ Create session
+API Controller
+  ↓
+User ← JWT Token + User Info
+</code></pre>
+<h3 id="registration-flow">Registration Flow</h3>
+<pre><code>User → Register Request
+  ↓
+API Controller (DainnUser.Api)
+  ↓ Validate DTO
+FluentValidation
+  ↓
+AuthenticationService (DainnUser.Application)
+  ↓ Check email exists
+  ↓ Hash password
+  ↓ Create user
+UserRepository (DainnUser.Infrastructure)
+  ↓ Save to database
+EF Core → Database
+  ↓
+EmailService (DainnUser.Infrastructure)
+  ↓ Send verification email
+External Email Provider
+  ↓
+API Controller
+  ↓
+User ← Success Response
+</code></pre>
+<h3 id="2fa-flow">2FA Flow</h3>
+<pre><code>User → Enable 2FA Request
+  ↓
+API Controller
+  ↓
+TwoFactorService (DainnUser.Application)
+  ↓ Generate secret
+  ↓ Generate QR code
+  ↓ Save to user
+UserRepository → Database
+  ↓
+User ← QR Code
+
+User → Verify 2FA Code
+  ↓
+TwoFactorService
+  ↓ Validate TOTP code
+  ↓ Mark 2FA enabled
+UserRepository → Database
+  ↓
+User ← Success
+</code></pre>
+<h2 id="external-services">External Services</h2>
+<h3 id="email-service">Email Service</h3>
+<ul>
+<li><strong>Purpose:</strong> Email verification, password reset, notifications</li>
+<li><strong>Providers:</strong> SendGrid, SMTP, AWS SES (configurable)</li>
+<li><strong>Configuration:</strong> <code>appsettings.json</code> → <code>EmailOptions</code></li>
+</ul>
+<h3 id="sms-service">SMS Service</h3>
+<ul>
+<li><strong>Purpose:</strong> 2FA codes via SMS</li>
+<li><strong>Providers:</strong> Twilio, AWS SNS (configurable)</li>
+<li><strong>Configuration:</strong> <code>appsettings.json</code> → <code>SmsOptions</code></li>
+</ul>
+<h3 id="storage-service">Storage Service</h3>
+<ul>
+<li><strong>Purpose:</strong> Avatar/file uploads</li>
+<li><strong>Providers:</strong> Azure Blob Storage, AWS S3, Local filesystem (configurable)</li>
+<li><strong>Configuration:</strong> <code>appsettings.json</code> → <code>StorageOptions</code></li>
+</ul>
+<h3 id="oauth-providers">OAuth Providers</h3>
+<ul>
+<li><strong>Purpose:</strong> Social login</li>
+<li><strong>Providers:</strong> Google, Facebook, GitHub, Microsoft</li>
+<li><strong>Configuration:</strong> <code>appsettings.json</code> → <code>OAuthOptions</code></li>
+</ul>
+<h3 id="recaptcha">reCAPTCHA</h3>
+<ul>
+<li><strong>Purpose:</strong> Bot protection</li>
+<li><strong>Provider:</strong> Google reCAPTCHA v2/v3</li>
+<li><strong>Configuration:</strong> <code>appsettings.json</code> → <code>RecaptchaOptions</code></li>
+</ul>
+<h2 id="environment-variables">Environment Variables</h2>
+<p>Required configuration in <code>appsettings.json</code>:</p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SqlServer&quot;, // SqlServer, PostgreSQL, MySQL, SQLite
+      &quot;ConnectionString&quot;: &quot;...&quot;
+    },
+    &quot;Jwt&quot;: {
+      &quot;SecretKey&quot;: &quot;...&quot;,
+      &quot;Issuer&quot;: &quot;...&quot;,
+      &quot;Audience&quot;: &quot;...&quot;,
+      &quot;ExpirationMinutes&quot;: 60
+    },
+    &quot;Email&quot;: {
+      &quot;Provider&quot;: &quot;SendGrid&quot;, // SendGrid, Smtp, AwsSes
+      &quot;ApiKey&quot;: &quot;...&quot;,
+      &quot;FromEmail&quot;: &quot;...&quot;,
+      &quot;FromName&quot;: &quot;...&quot;
+    },
+    &quot;Sms&quot;: {
+      &quot;Provider&quot;: &quot;Twilio&quot;, // Twilio, AwsSns
+      &quot;AccountSid&quot;: &quot;...&quot;,
+      &quot;AuthToken&quot;: &quot;...&quot;,
+      &quot;FromNumber&quot;: &quot;...&quot;
+    },
+    &quot;Storage&quot;: {
+      &quot;Provider&quot;: &quot;AzureBlob&quot;, // AzureBlob, AwsS3, Local
+      &quot;ConnectionString&quot;: &quot;...&quot;,
+      &quot;ContainerName&quot;: &quot;...&quot;
+    },
+    &quot;OAuth&quot;: {
+      &quot;Google&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;ClientId&quot;: &quot;...&quot;,
+        &quot;ClientSecret&quot;: &quot;...&quot;
+      },
+      &quot;Facebook&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;AppId&quot;: &quot;...&quot;,
+        &quot;AppSecret&quot;: &quot;...&quot;
+      },
+      &quot;GitHub&quot;: {
+        &quot;Enabled&quot;: false,
+        &quot;ClientId&quot;: &quot;...&quot;,
+        &quot;ClientSecret&quot;: &quot;...&quot;
+      },
+      &quot;Microsoft&quot;: {
+        &quot;Enabled&quot;: false,
+        &quot;ClientId&quot;: &quot;...&quot;,
+        &quot;ClientSecret&quot;: &quot;...&quot;
+      }
+    },
+    &quot;Recaptcha&quot;: {
+      &quot;Enabled&quot;: true,
+      &quot;SiteKey&quot;: &quot;...&quot;,
+      &quot;SecretKey&quot;: &quot;...&quot;
+    },
+    &quot;Security&quot;: {
+      &quot;RequireEmailVerification&quot;: true,
+      &quot;RequirePhoneVerification&quot;: false,
+      &quot;EnableTwoFactor&quot;: true,
+      &quot;PasswordRequirements&quot;: {
+        &quot;RequireDigit&quot;: true,
+        &quot;RequireLowercase&quot;: true,
+        &quot;RequireUppercase&quot;: true,
+        &quot;RequireNonAlphanumeric&quot;: true,
+        &quot;RequiredLength&quot;: 12
+      },
+      &quot;Lockout&quot;: {
+        &quot;MaxFailedAccessAttempts&quot;: 5,
+        &quot;LockoutDurationMinutes&quot;: 15
+      },
+      &quot;RateLimiting&quot;: {
+        &quot;Enabled&quot;: true,
+        &quot;MaxRequestsPerMinute&quot;: 60
+      }
+    }
+  }
+}
+</code></pre>
+<h2 id="security-architecture">Security Architecture</h2>
+<h3 id="defense-in-depth">Defense in Depth</h3>
+<p><strong>Layer 1: Input Validation</strong></p>
+<ul>
+<li>FluentValidation cho DTOs</li>
+<li>Model binding validation</li>
+<li>Sanitization</li>
+</ul>
+<p><strong>Layer 2: Authentication</strong></p>
+<ul>
+<li>JWT tokens với expiration</li>
+<li>Refresh token rotation</li>
+<li>2FA support</li>
+<li>OAuth integration</li>
+</ul>
+<p><strong>Layer 3: Authorization</strong></p>
+<ul>
+<li>RBAC với ASP.NET Core Identity</li>
+<li>Policy-based authorization</li>
+<li>Resource-based authorization</li>
+</ul>
+<p><strong>Layer 4: Data Protection</strong></p>
+<ul>
+<li>Password hashing (PBKDF2/Argon2)</li>
+<li>Data encryption at rest</li>
+<li>TLS/HTTPS enforcement</li>
+</ul>
+<p><strong>Layer 5: Monitoring</strong></p>
+<ul>
+<li>Login history</li>
+<li>Activity logging</li>
+<li>Failed attempt tracking</li>
+<li>Anomaly detection (planned)</li>
+</ul>
+<h3 id="owasp-top-10-mapping">OWASP Top 10 Mapping</h3>
+<p>Xem <code>.claude/skills/security-review.md</code> cho chi tiết implementation.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/architecture.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          © 2026 DainnUser. Licensed under MIT.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

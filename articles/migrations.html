@@ -1,0 +1,262 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Database Migrations Guide | DainnUser Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Database Migrations Guide | DainnUser Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/migrations.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="">
+            
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="database-migrations-guide">Database Migrations Guide</h1>
+
+<h2 id="overview">Overview</h2>
+<p>DainnUser sử dụng Entity Framework Core Migrations để quản lý database schema. Library hỗ trợ 4 database providers: SQL Server, PostgreSQL, MySQL, và SQLite.</p>
+<h2 id="important-notes">Important Notes</h2>
+<p>⚠️ <strong>Migrations đã được pre-generated</strong> trong library với SQLite làm design-time provider. Tuy nhiên, bạn có thể generate lại migrations cho provider cụ thể của mình nếu cần.</p>
+<h2 id="configuration">Configuration</h2>
+<p>Trong <code>appsettings.json</code> của ứng dụng:</p>
+<pre><code class="lang-json">{
+  &quot;DainnUser&quot;: {
+    &quot;Database&quot;: {
+      &quot;Provider&quot;: &quot;SqlServer&quot;,  // SqlServer | PostgreSQL | MySQL | SQLite
+      &quot;ConnectionString&quot;: &quot;Server=localhost;Database=DainnUserDb;Trusted_Connection=True;TrustServerCertificate=True;&quot;,
+      &quot;EnableSensitiveDataLogging&quot;: false,  // Only true in development
+      &quot;EnableDetailedErrors&quot;: false  // Only true in development
+    }
+  }
+}
+</code></pre>
+<h2 id="applying-migrations">Applying Migrations</h2>
+<h3 id="option-1-automatic-migration-on-startup-recommended-for-development">Option 1: Automatic Migration on Startup (Recommended for Development)</h3>
+<p>Trong <code>Program.cs</code>:</p>
+<pre><code class="lang-csharp">using DainnUser.Infrastructure.Data;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add DainnUser DbContext
+builder.Services.AddDainnUserDbContext(builder.Configuration);
+
+var app = builder.Build();
+
+// Apply migrations automatically on startup
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService&lt;DainnUserDbContext&gt;();
+    dbContext.Database.Migrate();
+}
+
+app.Run();
+</code></pre>
+<h3 id="option-2-manual-migration-via-cli">Option 2: Manual Migration via CLI</h3>
+<pre><code class="lang-bash"># Navigate to your application project (not DainnUser.Infrastructure)
+cd YourApp
+
+# Apply migrations
+dotnet ef database update --project ../path/to/DainnUser.Infrastructure
+
+# Or if you have the connection string
+dotnet ef database update --project ../path/to/DainnUser.Infrastructure --connection &quot;YourConnectionString&quot;
+</code></pre>
+<h3 id="option-3-sql-script-generation-recommended-for-production">Option 3: SQL Script Generation (Recommended for Production)</h3>
+<pre><code class="lang-bash"># Generate SQL script for review before applying
+dotnet ef migrations script --project ../path/to/DainnUser.Infrastructure --output migration.sql
+
+# Review migration.sql, then apply manually to production database
+</code></pre>
+<h2 id="creating-new-migrations-for-library-developers">Creating New Migrations (For Library Developers)</h2>
+<p>Nếu bạn đang phát triển DainnUser library và cần tạo migration mới:</p>
+<pre><code class="lang-bash"># Navigate to Infrastructure project
+cd src/DainnUser.Infrastructure
+
+# Create new migration
+dotnet ef migrations add YourMigrationName --output-dir Data/Migrations
+
+# Remove last migration if needed
+dotnet ef migrations remove
+</code></pre>
+<h2 id="multi-provider-considerations">Multi-Provider Considerations</h2>
+<h3 id="design-time-provider">Design-Time Provider</h3>
+<p>Library sử dụng SQLite làm design-time provider (trong <code>DainnUserDbContextFactory.cs</code>) để generate migrations. Migrations này <strong>tương thích với tất cả providers</strong> vì:</p>
+<ul>
+<li>Sử dụng EF Core abstractions</li>
+<li>Không có provider-specific syntax</li>
+<li>Fluent API configurations hoạt động trên mọi provider</li>
+</ul>
+<h3 id="runtime-provider">Runtime Provider</h3>
+<p>Provider thực tế được chọn tại runtime dựa trên configuration:</p>
+<pre><code class="lang-csharp">services.AddDainnUserDbContext(configuration);
+</code></pre>
+<h3 id="provider-specific-notes">Provider-Specific Notes</h3>
+<p><strong>SQL Server:</strong></p>
+<ul>
+<li>Hỗ trợ đầy đủ tất cả features</li>
+<li>Connection retry với exponential backoff</li>
+<li>Recommended cho production</li>
+</ul>
+<p><strong>PostgreSQL:</strong></p>
+<ul>
+<li>Case-sensitive table/column names</li>
+<li>Excellent performance</li>
+<li>Recommended cho production</li>
+</ul>
+<p><strong>MySQL:</strong></p>
+<ul>
+<li>Auto-detect server version</li>
+<li>Sử dụng Pomelo provider (recommended)</li>
+<li>Recommended cho production</li>
+</ul>
+<p><strong>SQLite:</strong></p>
+<ul>
+<li>File-based database</li>
+<li>Không hỗ trợ một số advanced features (e.g., multiple concurrent writes)</li>
+<li>Recommended cho development/testing only</li>
+</ul>
+<h2 id="seed-data">Seed Data</h2>
+<p>Initial migration bao gồm seed data cho 3 default roles:</p>
+<ul>
+<li><strong>Administrator</strong>: Full system access</li>
+<li><strong>User</strong>: Standard user permissions</li>
+<li><strong>Moderator</strong>: User management permissions</li>
+</ul>
+<p>Seed data được apply tự động khi chạy migration.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="unable-to-create-dbcontext-error">&quot;Unable to create DbContext&quot; Error</h3>
+<p>Đảm bảo bạn đã:</p>
+<ol>
+<li>Add DainnUser DbContext vào DI container: <code>services.AddDainnUserDbContext(configuration)</code></li>
+<li>Configure connection string trong appsettings.json</li>
+<li>Install EF Core tools: <code>dotnet tool install --global dotnet-ef</code></li>
+</ol>
+<h3 id="migration-already-applied">Migration Already Applied</h3>
+<pre><code class="lang-bash"># Check migration status
+dotnet ef migrations list --project ../path/to/DainnUser.Infrastructure
+
+# Rollback to specific migration
+dotnet ef database update PreviousMigrationName --project ../path/to/DainnUser.Infrastructure
+</code></pre>
+<h3 id="provider-specific-connection-string-issues">Provider-Specific Connection String Issues</h3>
+<p><strong>SQL Server:</strong></p>
+<pre><code>Server=localhost;Database=DainnUserDb;Trusted_Connection=True;TrustServerCertificate=True;
+</code></pre>
+<p><strong>PostgreSQL:</strong></p>
+<pre><code>Host=localhost;Database=dainnuserdb;Username=postgres;Password=yourpassword
+</code></pre>
+<p><strong>MySQL:</strong></p>
+<pre><code>Server=localhost;Database=dainnuserdb;User=root;Password=yourpassword
+</code></pre>
+<p><strong>SQLite:</strong></p>
+<pre><code>Data Source=dainnuser.db
+</code></pre>
+<h2 id="production-deployment">Production Deployment</h2>
+<h3 id="recommended-approach">Recommended Approach</h3>
+<ol>
+<li><strong>Generate SQL script</strong> từ migrations</li>
+<li><strong>Review script</strong> với DBA team</li>
+<li><strong>Test script</strong> trên staging environment</li>
+<li><strong>Apply script</strong> manually trên production database</li>
+<li><strong>Verify</strong> bằng cách check <code>__EFMigrationsHistory</code> table</li>
+</ol>
+<h3 id="avoid-automatic-migration-in-production">Avoid Automatic Migration in Production</h3>
+<p>❌ <strong>Không nên:</strong></p>
+<pre><code class="lang-csharp">dbContext.Database.Migrate(); // Dangerous in production
+</code></pre>
+<p>✅ <strong>Nên:</strong></p>
+<pre><code class="lang-bash">dotnet ef migrations script --idempotent --output production-migration.sql
+# Review và apply manually
+</code></pre>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/">EF Core Migrations Documentation</a></li>
+<li><a href="https://learn.microsoft.com/en-us/ef/core/providers/">EF Core Database Providers</a></li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/migrations.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          © 2026 DainnUser. Licensed under MIT.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

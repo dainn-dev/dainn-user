@@ -1,0 +1,1700 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>API Endpoints Documentation | DainnUser Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="API Endpoints Documentation | DainnUser Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/api-endpoints.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="">
+            
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="api-endpoints-documentation">API Endpoints Documentation</h1>
+
+<p>Base URL: <code>https://localhost:5001/api</code> (Development)</p>
+<h2 id="authentication-endpoints">Authentication Endpoints</h2>
+<h3 id="1-register-user">1. Register User</h3>
+<p>Creates a new user account and sends a verification email.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/register</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;email&quot;: &quot;user@example.com&quot;,
+  &quot;username&quot;: &quot;johndoe&quot;,
+  &quot;password&quot;: &quot;SecurePass123!@#&quot;,
+  &quot;confirmPassword&quot;: &quot;SecurePass123!@#&quot;
+}
+</code></pre>
+<p><strong>Validation Rules:</strong></p>
+<ul>
+<li>Email: Required, valid email format, max 256 characters</li>
+<li>Username: Required, 3-50 characters, alphanumeric with underscores/hyphens only</li>
+<li>Password: Required, min 8 characters, must contain uppercase, lowercase, digit, and special character</li>
+<li>ConfirmPassword: Must match password</li>
+</ul>
+<p><strong>Success Response (201 Created):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;userId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;message&quot;: &quot;Registration successful. Please check your email to verify your account.&quot;
+  },
+  &quot;message&quot;: null,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Responses:</strong></p>
+<p><strong>400 Bad Request</strong> (Validation Failed):</p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Validation failed.&quot;,
+  &quot;errors&quot;: [
+    &quot;Email is required.&quot;,
+    &quot;Password must be at least 8 characters.&quot;
+  ]
+}
+</code></pre>
+<p><strong>409 Conflict</strong> (Duplicate Email/Username):</p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Email is already registered.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>201 Created</code> - Registration successful</li>
+<li><code>400 Bad Request</code> - Validation failed</li>
+<li><code>409 Conflict</code> - Email or username already exists</li>
+</ul>
+<hr>
+<h3 id="2-verify-email">2. Verify Email</h3>
+<p>Verifies a user's email address using the token sent via email.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/verify-email</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;userId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;token&quot;: &quot;AbCdEfGhIjKlMnOpQrStUvWxYz0123456789+/==&quot;
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: &quot;Email verified successfully.&quot;,
+  &quot;message&quot;: &quot;Your account is now active.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Email verification failed. Token may be invalid, expired, or already used.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Token Expiration:</strong> Verification tokens expire after 24 hours.</p>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Email verified successfully</li>
+<li><code>400 Bad Request</code> - Invalid, expired, or already used token</li>
+</ul>
+<hr>
+<h3 id="3-resend-verification-email">3. Resend Verification Email</h3>
+<p>Resends the verification email to a user who hasn't verified their email yet.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/resend-verification</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;email&quot;: &quot;user@example.com&quot;
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: &quot;Verification email sent.&quot;,
+  &quot;message&quot;: &quot;Please check your email for the verification link.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Failed to resend verification email. User may not exist or email is already verified.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>Old verification tokens are automatically revoked when a new one is generated</li>
+<li>Only works for unverified accounts</li>
+<li>Rate limiting recommended in production</li>
+</ul>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Verification email sent</li>
+<li><code>400 Bad Request</code> - User not found or email already verified</li>
+</ul>
+<hr>
+<h3 id="4-login">4. Login</h3>
+<p>Authenticates user and returns JWT tokens.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/login</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;email&quot;: &quot;user@example.com&quot;,
+  &quot;password&quot;: &quot;SecurePass123!@#&quot;,
+  &quot;rememberDeviceToken&quot;: null
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;accessToken&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&quot;,
+    &quot;refreshToken&quot;: &quot;abc123def456...&quot;,
+    &quot;expiresIn&quot;: 3600,
+    &quot;tokenType&quot;: &quot;Bearer&quot;,
+    &quot;user&quot;: {
+      &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+      &quot;email&quot;: &quot;user@example.com&quot;,
+      &quot;username&quot;: &quot;johndoe&quot;,
+      &quot;emailVerified&quot;: true,
+      &quot;twoFactorEnabled&quot;: false
+    },
+    &quot;requiresTwoFactor&quot;: false
+  },
+  &quot;message&quot;: null,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (401 Unauthorized):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Invalid email or password.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (403 Forbidden - Email Not Verified):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Email not verified. Please check your email.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (423 Locked):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Account is locked due to too many failed login attempts.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Login successful</li>
+<li><code>401 Unauthorized</code> - Invalid credentials</li>
+<li><code>403 Forbidden</code> - Email not verified</li>
+<li><code>423 Locked</code> - Account locked</li>
+</ul>
+<hr>
+<h3 id="5-logout">5. Logout</h3>
+<p>Ends current session and revokes refresh token.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/logout</code></p>
+<p><strong>Authorization:</strong> Required (Bearer token)</p>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: &quot;Logged out.&quot;,
+  &quot;message&quot;: &quot;Session ended.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Logout successful</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+</ul>
+<hr>
+<h3 id="6-refresh-token">6. Refresh Token</h3>
+<p>Refreshes access token using refresh token. Rotates refresh token.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/refresh-token</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;refreshToken&quot;: &quot;abc123def456...&quot;
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;accessToken&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&quot;,
+    &quot;refreshToken&quot;: &quot;new-refresh-token...&quot;,
+    &quot;expiresIn&quot;: 3600,
+    &quot;tokenType&quot;: &quot;Bearer&quot;,
+    &quot;user&quot;: {
+      &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+      &quot;email&quot;: &quot;user@example.com&quot;,
+      &quot;username&quot;: &quot;johndoe&quot;,
+      &quot;emailVerified&quot;: true,
+      &quot;twoFactorEnabled&quot;: false
+    },
+    &quot;requiresTwoFactor&quot;: false
+  },
+  &quot;message&quot;: null,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (401 Unauthorized):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Invalid refresh token.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Token refreshed successfully</li>
+<li><code>401 Unauthorized</code> - Invalid or expired refresh token</li>
+</ul>
+<hr>
+<h3 id="7-forgot-password">7. Forgot Password</h3>
+<p>Initiates password reset. Always returns 200 to prevent user enumeration.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/forgot-password</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;email&quot;: &quot;user@example.com&quot;
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: &quot;If an account with that email exists, a password reset link has been sent.&quot;,
+  &quot;message&quot;: null,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Request processed (always returns 200 for security)</li>
+</ul>
+<hr>
+<h3 id="8-reset-password">8. Reset Password</h3>
+<p>Completes password reset using token from email. Invalidates all sessions.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/reset-password</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;token&quot;: &quot;reset-token-from-email&quot;,
+  &quot;newPassword&quot;: &quot;NewSecurePass123!@#&quot;,
+  &quot;confirmPassword&quot;: &quot;NewSecurePass123!@#&quot;
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: &quot;Password reset successfully.&quot;,
+  &quot;message&quot;: &quot;All active sessions have been invalidated. Please log in with your new password.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Invalid or expired password reset token.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Password reset successful</li>
+<li><code>400 Bad Request</code> - Invalid or expired token</li>
+</ul>
+<hr>
+<h3 id="9-change-password">9. Change Password</h3>
+<p>Changes password for authenticated user. Invalidates all other sessions.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/change-password</code></p>
+<p><strong>Authorization:</strong> Required (Bearer token)</p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;currentPassword&quot;: &quot;OldPass123!@#&quot;,
+  &quot;newPassword&quot;: &quot;NewPass123!@#&quot;,
+  &quot;confirmPassword&quot;: &quot;NewPass123!@#&quot;
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: &quot;Password changed successfully.&quot;,
+  &quot;message&quot;: &quot;All other active sessions have been invalidated.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Current password is incorrect.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Password changed successfully</li>
+<li><code>400 Bad Request</code> - Current password incorrect or validation failed</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+</ul>
+<hr>
+<h3 id="10-setup-two-factor-authentication">10. Setup Two-Factor Authentication</h3>
+<p>Initiates 2FA setup. Returns TOTP secret and QR code URI.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/2fa/setup</code></p>
+<p><strong>Authorization:</strong> Required (Bearer token)</p>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;secret&quot;: &quot;JBSWY3DPEHPK3PXP&quot;,
+    &quot;qrCodeUri&quot;: &quot;otpauth://totp/DainnUser:user@example.com?secret=JBSWY3DPEHPK3PXP&amp;issuer=DainnUser&quot;
+  },
+  &quot;message&quot;: &quot;Scan the QR code with your authenticator app and confirm with a code.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - 2FA setup initiated</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+</ul>
+<hr>
+<h3 id="11-enable-two-factor-authentication">11. Enable Two-Factor Authentication</h3>
+<p>Confirms and activates 2FA. Returns backup codes.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/2fa/enable</code></p>
+<p><strong>Authorization:</strong> Required (Bearer token)</p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;code&quot;: &quot;123456&quot;
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;backupCodes&quot;: [
+      &quot;12345678&quot;,
+      &quot;23456789&quot;,
+      &quot;34567890&quot;,
+      &quot;45678901&quot;,
+      &quot;56789012&quot;,
+      &quot;67890123&quot;,
+      &quot;78901234&quot;,
+      &quot;89012345&quot;,
+      &quot;90123456&quot;,
+      &quot;01234567&quot;
+    ]
+  },
+  &quot;message&quot;: &quot;Two-factor authentication enabled. Store these backup codes securely — they will not be shown again.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Invalid or expired two-factor code.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - 2FA enabled successfully</li>
+<li><code>400 Bad Request</code> - Invalid or expired code</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+</ul>
+<hr>
+<h3 id="12-disable-two-factor-authentication">12. Disable Two-Factor Authentication</h3>
+<p>Disables 2FA. Requires valid TOTP or backup code.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/2fa/disable</code></p>
+<p><strong>Authorization:</strong> Required (Bearer token)</p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;code&quot;: &quot;123456&quot;
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: &quot;Two-factor authentication disabled.&quot;,
+  &quot;message&quot;: null,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - 2FA disabled successfully</li>
+<li><code>400 Bad Request</code> - Invalid code</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+</ul>
+<hr>
+<h3 id="13-complete-two-factor-login">13. Complete Two-Factor Login</h3>
+<p>Completes login requiring 2FA. Verifies TOTP or backup code.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/2fa/login</code></p>
+<p><strong>Authorization:</strong> None (public endpoint)</p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;userId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;code&quot;: &quot;123456&quot;,
+  &quot;rememberDevice&quot;: false
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;accessToken&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&quot;,
+    &quot;refreshToken&quot;: &quot;abc123def456...&quot;,
+    &quot;expiresIn&quot;: 3600,
+    &quot;tokenType&quot;: &quot;Bearer&quot;,
+    &quot;user&quot;: {
+      &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+      &quot;email&quot;: &quot;user@example.com&quot;,
+      &quot;username&quot;: &quot;johndoe&quot;,
+      &quot;emailVerified&quot;: true,
+      &quot;twoFactorEnabled&quot;: true
+    },
+    &quot;requiresTwoFactor&quot;: false
+  },
+  &quot;message&quot;: null,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - 2FA login successful</li>
+<li><code>400 Bad Request</code> - Invalid code</li>
+<li><code>401 Unauthorized</code> - Invalid user ID</li>
+</ul>
+<hr>
+<h3 id="14-regenerate-backup-codes">14. Regenerate Backup Codes</h3>
+<p>Regenerates 2FA backup codes. Requires valid TOTP code (not backup code).</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/2fa/backup-codes/regenerate</code></p>
+<p><strong>Authorization:</strong> Required (Bearer token)</p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;code&quot;: &quot;123456&quot;
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;backupCodes&quot;: [
+      &quot;11111111&quot;,
+      &quot;22222222&quot;,
+      &quot;33333333&quot;,
+      &quot;44444444&quot;,
+      &quot;55555555&quot;,
+      &quot;66666666&quot;,
+      &quot;77777777&quot;,
+      &quot;88888888&quot;,
+      &quot;99999999&quot;,
+      &quot;00000000&quot;
+    ]
+  },
+  &quot;message&quot;: &quot;Backup codes regenerated. All previous codes are now invalid.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Backup codes regenerated</li>
+<li><code>400 Bad Request</code> - Invalid code or backup code used</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+</ul>
+<hr>
+<h3 id="15-unlock-account-admin">15. Unlock Account (Admin)</h3>
+<p>Manually unlocks locked user account. Admin only.</p>
+<p><strong>Endpoint:</strong> <code>POST /auth/admin/unlock-account/{userId}</code></p>
+<p><strong>Authorization:</strong> Required (Bearer token, Administrator role)</p>
+<p><strong>Path Parameters:</strong></p>
+<ul>
+<li><code>userId</code> (required): User ID (GUID format)</li>
+</ul>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: &quot;Account unlocked.&quot;,
+  &quot;message&quot;: &quot;Failed login counters reset and lockout cleared.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (404 Not Found):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User not found.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Account unlocked successfully</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+<li><code>403 Forbidden</code> - Insufficient permissions</li>
+<li><code>404 Not Found</code> - User not found</li>
+</ul>
+<hr>
+<h2 id="profile-endpoints">Profile Endpoints</h2>
+<p>All profile endpoints require authentication via Bearer token.</p>
+<h3 id="1-get-profile">1. Get Profile</h3>
+<p>Gets the authenticated user's profile information.</p>
+<p><strong>Endpoint:</strong> <code>GET /profile</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token)</p>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;userId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;email&quot;: &quot;user@example.com&quot;,
+    &quot;username&quot;: &quot;johndoe&quot;,
+    &quot;firstName&quot;: &quot;John&quot;,
+    &quot;lastName&quot;: &quot;Doe&quot;,
+    &quot;displayName&quot;: &quot;John D.&quot;,
+    &quot;avatarUrl&quot;: &quot;https://storage.example.com/avatars/user123.jpg&quot;,
+    &quot;dateOfBirth&quot;: &quot;1990-05-15&quot;,
+    &quot;gender&quot;: &quot;Male&quot;,
+    &quot;language&quot;: &quot;en&quot;,
+    &quot;timezone&quot;: &quot;America/New_York&quot;,
+    &quot;bio&quot;: &quot;Software developer and tech enthusiast.&quot;,
+    &quot;website&quot;: &quot;https://johndoe.com&quot;,
+    &quot;createdAt&quot;: &quot;2024-01-15T10:30:00Z&quot;,
+    &quot;updatedAt&quot;: &quot;2024-03-20T14:45:00Z&quot;
+  },
+  &quot;message&quot;: null,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (401 Unauthorized):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Invalid token.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (404 Not Found):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User not found.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Profile retrieved successfully</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+<li><code>404 Not Found</code> - User not found</li>
+</ul>
+<hr>
+<h3 id="2-update-profile">2. Update Profile</h3>
+<p>Updates the authenticated user's profile information.</p>
+<p><strong>Endpoint:</strong> <code>PUT /profile</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token)</p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;firstName&quot;: &quot;John&quot;,
+  &quot;lastName&quot;: &quot;Doe&quot;,
+  &quot;displayName&quot;: &quot;John D.&quot;,
+  &quot;dateOfBirth&quot;: &quot;1990-05-15&quot;,
+  &quot;gender&quot;: &quot;Male&quot;,
+  &quot;language&quot;: &quot;en&quot;,
+  &quot;timezone&quot;: &quot;America/New_York&quot;,
+  &quot;bio&quot;: &quot;Software developer and tech enthusiast.&quot;,
+  &quot;website&quot;: &quot;https://johndoe.com&quot;
+}
+</code></pre>
+<p><strong>Validation Rules:</strong></p>
+<ul>
+<li>FirstName: Optional, max 100 characters</li>
+<li>LastName: Optional, max 100 characters</li>
+<li>DisplayName: Optional, max 100 characters</li>
+<li>DateOfBirth: Optional, must be valid date, cannot be in future</li>
+<li>Gender: Optional, max 50 characters</li>
+<li>Language: Optional, 2-10 characters (language code)</li>
+<li>Timezone: Optional, valid IANA timezone (e.g., &quot;Asia/Ho_Chi_Minh&quot;)</li>
+<li>Bio: Optional, max 500 characters</li>
+<li>Website: Optional, valid URL format</li>
+</ul>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;userId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;email&quot;: &quot;user@example.com&quot;,
+    &quot;username&quot;: &quot;johndoe&quot;,
+    &quot;firstName&quot;: &quot;John&quot;,
+    &quot;lastName&quot;: &quot;Doe&quot;,
+    &quot;displayName&quot;: &quot;John D.&quot;,
+    &quot;avatarUrl&quot;: null,
+    &quot;dateOfBirth&quot;: &quot;1990-05-15&quot;,
+    &quot;gender&quot;: &quot;Male&quot;,
+    &quot;language&quot;: &quot;en&quot;,
+    &quot;timezone&quot;: &quot;America/New_York&quot;,
+    &quot;bio&quot;: &quot;Software developer and tech enthusiast.&quot;,
+    &quot;website&quot;: &quot;https://johndoe.com&quot;,
+    &quot;createdAt&quot;: &quot;2024-01-15T10:30:00Z&quot;,
+    &quot;updatedAt&quot;: &quot;2024-03-20T15:00:00Z&quot;
+  },
+  &quot;message&quot;: &quot;Profile updated successfully.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Validation failed.&quot;,
+  &quot;errors&quot;: [
+    &quot;Website must be a valid URL.&quot;,
+    &quot;Date of birth cannot be in the future.&quot;
+  ]
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Profile updated successfully</li>
+<li><code>400 Bad Request</code> - Validation failed</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+</ul>
+<hr>
+<h3 id="3-upload-avatar">3. Upload Avatar</h3>
+<p>Uploads or updates the authenticated user's avatar image.</p>
+<p><strong>Endpoint:</strong> <code>POST /profile/avatar</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token)</p>
+<p><strong>Request:</strong> <code>multipart/form-data</code></p>
+<ul>
+<li>Field name: <code>file</code></li>
+<li>Supported formats: JPEG, PNG, GIF, WebP</li>
+<li>Max file size: 5MB</li>
+<li>Recommended size: 256x256 pixels</li>
+</ul>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;userId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;email&quot;: &quot;user@example.com&quot;,
+    &quot;username&quot;: &quot;johndoe&quot;,
+    &quot;firstName&quot;: &quot;John&quot;,
+    &quot;lastName&quot;: &quot;Doe&quot;,
+    &quot;displayName&quot;: &quot;John D.&quot;,
+    &quot;avatarUrl&quot;: &quot;https://storage.example.com/avatars/abc123.jpg&quot;,
+    &quot;dateOfBirth&quot;: null,
+    &quot;gender&quot;: null,
+    &quot;language&quot;: &quot;en&quot;,
+    &quot;timezone&quot;: &quot;America/New_York&quot;,
+    &quot;bio&quot;: null,
+    &quot;website&quot;: null,
+    &quot;createdAt&quot;: &quot;2024-01-15T10:30:00Z&quot;,
+    &quot;updatedAt&quot;: &quot;2024-03-20T16:00:00Z&quot;
+  },
+  &quot;message&quot;: &quot;Avatar uploaded successfully.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Avatar uploaded successfully</li>
+<li><code>400 Bad Request</code> - Invalid file type or size</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+</ul>
+<hr>
+<h3 id="4-delete-avatar">4. Delete Avatar</h3>
+<p>Deletes the authenticated user's avatar image.</p>
+<p><strong>Endpoint:</strong> <code>DELETE /profile/avatar</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token)</p>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;userId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;email&quot;: &quot;user@example.com&quot;,
+    &quot;username&quot;: &quot;johndoe&quot;,
+    &quot;firstName&quot;: &quot;John&quot;,
+    &quot;lastName&quot;: &quot;Doe&quot;,
+    &quot;displayName&quot;: &quot;John D.&quot;,
+    &quot;avatarUrl&quot;: null,
+    &quot;dateOfBirth&quot;: null,
+    &quot;gender&quot;: null,
+    &quot;language&quot;: &quot;en&quot;,
+    &quot;timezone&quot;: &quot;America/New_York&quot;,
+    &quot;bio&quot;: null,
+    &quot;website&quot;: null,
+    &quot;createdAt&quot;: &quot;2024-01-15T10:30:00Z&quot;,
+    &quot;updatedAt&quot;: &quot;2024-03-20T16:30:00Z&quot;
+  },
+  &quot;message&quot;: &quot;Avatar deleted successfully.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Avatar deleted successfully</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+</ul>
+<hr>
+<h3 id="5-update-profile-settings">5. Update Profile Settings</h3>
+<p>Updates the authenticated user's profile settings (language, timezone).</p>
+<p><strong>Endpoint:</strong> <code>PUT /profile/settings</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token)</p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;language&quot;: &quot;vi&quot;,
+  &quot;timezone&quot;: &quot;Asia/Ho_Chi_Minh&quot;
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;userId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;email&quot;: &quot;user@example.com&quot;,
+    &quot;username&quot;: &quot;johndoe&quot;,
+    &quot;firstName&quot;: &quot;John&quot;,
+    &quot;lastName&quot;: &quot;Doe&quot;,
+    &quot;displayName&quot;: &quot;John D.&quot;,
+    &quot;avatarUrl&quot;: null,
+    &quot;dateOfBirth&quot;: null,
+    &quot;gender&quot;: null,
+    &quot;language&quot;: &quot;vi&quot;,
+    &quot;timezone&quot;: &quot;Asia/Ho_Chi_Minh&quot;,
+    &quot;bio&quot;: null,
+    &quot;website&quot;: null,
+    &quot;createdAt&quot;: &quot;2024-01-15T10:30:00Z&quot;,
+    &quot;updatedAt&quot;: &quot;2024-03-20T17:00:00Z&quot;
+  },
+  &quot;message&quot;: &quot;Profile updated successfully.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Validation failed.&quot;,
+  &quot;errors&quot;: [
+    &quot;Timezone must be a valid IANA timezone identifier.&quot;
+  ]
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Settings updated successfully</li>
+<li><code>400 Bad Request</code> - Validation failed</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+</ul>
+<hr>
+<h2 id="user-management-endpoints">User Management Endpoints</h2>
+<p>All user management endpoints require authentication and Administrator role.</p>
+<h3 id="1-list-users">1. List Users</h3>
+<p>Gets a paginated list of all users with optional filtering.</p>
+<p><strong>Endpoint:</strong> <code>GET /user</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token, Administrator role)</p>
+<p><strong>Query Parameters:</strong></p>
+<ul>
+<li><code>pageNumber</code> (optional): Page number, default 1</li>
+<li><code>pageSize</code> (optional): Items per page, default 20, max 100</li>
+<li><code>search</code> (optional): Search by email or username</li>
+<li><code>status</code> (optional): Filter by user status (<code>Pending</code>, <code>Active</code>, <code>Suspended</code>, <code>Locked</code>)</li>
+</ul>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;items&quot;: [
+      {
+        &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+        &quot;email&quot;: &quot;user@example.com&quot;,
+        &quot;username&quot;: &quot;johndoe&quot;,
+        &quot;status&quot;: &quot;Active&quot;,
+        &quot;emailVerified&quot;: true,
+        &quot;twoFactorEnabled&quot;: false,
+        &quot;lastLoginAt&quot;: &quot;2024-03-20T10:00:00Z&quot;,
+        &quot;createdAt&quot;: &quot;2024-01-15T10:30:00Z&quot;,
+        &quot;updatedAt&quot;: &quot;2024-03-20T14:45:00Z&quot;,
+        &quot;roles&quot;: [&quot;User&quot;]
+      },
+      {
+        &quot;id&quot;: &quot;7c963f66afa63fa85f64-5717-4562-b3fc&quot;,
+        &quot;email&quot;: &quot;admin@example.com&quot;,
+        &quot;username&quot;: &quot;admin&quot;,
+        &quot;status&quot;: &quot;Active&quot;,
+        &quot;emailVerified&quot;: true,
+        &quot;twoFactorEnabled&quot;: true,
+        &quot;lastLoginAt&quot;: &quot;2024-03-20T09:00:00Z&quot;,
+        &quot;createdAt&quot;: &quot;2024-01-01T08:00:00Z&quot;,
+        &quot;updatedAt&quot;: &quot;2024-03-19T16:30:00Z&quot;,
+        &quot;roles&quot;: [&quot;Administrator&quot;]
+      }
+    ],
+    &quot;totalCount&quot;: 150,
+    &quot;pageNumber&quot;: 1,
+    &quot;pageSize&quot;: 20,
+    &quot;totalPages&quot;: 8
+  },
+  &quot;message&quot;: null,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (401 Unauthorized):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Unauthorized&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (403 Forbidden):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Forbidden&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Users retrieved successfully</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+<li><code>403 Forbidden</code> - Insufficient permissions</li>
+</ul>
+<hr>
+<h3 id="2-get-user">2. Get User</h3>
+<p>Gets a specific user by ID.</p>
+<p><strong>Endpoint:</strong> <code>GET /user/{id}</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token, Administrator role)</p>
+<p><strong>Path Parameters:</strong></p>
+<ul>
+<li><code>id</code> (required): User ID (GUID format)</li>
+</ul>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;email&quot;: &quot;user@example.com&quot;,
+    &quot;username&quot;: &quot;johndoe&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;emailVerified&quot;: true,
+    &quot;twoFactorEnabled&quot;: false,
+    &quot;lastLoginAt&quot;: &quot;2024-03-20T10:00:00Z&quot;,
+    &quot;createdAt&quot;: &quot;2024-01-15T10:30:00Z&quot;,
+    &quot;updatedAt&quot;: &quot;2024-03-20T14:45:00Z&quot;,
+    &quot;roles&quot;: [&quot;User&quot;]
+  },
+  &quot;message&quot;: null,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (404 Not Found):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User not found.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - User retrieved successfully</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+<li><code>403 Forbidden</code> - Insufficient permissions</li>
+<li><code>404 Not Found</code> - User not found</li>
+</ul>
+<hr>
+<h3 id="3-update-user">3. Update User</h3>
+<p>Updates a specific user's information.</p>
+<p><strong>Endpoint:</strong> <code>PUT /user/{id}</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token, Administrator role)</p>
+<p><strong>Path Parameters:</strong></p>
+<ul>
+<li><code>id</code> (required): User ID (GUID format)</li>
+</ul>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;email&quot;: &quot;newemail@example.com&quot;,
+  &quot;username&quot;: &quot;newhandle&quot;,
+  &quot;status&quot;: &quot;Active&quot;
+}
+</code></pre>
+<p><strong>Validation Rules:</strong></p>
+<ul>
+<li>Email: Optional, valid email format, max 256 characters</li>
+<li>Username: Optional, 3-50 characters, alphanumeric with underscores/hyphens only</li>
+<li>Status: Optional, must be one of <code>Pending</code>, <code>Active</code>, <code>Suspended</code>, <code>Locked</code></li>
+</ul>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;email&quot;: &quot;newemail@example.com&quot;,
+    &quot;username&quot;: &quot;newhandle&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;emailVerified&quot;: true,
+    &quot;twoFactorEnabled&quot;: false,
+    &quot;lastLoginAt&quot;: &quot;2024-03-20T10:00:00Z&quot;,
+    &quot;createdAt&quot;: &quot;2024-01-15T10:30:00Z&quot;,
+    &quot;updatedAt&quot;: &quot;2024-03-20T18:00:00Z&quot;,
+    &quot;roles&quot;: [&quot;User&quot;]
+  },
+  &quot;message&quot;: &quot;User updated successfully.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Email is already in use.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (404 Not Found):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User not found.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - User updated successfully</li>
+<li><code>400 Bad Request</code> - Validation failed or duplicate email/username</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+<li><code>403 Forbidden</code> - Insufficient permissions</li>
+<li><code>404 Not Found</code> - User not found</li>
+</ul>
+<hr>
+<h3 id="4-delete-user">4. Delete User</h3>
+<p>Deletes a specific user.</p>
+<p><strong>Endpoint:</strong> <code>DELETE /user/{id}</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token, Administrator role)</p>
+<p><strong>Path Parameters:</strong></p>
+<ul>
+<li><code>id</code> (required): User ID (GUID format)</li>
+</ul>
+<p><strong>Business Rules:</strong></p>
+<ul>
+<li>Cannot delete your own account (returns 400 Bad Request)</li>
+</ul>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User deleted successfully.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Cannot delete your own account.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (404 Not Found):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User not found.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - User deleted successfully</li>
+<li><code>400 Bad Request</code> - Cannot delete own account</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+<li><code>403 Forbidden</code> - Insufficient permissions</li>
+<li><code>404 Not Found</code> - User not found</li>
+</ul>
+<hr>
+<h3 id="5-lock-user">5. Lock User</h3>
+<p>Locks a user account, preventing login.</p>
+<p><strong>Endpoint:</strong> <code>POST /user/{id}/lock</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token, Administrator role)</p>
+<p><strong>Path Parameters:</strong></p>
+<ul>
+<li><code>id</code> (required): User ID (GUID format)</li>
+</ul>
+<p><strong>Business Rules:</strong></p>
+<ul>
+<li>Cannot lock your own account (returns 400 Bad Request)</li>
+</ul>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User locked successfully.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Cannot lock your own account.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (404 Not Found):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User not found.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - User locked successfully</li>
+<li><code>400 Bad Request</code> - Cannot lock own account</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+<li><code>403 Forbidden</code> - Insufficient permissions</li>
+<li><code>404 Not Found</code> - User not found</li>
+</ul>
+<hr>
+<h3 id="6-unlock-user">6. Unlock User</h3>
+<p>Unlocks a previously locked user account.</p>
+<p><strong>Endpoint:</strong> <code>POST /user/{id}/unlock</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token, Administrator role)</p>
+<p><strong>Path Parameters:</strong></p>
+<ul>
+<li><code>id</code> (required): User ID (GUID format)</li>
+</ul>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User unlocked successfully.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (404 Not Found):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User not found.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - User unlocked successfully</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+<li><code>403 Forbidden</code> - Insufficient permissions</li>
+<li><code>404 Not Found</code> - User not found</li>
+</ul>
+<hr>
+<h3 id="7-add-role-to-user">7. Add Role to User</h3>
+<p>Adds a role to a user.</p>
+<p><strong>Endpoint:</strong> <code>POST /user/{id}/roles</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token, Administrator role)</p>
+<p><strong>Path Parameters:</strong></p>
+<ul>
+<li><code>id</code> (required): User ID (GUID format)</li>
+</ul>
+<p><strong>Request Body:</strong></p>
+<pre><code class="lang-json">{
+  &quot;roleId&quot;: &quot;8fa85f64-5717-4562-b3fc-2c963f66afa6&quot;
+}
+</code></pre>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Role added successfully.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User already has this role.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (404 Not Found):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;User not found.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Role added successfully</li>
+<li><code>400 Bad Request</code> - User already has role</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+<li><code>403 Forbidden</code> - Insufficient permissions</li>
+<li><code>404 Not Found</code> - User or role not found</li>
+</ul>
+<hr>
+<h3 id="8-remove-role-from-user">8. Remove Role from User</h3>
+<p>Removes a role from a user.</p>
+<p><strong>Endpoint:</strong> <code>DELETE /user/{id}/roles/{roleId}</code></p>
+<p><strong>Authentication:</strong> Required (Bearer token, Administrator role)</p>
+<p><strong>Path Parameters:</strong></p>
+<ul>
+<li><code>id</code> (required): User ID (GUID format)</li>
+<li><code>roleId</code> (required): Role ID (GUID format)</li>
+</ul>
+<p><strong>Success Response (200 OK):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Role removed successfully.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Error Response (400 Bad Request):</strong></p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Cannot remove the last administrator role.&quot;,
+  &quot;errors&quot;: null
+}
+</code></pre>
+<p><strong>Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Role removed successfully</li>
+<li><code>400 Bad Request</code> - Cannot remove last administrator role</li>
+<li><code>401 Unauthorized</code> - Invalid or missing token</li>
+<li><code>403 Forbidden</code> - Insufficient permissions</li>
+<li><code>404 Not Found</code> - User or role not found</li>
+</ul>
+<hr>
+<h2 id="testing-with-curl">Testing with cURL</h2>
+<h3 id="authentication-endpoints-1">Authentication Endpoints</h3>
+<h4 id="register-a-user">Register a User</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/register \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;email&quot;: &quot;test@example.com&quot;,
+    &quot;username&quot;: &quot;testuser&quot;,
+    &quot;password&quot;: &quot;Test123!@#&quot;,
+    &quot;confirmPassword&quot;: &quot;Test123!@#&quot;
+  }'
+</code></pre>
+<h4 id="login">Login</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/login \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;email&quot;: &quot;test@example.com&quot;,
+    &quot;password&quot;: &quot;Test123!@#&quot;
+  }'
+</code></pre>
+<h4 id="logout">Logout</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/logout \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot;
+</code></pre>
+<h4 id="refresh-token">Refresh Token</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/refresh-token \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;refreshToken&quot;: &quot;your-refresh-token&quot;
+  }'
+</code></pre>
+<h4 id="verify-email">Verify Email</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/verify-email \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;userId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;token&quot;: &quot;your-verification-token-here&quot;
+  }'
+</code></pre>
+<h4 id="resend-verification">Resend Verification</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/resend-verification \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;email&quot;: &quot;test@example.com&quot;
+  }'
+</code></pre>
+<h4 id="forgot-password">Forgot Password</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/forgot-password \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;email&quot;: &quot;test@example.com&quot;
+  }'
+</code></pre>
+<h4 id="reset-password">Reset Password</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/reset-password \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;token&quot;: &quot;reset-token-from-email&quot;,
+    &quot;newPassword&quot;: &quot;NewPass123!@#&quot;,
+    &quot;confirmPassword&quot;: &quot;NewPass123!@#&quot;
+  }'
+</code></pre>
+<h4 id="change-password">Change Password</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/change-password \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;currentPassword&quot;: &quot;OldPass123!@#&quot;,
+    &quot;newPassword&quot;: &quot;NewPass123!@#&quot;,
+    &quot;confirmPassword&quot;: &quot;NewPass123!@#&quot;
+  }'
+</code></pre>
+<h4 id="setup-2fa">Setup 2FA</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/2fa/setup \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot;
+</code></pre>
+<h4 id="enable-2fa">Enable 2FA</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/2fa/enable \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;code&quot;: &quot;123456&quot;
+  }'
+</code></pre>
+<h4 id="disable-2fa">Disable 2FA</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/2fa/disable \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;code&quot;: &quot;123456&quot;
+  }'
+</code></pre>
+<h4 id="complete-2fa-login">Complete 2FA Login</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/2fa/login \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;userId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;code&quot;: &quot;123456&quot;,
+    &quot;rememberDevice&quot;: false
+  }'
+</code></pre>
+<h4 id="regenerate-backup-codes">Regenerate Backup Codes</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/2fa/backup-codes/regenerate \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;code&quot;: &quot;123456&quot;
+  }'
+</code></pre>
+<h4 id="unlock-account-admin">Unlock Account (Admin)</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/auth/admin/unlock-account/3fa85f64-5717-4562-b3fc-2c963f66afa6 \
+  -H &quot;Authorization: Bearer YOUR_ADMIN_JWT_TOKEN&quot;
+</code></pre>
+<h3 id="profile-endpoints-1">Profile Endpoints</h3>
+<h4 id="get-profile">Get Profile</h4>
+<pre><code class="lang-bash">curl -X GET https://localhost:5001/api/profile \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot;
+</code></pre>
+<h4 id="update-profile">Update Profile</h4>
+<pre><code class="lang-bash">curl -X PUT https://localhost:5001/api/profile \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;firstName&quot;: &quot;John&quot;,
+    &quot;lastName&quot;: &quot;Doe&quot;,
+    &quot;displayName&quot;: &quot;John D.&quot;,
+    &quot;language&quot;: &quot;en&quot;,
+    &quot;timezone&quot;: &quot;America/New_York&quot;,
+    &quot;bio&quot;: &quot;Software developer&quot;
+  }'
+</code></pre>
+<h4 id="upload-avatar">Upload Avatar</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/profile/avatar \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot; \
+  -F &quot;file=@/path/to/avatar.jpg&quot;
+</code></pre>
+<h4 id="delete-avatar">Delete Avatar</h4>
+<pre><code class="lang-bash">curl -X DELETE https://localhost:5001/api/profile/avatar \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot;
+</code></pre>
+<h4 id="update-settings">Update Settings</h4>
+<pre><code class="lang-bash">curl -X PUT https://localhost:5001/api/profile/settings \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;language&quot;: &quot;vi&quot;,
+    &quot;timezone&quot;: &quot;Asia/Ho_Chi_Minh&quot;
+  }'
+</code></pre>
+<h3 id="user-management-endpoints-1">User Management Endpoints</h3>
+<h4 id="list-users">List Users</h4>
+<pre><code class="lang-bash">curl -X GET &quot;https://localhost:5001/api/user?pageNumber=1&amp;pageSize=20&amp;search=john&amp;status=Active&quot; \
+  -H &quot;Authorization: Bearer YOUR_ADMIN_JWT_TOKEN&quot;
+</code></pre>
+<h4 id="get-user">Get User</h4>
+<pre><code class="lang-bash">curl -X GET https://localhost:5001/api/user/3fa85f64-5717-4562-b3fc-2c963f66afa6 \
+  -H &quot;Authorization: Bearer YOUR_ADMIN_JWT_TOKEN&quot;
+</code></pre>
+<h4 id="update-user">Update User</h4>
+<pre><code class="lang-bash">curl -X PUT https://localhost:5001/api/user/3fa85f64-5717-4562-b3fc-2c963f66afa6 \
+  -H &quot;Authorization: Bearer YOUR_ADMIN_JWT_TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;email&quot;: &quot;newemail@example.com&quot;,
+    &quot;username&quot;: &quot;newhandle&quot;,
+    &quot;status&quot;: &quot;Active&quot;
+  }'
+</code></pre>
+<h4 id="delete-user">Delete User</h4>
+<pre><code class="lang-bash">curl -X DELETE https://localhost:5001/api/user/3fa85f64-5717-4562-b3fc-2c963f66afa6 \
+  -H &quot;Authorization: Bearer YOUR_ADMIN_JWT_TOKEN&quot;
+</code></pre>
+<h4 id="lock-user">Lock User</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/user/3fa85f64-5717-4562-b3fc-2c963f66afa6/lock \
+  -H &quot;Authorization: Bearer YOUR_ADMIN_JWT_TOKEN&quot;
+</code></pre>
+<h4 id="unlock-user">Unlock User</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/user/3fa85f64-5717-4562-b3fc-2c963f66afa6/unlock \
+  -H &quot;Authorization: Bearer YOUR_ADMIN_JWT_TOKEN&quot;
+</code></pre>
+<h4 id="add-role-to-user">Add Role to User</h4>
+<pre><code class="lang-bash">curl -X POST https://localhost:5001/api/user/3fa85f64-5717-4562-b3fc-2c963f66afa6/roles \
+  -H &quot;Authorization: Bearer YOUR_ADMIN_JWT_TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;roleId&quot;: &quot;8fa85f64-5717-4562-b3fc-2c963f66afa6&quot;
+  }'
+</code></pre>
+<h4 id="remove-role-from-user">Remove Role from User</h4>
+<pre><code class="lang-bash">curl -X DELETE https://localhost:5001/api/user/3fa85f64-5717-4562-b3fc-2c963f66afa6/roles/8fa85f64-5717-4562-b3fc-2c963f66afa6 \
+  -H &quot;Authorization: Bearer YOUR_ADMIN_JWT_TOKEN&quot;
+</code></pre>
+<hr>
+<h2 id="testing-with-c">Testing with C#</h2>
+<h3 id="authentication-endpoints-2">Authentication Endpoints</h3>
+<h4 id="register">Register</h4>
+<pre><code class="lang-csharp">var registerDto = new RegisterDto
+{
+    Email = &quot;test@example.com&quot;,
+    Username = &quot;testuser&quot;,
+    Password = &quot;Test123!@#&quot;,
+    ConfirmPassword = &quot;Test123!@#&quot;
+};
+
+var response = await client.PostAsJsonAsync(&quot;https://localhost:5001/api/auth/register&quot;, registerDto);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;RegisterResponse&gt;&gt;();
+</code></pre>
+<h4 id="login-1">Login</h4>
+<pre><code class="lang-csharp">var loginDto = new LoginDto
+{
+    Email = &quot;test@example.com&quot;,
+    Password = &quot;Test123!@#&quot;
+};
+
+var response = await client.PostAsJsonAsync(&quot;https://localhost:5001/api/auth/login&quot;, loginDto);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;LoginResponse&gt;&gt;();
+
+if (result.Success)
+{
+    var accessToken = result.Data.AccessToken;
+    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(&quot;Bearer&quot;, accessToken);
+}
+</code></pre>
+<h4 id="logout-1">Logout</h4>
+<pre><code class="lang-csharp">var response = await client.PostAsync(&quot;https://localhost:5001/api/auth/logout&quot;, null);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;string&gt;&gt;();
+</code></pre>
+<h4 id="refresh-token-1">Refresh Token</h4>
+<pre><code class="lang-csharp">var refreshDto = new RefreshTokenDto
+{
+    RefreshToken = &quot;your-refresh-token&quot;
+};
+
+var response = await client.PostAsJsonAsync(&quot;https://localhost:5001/api/auth/refresh-token&quot;, refreshDto);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;LoginResponse&gt;&gt;();
+</code></pre>
+<h4 id="forgot-password-1">Forgot Password</h4>
+<pre><code class="lang-csharp">var forgotPasswordDto = new ForgotPasswordDto
+{
+    Email = &quot;test@example.com&quot;
+};
+
+var response = await client.PostAsJsonAsync(&quot;https://localhost:5001/api/auth/forgot-password&quot;, forgotPasswordDto);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;string&gt;&gt;();
+</code></pre>
+<h4 id="reset-password-1">Reset Password</h4>
+<pre><code class="lang-csharp">var resetPasswordDto = new ResetPasswordDto
+{
+    Token = &quot;reset-token-from-email&quot;,
+    NewPassword = &quot;NewPass123!@#&quot;,
+    ConfirmPassword = &quot;NewPass123!@#&quot;
+};
+
+var response = await client.PostAsJsonAsync(&quot;https://localhost:5001/api/auth/reset-password&quot;, resetPasswordDto);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;string&gt;&gt;();
+</code></pre>
+<h4 id="change-password-1">Change Password</h4>
+<pre><code class="lang-csharp">var changePasswordDto = new ChangePasswordDto
+{
+    CurrentPassword = &quot;OldPass123!@#&quot;,
+    NewPassword = &quot;NewPass123!@#&quot;,
+    ConfirmPassword = &quot;NewPass123!@#&quot;
+};
+
+var response = await client.PostAsJsonAsync(&quot;https://localhost:5001/api/auth/change-password&quot;, changePasswordDto);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;string&gt;&gt;();
+</code></pre>
+<h4 id="setup-2fa-1">Setup 2FA</h4>
+<pre><code class="lang-csharp">var response = await client.PostAsync(&quot;https://localhost:5001/api/auth/2fa/setup&quot;, null);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;TwoFactorSetupResponse&gt;&gt;();
+
+Console.WriteLine($&quot;Secret: {result.Data.Secret}&quot;);
+Console.WriteLine($&quot;QR Code URI: {result.Data.QrCodeUri}&quot;);
+</code></pre>
+<h4 id="enable-2fa-1">Enable 2FA</h4>
+<pre><code class="lang-csharp">var twoFactorCodeDto = new TwoFactorCodeDto
+{
+    Code = &quot;123456&quot;
+};
+
+var response = await client.PostAsJsonAsync(&quot;https://localhost:5001/api/auth/2fa/enable&quot;, twoFactorCodeDto);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;BackupCodesResponse&gt;&gt;();
+
+foreach (var code in result.Data.BackupCodes)
+{
+    Console.WriteLine($&quot;Backup code: {code}&quot;);
+}
+</code></pre>
+<h4 id="complete-2fa-login-1">Complete 2FA Login</h4>
+<pre><code class="lang-csharp">var completeTwoFactorDto = new CompleteTwoFactorLoginDto
+{
+    UserId = Guid.Parse(&quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;),
+    Code = &quot;123456&quot;,
+    RememberDevice = false
+};
+
+var response = await client.PostAsJsonAsync(&quot;https://localhost:5001/api/auth/2fa/login&quot;, completeTwoFactorDto);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;LoginResponse&gt;&gt;();
+</code></pre>
+<h3 id="profile-endpoints-2">Profile Endpoints</h3>
+<h4 id="get-profile-1">Get Profile</h4>
+<pre><code class="lang-csharp">using System.Net.Http.Headers;
+
+var client = new HttpClient();
+client.DefaultRequestHeaders.Authorization = 
+    new AuthenticationHeaderValue(&quot;Bearer&quot;, &quot;YOUR_JWT_TOKEN&quot;);
+
+var response = await client.GetAsync(&quot;https://localhost:5001/api/profile&quot;);
+var profile = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;ProfileResponse&gt;&gt;();
+</code></pre>
+<h4 id="update-profile-1">Update Profile</h4>
+<pre><code class="lang-csharp">var updateDto = new UpdateProfileDto
+{
+    FirstName = &quot;John&quot;,
+    LastName = &quot;Doe&quot;,
+    DisplayName = &quot;John D.&quot;,
+    Language = &quot;en&quot;,
+    Timezone = &quot;America/New_York&quot;,
+    Bio = &quot;Software developer&quot;
+};
+
+var response = await client.PutAsJsonAsync(&quot;https://localhost:5001/api/profile&quot;, updateDto);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;ProfileResponse&gt;&gt;();
+</code></pre>
+<h4 id="upload-avatar-1">Upload Avatar</h4>
+<pre><code class="lang-csharp">using var form = new MultipartFormDataContent();
+using var fileStream = File.OpenRead(&quot;avatar.jpg&quot;);
+using var streamContent = new StreamContent(fileStream);
+streamContent.Headers.ContentType = new MediaTypeHeaderValue(&quot;image/jpeg&quot;);
+form.Add(streamContent, &quot;file&quot;, &quot;avatar.jpg&quot;);
+
+var response = await client.PostAsync(&quot;https://localhost:5001/api/profile/avatar&quot;, form);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;ProfileResponse&gt;&gt;();
+</code></pre>
+<h3 id="user-management-endpoints-2">User Management Endpoints</h3>
+<h4 id="list-users-1">List Users</h4>
+<pre><code class="lang-csharp">var response = await client.GetAsync(
+    &quot;https://localhost:5001/api/user?pageNumber=1&amp;pageSize=20&amp;search=john&amp;status=Active&quot;);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;PagedResult&lt;UserDto&gt;&gt;&gt;();
+
+foreach (var user in result.Data.Items)
+{
+    Console.WriteLine($&quot;{user.Username} - {user.Email}&quot;);
+}
+</code></pre>
+<h4 id="update-user-1">Update User</h4>
+<pre><code class="lang-csharp">var updateDto = new UpdateUserDto
+{
+    Email = &quot;newemail@example.com&quot;,
+    Username = &quot;newhandle&quot;,
+    Status = UserStatus.Active
+};
+
+var userId = Guid.Parse(&quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;);
+var response = await client.PutAsJsonAsync($&quot;https://localhost:5001/api/user/{userId}&quot;, updateDto);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;UserDto&gt;&gt;();
+</code></pre>
+<h4 id="lock-user-1">Lock User</h4>
+<pre><code class="lang-csharp">var userId = Guid.Parse(&quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;);
+var response = await client.PostAsync($&quot;https://localhost:5001/api/user/{userId}/lock&quot;, null);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;object&gt;&gt;();
+</code></pre>
+<h4 id="add-role-to-user-1">Add Role to User</h4>
+<pre><code class="lang-csharp">var userId = Guid.Parse(&quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;);
+var roleId = Guid.Parse(&quot;8fa85f64-5717-4562-b3fc-2c963f66afa6&quot;);
+
+var request = new AddRoleRequest { RoleId = roleId };
+var response = await client.PostAsJsonAsync($&quot;https://localhost:5001/api/user/{userId}/roles&quot;, request);
+var result = await response.Content.ReadFromJsonAsync&lt;ApiResponse&lt;object&gt;&gt;();
+</code></pre>
+<hr>
+<h2 id="testing-with-swagger-ui">Testing with Swagger UI</h2>
+<ol>
+<li>Start the API: <code>dotnet run</code> in <code>src/DainnUser.Api</code></li>
+<li>Open browser: https://localhost:5001/swagger</li>
+<li>Expand an endpoint</li>
+<li>Click &quot;Try it out&quot;</li>
+<li>Fill in the request body</li>
+<li>Click &quot;Execute&quot;</li>
+<li>View the response</li>
+</ol>
+<hr>
+<h2 id="error-handling">Error Handling</h2>
+<p>All endpoints follow a consistent error response format:</p>
+<pre><code class="lang-json">{
+  &quot;success&quot;: false,
+  &quot;data&quot;: null,
+  &quot;message&quot;: &quot;Error description&quot;,
+  &quot;errors&quot;: [&quot;Detailed error 1&quot;, &quot;Detailed error 2&quot;]
+}
+</code></pre>
+<p><strong>HTTP Status Codes:</strong></p>
+<ul>
+<li><code>200 OK</code> - Request successful</li>
+<li><code>201 Created</code> - Resource created successfully</li>
+<li><code>400 Bad Request</code> - Validation error or invalid request</li>
+<li><code>404 Not Found</code> - Resource not found</li>
+<li><code>409 Conflict</code> - Resource conflict (e.g., duplicate email)</li>
+<li><code>500 Internal Server Error</code> - Unexpected server error</li>
+</ul>
+<hr>
+<h2 id="security-considerations">Security Considerations</h2>
+<ol>
+<li><strong>HTTPS Only</strong>: Always use HTTPS in production</li>
+<li><strong>Rate Limiting</strong>: Implement rate limiting for registration and resend endpoints</li>
+<li><strong>CORS</strong>: Configure CORS policy appropriately for your frontend</li>
+<li><strong>Password Storage</strong>: Passwords are hashed using ASP.NET Core Identity's PasswordHasher (PBKDF2)</li>
+<li><strong>Token Security</strong>: Verification tokens are cryptographically secure (32-byte random)</li>
+<li><strong>Email Verification</strong>: Users cannot login until email is verified (Status = Pending)</li>
+</ol>
+<hr>
+<h2 id="email-templates">Email Templates</h2>
+<p>The system sends HTML emails for:</p>
+<ol>
+<li><strong>Email Verification</strong>: Contains verification token, expires in 24 hours</li>
+<li><strong>Password Reset</strong>: Contains reset token, expires in 1 hour (coming soon)</li>
+<li><strong>Two-Factor Authentication</strong>: Contains 6-digit code, expires in 5 minutes (coming soon)</li>
+</ol>
+<p>All emails are sent asynchronously and include proper error handling.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/dainn-dev/dainn-user/blob/master/docs/articles/api-endpoints.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          © 2026 DainnUser. Licensed under MIT.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
