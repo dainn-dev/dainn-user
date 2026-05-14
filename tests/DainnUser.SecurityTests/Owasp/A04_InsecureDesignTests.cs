@@ -1,3 +1,4 @@
+using DainnUser.Core.Configuration;
 using DainnUser.Infrastructure.Configuration;
 using FluentAssertions;
 

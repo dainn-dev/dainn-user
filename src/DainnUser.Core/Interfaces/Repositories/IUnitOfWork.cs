@@ -36,6 +36,16 @@ public interface IUnitOfWork : IDisposable
     IAddressRepository Addresses { get; }
 
     /// <summary>
+    /// Gets the contact repository.
+    /// </summary>
+    IContactRepository Contacts { get; }
+
+    /// <summary>
+    /// Gets the user token repository.
+    /// </summary>
+    IUserTokenRepository UserTokens { get; }
+
+    /// <summary>
     /// Saves all changes made in this unit of work to the database.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>

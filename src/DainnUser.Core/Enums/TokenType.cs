@@ -43,5 +43,10 @@ public enum TokenType
     /// <summary>
     /// Remember-device token that bypasses 2FA challenge for a trusted device.
     /// </summary>
-    TwoFactorRememberDevice = 7
+    TwoFactorRememberDevice = 7,
+
+    /// <summary>
+    /// Contact verification token for email, phone, or social contacts.
+    /// </summary>
+    ContactVerification = 8
 }

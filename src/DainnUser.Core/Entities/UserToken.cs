@@ -18,6 +18,11 @@ public class UserToken
     public Guid UserId { get; set; }
 
     /// <summary>
+    /// Gets or sets the contact identifier for contact verification tokens.
+    /// </summary>
+    public Guid? ContactId { get; set; }
+
+    /// <summary>
     /// Gets or sets the type of token.
     /// </summary>
     public TokenType TokenType { get; set; }
@@ -63,4 +68,9 @@ public class UserToken
     /// Gets or sets the user associated with this token.
     /// </summary>
     public User User { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the contact associated with this token.
+    /// </summary>
+    public UserContact? Contact { get; set; }
 }

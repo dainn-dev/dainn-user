@@ -1,0 +1,63 @@
+@namespace DainnUser.Web.Components
+
+<EditForm Model="Model" OnValidSubmit="HandleSubmitAsync" class="@CssClass">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger mb-3" />
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+    }
+
+    <div class="mb-3">
+        <label class="form-label" for="@_emailId">Email</label>
+        <InputText id="@_emailId" class="form-control" type="email" autocomplete="email" @bind-Value="Model.Email" />
+        <ValidationMessage For="@(() => Model.Email)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="@_passwordId">Password</label>
+        <InputText id="@_passwordId" class="form-control" type="password" autocomplete="current-password" @bind-Value="Model.Password" />
+        <ValidationMessage For="@(() => Model.Password)" class="text-danger" />
+    </div>
+
+    @if (EnableRememberMe)
+    {
+        <div class="mb-3 form-check">
+            <InputCheckbox id="@_rememberId" class="form-check-input" @bind-Value="Model.RememberMe" />
+            <label class="form-check-label" for="@_rememberId">Remember me</label>
+        </div>
+    }
+
+    <button type="submit" class="btn btn-primary w-100" disabled="@IsSubmitting">
+        @(IsSubmitting ? LoadingText : SubmitText)
+    </button>
+
+    @if (EnableSocialLogin)
+    {
+        <SocialLoginButtons Providers="SocialProviders" OnProviderSelected="OnSocialLoginSelected" CssClass="mt-3" />
+    }
+</EditForm>
+
+@code {
+    private readonly string _emailId = $"du-login-email-{Guid.NewGuid():N}";
+    private readonly string _passwordId = $"du-login-password-{Guid.NewGuid():N}";
+    private readonly string _rememberId = $"du-login-remember-{Guid.NewGuid():N}";
+
+    [Parameter] public LoginFormModel Model { get; set; } = new();
+    [Parameter] public EventCallback<LoginFormModel> OnSubmit { get; set; }
+    [Parameter] public EventCallback<string> OnSocialLoginSelected { get; set; }
+    [Parameter] public bool EnableRememberMe { get; set; } = true;
+    [Parameter] public bool EnableSocialLogin { get; set; }
+    [Parameter] public IReadOnlyList<SocialLoginProvider> SocialProviders { get; set; } = Array.Empty<SocialLoginProvider>();
+    [Parameter] public bool IsSubmitting { get; set; }
+    [Parameter] public string SubmitText { get; set; } = "Sign in";
+    [Parameter] public string LoadingText { get; set; } = "Signing in...";
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public string? CssClass { get; set; }
+
+    private async Task HandleSubmitAsync()
+    {
+        await OnSubmit.InvokeAsync(Model);
+    }
+}

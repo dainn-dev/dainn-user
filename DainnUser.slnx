@@ -4,6 +4,7 @@
     <Project Path="src/DainnUser.Application/DainnUser.Application.csproj" />
     <Project Path="src/DainnUser.Core/DainnUser.Core.csproj" />
     <Project Path="src/DainnUser.Infrastructure/DainnUser.Infrastructure.csproj" />
+    <Project Path="src/DainnUser.OpenIddict/DainnUser.OpenIddict.csproj" />
     <Project Path="src/DainnUser.Web/DainnUser.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">

@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DainnUser.Application\DainnUser.Application.csproj" />
+    <ProjectReference Include="..\..\src\DainnUser.Infrastructure\DainnUser.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

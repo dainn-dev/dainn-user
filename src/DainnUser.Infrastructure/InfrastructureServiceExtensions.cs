@@ -4,6 +4,7 @@ using DainnUser.Infrastructure.Middleware;
 using DainnUser.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DainnUser.Infrastructure;
 
@@ -41,10 +42,10 @@ public static class InfrastructureServiceExtensions
         RegisterStorageProvider(services, configuration);
 
         // Register infrastructure services
-        services.AddScoped<IEmailService, EmailService>();
-        services.AddSingleton<IJwtTokenService, JwtTokenService>();
-        services.AddSingleton<RateLimiterRegistry>();
-        services.AddScoped<IAvatarService, AvatarService>();
+        services.TryAddScoped<IEmailService, EmailService>();
+        services.TryAddSingleton<IJwtTokenService, JwtTokenService>();
+        services.TryAddSingleton<RateLimiterRegistry>();
+        services.TryAddScoped<IAvatarService, AvatarService>();
 
         return services;
     }
@@ -56,13 +57,13 @@ public static class InfrastructureServiceExtensions
         switch (provider.ToLowerInvariant())
         {
             case "sendgrid":
-                services.AddScoped<IEmailProvider, SendGridEmailProvider>();
+                services.TryAddScoped<IEmailProvider, SendGridEmailProvider>();
                 break;
             case "awsses":
-                services.AddScoped<IEmailProvider, AwsSesEmailProvider>();
+                services.TryAddScoped<IEmailProvider, AwsSesEmailProvider>();
                 break;
             default:
-                services.AddScoped<IEmailProvider, SmtpEmailProvider>();
+                services.TryAddScoped<IEmailProvider, SmtpEmailProvider>();
                 break;
         }
     }
@@ -74,13 +75,16 @@ public static class InfrastructureServiceExtensions
         switch (provider.ToLowerInvariant())
         {
             case "azure":
-                services.AddScoped<IStorageService, AzureBlobStorageService>();
+                services.TryAddScoped<IStorageService, AzureBlobStorageService>();
                 break;
             case "awss3":
-                services.AddHttpClient<IStorageService, AwsS3StorageService>();
+                if (!services.Any(descriptor => descriptor.ServiceType == typeof(IStorageService)))
+                {
+                    services.AddHttpClient<IStorageService, AwsS3StorageService>();
+                }
                 break;
             default:
-                services.AddScoped<IStorageService, LocalFileSystemStorageService>();
+                services.TryAddScoped<IStorageService, LocalFileSystemStorageService>();
                 break;
         }
     }

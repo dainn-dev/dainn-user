@@ -1,3 +1,4 @@
+using DainnUser.Core.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using DainnUser.Core.Authorization;

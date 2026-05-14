@@ -1,0 +1,59 @@
+@namespace DainnUser.Web.Components
+
+<EditForm Model="Model" OnValidSubmit="HandleSubmitAsync" class="@CssClass">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger mb-3" />
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+    }
+
+    <div class="mb-3">
+        <label class="form-label" for="@_usernameId">Username</label>
+        <InputText id="@_usernameId" class="form-control" autocomplete="username" @bind-Value="Model.Username" />
+        <ValidationMessage For="@(() => Model.Username)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="@_emailId">Email</label>
+        <InputText id="@_emailId" class="form-control" type="email" autocomplete="email" @bind-Value="Model.Email" />
+        <ValidationMessage For="@(() => Model.Email)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="@_passwordId">Password</label>
+        <InputText id="@_passwordId" class="form-control" type="password" autocomplete="new-password" @bind-Value="Model.Password" />
+        <ValidationMessage For="@(() => Model.Password)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="@_confirmPasswordId">Confirm password</label>
+        <InputText id="@_confirmPasswordId" class="form-control" type="password" autocomplete="new-password" @bind-Value="Model.ConfirmPassword" />
+        <ValidationMessage For="@(() => Model.ConfirmPassword)" class="text-danger" />
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100" disabled="@IsSubmitting">
+        @(IsSubmitting ? LoadingText : SubmitText)
+    </button>
+</EditForm>
+
+@code {
+    private readonly string _usernameId = $"du-register-username-{Guid.NewGuid():N}";
+    private readonly string _emailId = $"du-register-email-{Guid.NewGuid():N}";
+    private readonly string _passwordId = $"du-register-password-{Guid.NewGuid():N}";
+    private readonly string _confirmPasswordId = $"du-register-confirm-{Guid.NewGuid():N}";
+
+    [Parameter] public RegisterFormModel Model { get; set; } = new();
+    [Parameter] public EventCallback<RegisterFormModel> OnSubmit { get; set; }
+    [Parameter] public bool IsSubmitting { get; set; }
+    [Parameter] public string SubmitText { get; set; } = "Create account";
+    [Parameter] public string LoadingText { get; set; } = "Creating account...";
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public string? CssClass { get; set; }
+
+    private async Task HandleSubmitAsync()
+    {
+        await OnSubmit.InvokeAsync(Model);
+    }
+}

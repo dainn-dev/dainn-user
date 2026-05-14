@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using DainnUser.Core.Authorization;
+using DainnUser.Core.Configuration;
 using DainnUser.Core.Entities;
 using DainnUser.Core.Interfaces.Services;
 using DainnUser.Infrastructure.Configuration;

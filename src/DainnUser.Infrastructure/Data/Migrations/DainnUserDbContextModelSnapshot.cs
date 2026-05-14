@@ -140,29 +140,29 @@ namespace DainnUser.Infrastructure.Data.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0000-000000000001"),
-                            CreatedAt = new DateTime(2026, 5, 10, 19, 16, 57, 89, DateTimeKind.Utc).AddTicks(6300),
+                            CreatedAt = new DateTime(2026, 5, 14, 5, 8, 15, 57, DateTimeKind.Utc).AddTicks(2442),
                             Description = "Full system access with all permissions",
                             Name = "Administrator",
                             Permissions = "users:read,users:write,users:delete,roles:read,roles:write,roles:delete,settings:read,settings:write",
-                            UpdatedAt = new DateTime(2026, 5, 10, 19, 16, 57, 89, DateTimeKind.Utc).AddTicks(6300)
+                            UpdatedAt = new DateTime(2026, 5, 14, 5, 8, 15, 57, DateTimeKind.Utc).AddTicks(2442)
                         },
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0000-000000000002"),
-                            CreatedAt = new DateTime(2026, 5, 10, 19, 16, 57, 89, DateTimeKind.Utc).AddTicks(6300),
+                            CreatedAt = new DateTime(2026, 5, 14, 5, 8, 15, 57, DateTimeKind.Utc).AddTicks(2442),
                             Description = "Standard user with basic permissions",
                             Name = "User",
                             Permissions = "profile:read,profile:write",
-                            UpdatedAt = new DateTime(2026, 5, 10, 19, 16, 57, 89, DateTimeKind.Utc).AddTicks(6300)
+                            UpdatedAt = new DateTime(2026, 5, 14, 5, 8, 15, 57, DateTimeKind.Utc).AddTicks(2442)
                         },
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0000-000000000003"),
-                            CreatedAt = new DateTime(2026, 5, 10, 19, 16, 57, 89, DateTimeKind.Utc).AddTicks(6300),
+                            CreatedAt = new DateTime(2026, 5, 14, 5, 8, 15, 57, DateTimeKind.Utc).AddTicks(2442),
                             Description = "Moderator with user management permissions",
                             Name = "Moderator",
                             Permissions = "users:read,users:write,profile:read,profile:write",
-                            UpdatedAt = new DateTime(2026, 5, 10, 19, 16, 57, 89, DateTimeKind.Utc).AddTicks(6300)
+                            UpdatedAt = new DateTime(2026, 5, 14, 5, 8, 15, 57, DateTimeKind.Utc).AddTicks(2442)
                         });
                 });
 
@@ -534,6 +534,9 @@ namespace DainnUser.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("ContactId")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -565,11 +568,15 @@ namespace DainnUser.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ContactId");
+
                     b.HasIndex("ExpiresAt");
 
                     b.HasIndex("TokenValue");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ContactId", "TokenType");
 
                     b.HasIndex("UserId", "TokenType");
 
@@ -685,11 +692,18 @@ namespace DainnUser.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("DainnUser.Core.Entities.UserToken", b =>
                 {
+                    b.HasOne("DainnUser.Core.Entities.UserContact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("DainnUser.Core.Entities.User", "User")
                         .WithMany("Tokens")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Contact");
 
                     b.Navigation("User");
                 });

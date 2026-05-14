@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+
+    <PackageId>DainnUser.OpenIddict</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Dainn Team</Authors>
+    <Company>Dainn</Company>
+    <Description>Optional OpenID Connect provider module for DainnUser, powered by OpenIddict.</Description>
+    <PackageTags>authentication;authorization;user-management;identity;oidc;openidconnect;openiddict</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>docs/README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/dainn/dainn-user</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/dainn/dainn-user</PackageProjectUrl>
+    <Copyright>Copyright (c) 2024 Dainn</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\docs\README.md" Link="docs\README.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DainnUser.Application\DainnUser.Application.csproj" />
+    <ProjectReference Include="..\DainnUser.Core\DainnUser.Core.csproj" />
+    <ProjectReference Include="..\DainnUser.Infrastructure\DainnUser.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenIddict.AspNetCore" Version="7.5.0" />
+    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.5.0" />
+  </ItemGroup>
+
+</Project>

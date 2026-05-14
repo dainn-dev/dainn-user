@@ -1,0 +1,47 @@
+@namespace DainnUser.Web.Components
+
+@if (Providers.Count > 0)
+{
+    <div class="@CssClass">
+        @if (ShowDivider)
+        {
+            <div class="text-center text-muted small mb-2">@DividerText</div>
+        }
+
+        <div class="d-grid gap-2">
+            @foreach (var provider in Providers)
+            {
+                if (!string.IsNullOrWhiteSpace(provider.Url))
+                {
+                    <a class="btn btn-outline-secondary" href="@provider.Url">
+                        @GetDisplayName(provider)
+                    </a>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-outline-secondary" @onclick="() => SelectProviderAsync(provider.Name)">
+                        @GetDisplayName(provider)
+                    </button>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<SocialLoginProvider> Providers { get; set; } = Array.Empty<SocialLoginProvider>();
+    [Parameter] public EventCallback<string> OnProviderSelected { get; set; }
+    [Parameter] public bool ShowDivider { get; set; } = true;
+    [Parameter] public string DividerText { get; set; } = "or continue with";
+    [Parameter] public string? CssClass { get; set; }
+
+    private static string GetDisplayName(SocialLoginProvider provider)
+    {
+        return string.IsNullOrWhiteSpace(provider.DisplayName) ? provider.Name : provider.DisplayName;
+    }
+
+    private async Task SelectProviderAsync(string providerName)
+    {
+        await OnProviderSelected.InvokeAsync(providerName);
+    }
+}

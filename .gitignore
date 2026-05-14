@@ -434,9 +434,12 @@ Thumbs.db
 # Claude Code specific
 .claude/memory/archive/*.md
 .claude/settings.local.json
+.claude/worktrees/
 
 # DocFX
 docs/_site/
 docs/api/*.yml
 docs/api/.manifest
 docs/obj/
+docs/*
+!docs/developer-guide.html

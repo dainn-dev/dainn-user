@@ -1,3 +1,5 @@
+using DainnUser.Core.Configuration;
+
 namespace DainnUser.Infrastructure.Configuration;
 
 /// <summary>

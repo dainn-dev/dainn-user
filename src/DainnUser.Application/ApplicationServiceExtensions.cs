@@ -4,6 +4,7 @@ using DainnUser.Core.Interfaces.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DainnUser.Application;
 
@@ -24,20 +25,30 @@ public static class ApplicationServiceExtensions
         services.AddValidatorsFromAssembly(assembly);
 
         // Register password hasher
-        services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+        services.TryAddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
         // Register application services
-        services.AddScoped<IAuthenticationService, AuthenticationService>();
-        services.AddScoped<ITwoFactorService, TwoFactorService>();
-        services.AddScoped<IRoleService, RoleService>();
-        services.AddScoped<IProfileService, ProfileService>();
-        services.AddScoped<ISessionService, SessionService>();
-        services.AddScoped<ILoginHistoryService, LoginHistoryService>();
-        services.AddScoped<ISocialLoginService, SocialLoginService>();
-        services.AddScoped<IRecaptchaService, RecaptchaService>();
-        services.AddScoped<IActivityService, ActivityService>();
-        services.AddScoped<IUserManagementService, UserManagementService>();
-        services.AddScoped<IAddressService, AddressService>();
+        services.TryAddScoped<IAuthenticationService, AuthenticationService>();
+        services.TryAddScoped<ITwoFactorService, TwoFactorService>();
+        services.TryAddScoped<IRoleService, RoleService>();
+        services.TryAddScoped<IProfileService, ProfileService>();
+        services.TryAddScoped<ISessionService, SessionService>();
+        services.TryAddScoped<ILoginHistoryService, LoginHistoryService>();
+        services.TryAddScoped<IActivityService, ActivityService>();
+        services.TryAddScoped<IUserManagementService, UserManagementService>();
+        services.TryAddScoped<IAddressService, AddressService>();
+        services.TryAddScoped<IContactService, ContactService>();
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IContactVerificationSender, EmailContactVerificationSender>());
+
+        if (!services.Any(descriptor => descriptor.ServiceType == typeof(ISocialLoginService)))
+        {
+            services.AddHttpClient<ISocialLoginService, SocialLoginService>();
+        }
+
+        if (!services.Any(descriptor => descriptor.ServiceType == typeof(IRecaptchaService)))
+        {
+            services.AddHttpClient<IRecaptchaService, RecaptchaService>();
+        }
 
         return services;
     }

@@ -2,7 +2,7 @@ using DainnUser.Core.Entities;
 using DainnUser.Core.Exceptions;
 using DainnUser.Core.Interfaces.Repositories;
 using DainnUser.Core.Interfaces.Services;
-using DainnUser.Infrastructure.Configuration;
+using DainnUser.Core.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace DainnUser.Application.Services;

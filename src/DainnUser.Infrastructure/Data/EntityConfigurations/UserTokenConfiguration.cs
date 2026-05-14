@@ -39,10 +39,17 @@ public class UserTokenConfiguration : IEntityTypeConfiguration<UserToken>
         builder.Property(t => t.CreatedAt)
             .IsRequired();
 
+        builder.HasOne(t => t.Contact)
+            .WithMany()
+            .HasForeignKey(t => t.ContactId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // Indexes
         builder.HasIndex(t => t.UserId);
+        builder.HasIndex(t => t.ContactId);
         builder.HasIndex(t => t.TokenValue);
         builder.HasIndex(t => new { t.UserId, t.TokenType });
+        builder.HasIndex(t => new { t.ContactId, t.TokenType });
         builder.HasIndex(t => t.ExpiresAt);
     }
 }

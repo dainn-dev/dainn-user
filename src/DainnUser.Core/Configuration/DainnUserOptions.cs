@@ -1,4 +1,4 @@
-namespace DainnUser.Infrastructure.Configuration;
+namespace DainnUser.Core.Configuration;
 
 /// <summary>
 /// Configuration options for DainnUser library.

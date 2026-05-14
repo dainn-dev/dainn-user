@@ -204,7 +204,7 @@ builder.Services.AddDainnUserWeb(); // Add web components
 @using DainnUser.Web.Components
 
 <DainnUser.Web.Components.LoginForm 
-    OnSuccess="HandleLoginSuccess"
+    OnSubmit="HandleLogin"
     EnableSocialLogin="true" />
 ```
 
@@ -213,16 +213,17 @@ builder.Services.AddDainnUserWeb(); // Add web components
 ```razor
 @page "/login"
 @using DainnUser.Web.Components
+@using DainnUser.Web.Models
 
 <LoginForm 
-    OnSuccess="@HandleLoginSuccess"
+    OnSubmit="@HandleLogin"
     EnableSocialLogin="true"
     EnableRememberMe="true" />
 
 @code {
-    private void HandleLoginSuccess(LoginResult result)
+    private async Task HandleLogin(LoginFormModel model)
     {
-        // Handle successful login
+        // Call your API or application service, then navigate on success.
         NavigationManager.NavigateTo("/dashboard");
     }
 }

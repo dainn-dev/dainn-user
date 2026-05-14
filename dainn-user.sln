@@ -28,6 +28,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApiSample", "samples\Web
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MvcSample", "samples\MvcSample\MvcSample.csproj", "{BFA7975B-AD6D-403A-AC11-B9B6708F8033}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DainnUser.OpenIddict", "src\DainnUser.OpenIddict\DainnUser.OpenIddict.csproj", "{ECF35EE9-9BA9-443B-938A-90A417B8173D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -74,6 +76,10 @@ Global
 		{BFA7975B-AD6D-403A-AC11-B9B6708F8033}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BFA7975B-AD6D-403A-AC11-B9B6708F8033}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BFA7975B-AD6D-403A-AC11-B9B6708F8033}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECF35EE9-9BA9-443B-938A-90A417B8173D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECF35EE9-9BA9-443B-938A-90A417B8173D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECF35EE9-9BA9-443B-938A-90A417B8173D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECF35EE9-9BA9-443B-938A-90A417B8173D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -89,6 +95,7 @@ Global
 		{4ADE8A7C-78BA-D934-26EE-3E2D63BE1FC6} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{BC37302A-37E7-49CF-9C0F-44742AE503FB} = {16299F0C-9375-4F10-92BD-6BAA4253A89F}
 		{BFA7975B-AD6D-403A-AC11-B9B6708F8033} = {16299F0C-9375-4F10-92BD-6BAA4253A89F}
+		{ECF35EE9-9BA9-443B-938A-90A417B8173D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EEB9B714-1C87-43EB-8E40-9AA56B020BAE}

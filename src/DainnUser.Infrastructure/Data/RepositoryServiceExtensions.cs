@@ -1,6 +1,7 @@
 using DainnUser.Core.Interfaces.Repositories;
 using DainnUser.Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DainnUser.Infrastructure.Data;
 
@@ -17,15 +18,17 @@ public static class RepositoryServiceExtensions
     public static IServiceCollection AddDainnUserRepositories(this IServiceCollection services)
     {
         // Register repositories
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IRoleRepository, RoleRepository>();
-        services.AddScoped<ILoginHistoryRepository, LoginHistoryRepository>();
-        services.AddScoped<ISessionRepository, SessionRepository>();
-        services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
-        services.AddScoped<IAddressRepository, AddressRepository>();
+        services.TryAddScoped<IUserRepository, UserRepository>();
+        services.TryAddScoped<IRoleRepository, RoleRepository>();
+        services.TryAddScoped<ILoginHistoryRepository, LoginHistoryRepository>();
+        services.TryAddScoped<ISessionRepository, SessionRepository>();
+        services.TryAddScoped<IActivityLogRepository, ActivityLogRepository>();
+        services.TryAddScoped<IAddressRepository, AddressRepository>();
+        services.TryAddScoped<IContactRepository, ContactRepository>();
+        services.TryAddScoped<IUserTokenRepository, UserTokenRepository>();
 
         // Register Unit of Work
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.TryAddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }

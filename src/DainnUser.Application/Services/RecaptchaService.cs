@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DainnUser.Core.Interfaces.Services;
 using DainnUser.Core.Models.Recaptcha;
-using DainnUser.Infrastructure.Configuration;
+using DainnUser.Core.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace DainnUser.Application.Services;

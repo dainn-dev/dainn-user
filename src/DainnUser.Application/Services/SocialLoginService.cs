@@ -6,7 +6,7 @@ using DainnUser.Core.Exceptions;
 using DainnUser.Core.Interfaces.Repositories;
 using DainnUser.Core.Interfaces.Services;
 using DainnUser.Core.Models.Authentication;
-using DainnUser.Infrastructure.Configuration;
+using DainnUser.Core.Configuration;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 

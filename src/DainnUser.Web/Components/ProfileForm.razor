@@ -1,0 +1,74 @@
+@namespace DainnUser.Web.Components
+
+<EditForm Model="Model" OnValidSubmit="HandleSubmitAsync" class="@CssClass">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger mb-3" />
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@SuccessMessage</div>
+    }
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label" for="@_firstNameId">First name</label>
+            <InputText id="@_firstNameId" class="form-control" autocomplete="given-name" @bind-Value="Model.FirstName" />
+            <ValidationMessage For="@(() => Model.FirstName)" class="text-danger" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label" for="@_lastNameId">Last name</label>
+            <InputText id="@_lastNameId" class="form-control" autocomplete="family-name" @bind-Value="Model.LastName" />
+            <ValidationMessage For="@(() => Model.LastName)" class="text-danger" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label" for="@_phoneId">Phone</label>
+            <InputText id="@_phoneId" class="form-control" autocomplete="tel" @bind-Value="Model.PhoneNumber" />
+            <ValidationMessage For="@(() => Model.PhoneNumber)" class="text-danger" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label" for="@_websiteId">Website</label>
+            <InputText id="@_websiteId" class="form-control" type="url" autocomplete="url" @bind-Value="Model.Website" />
+            <ValidationMessage For="@(() => Model.Website)" class="text-danger" />
+        </div>
+
+        <div class="col-12">
+            <label class="form-label" for="@_bioId">Bio</label>
+            <InputTextArea id="@_bioId" class="form-control" rows="4" @bind-Value="Model.Bio" />
+            <ValidationMessage For="@(() => Model.Bio)" class="text-danger" />
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3" disabled="@IsSubmitting">
+        @(IsSubmitting ? LoadingText : SubmitText)
+    </button>
+</EditForm>
+
+@code {
+    private readonly string _firstNameId = $"du-profile-first-{Guid.NewGuid():N}";
+    private readonly string _lastNameId = $"du-profile-last-{Guid.NewGuid():N}";
+    private readonly string _phoneId = $"du-profile-phone-{Guid.NewGuid():N}";
+    private readonly string _websiteId = $"du-profile-website-{Guid.NewGuid():N}";
+    private readonly string _bioId = $"du-profile-bio-{Guid.NewGuid():N}";
+
+    [Parameter] public ProfileFormModel Model { get; set; } = new();
+    [Parameter] public EventCallback<ProfileFormModel> OnSubmit { get; set; }
+    [Parameter] public bool IsSubmitting { get; set; }
+    [Parameter] public string SubmitText { get; set; } = "Save changes";
+    [Parameter] public string LoadingText { get; set; } = "Saving...";
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public string? SuccessMessage { get; set; }
+    [Parameter] public string? CssClass { get; set; }
+
+    private async Task HandleSubmitAsync()
+    {
+        await OnSubmit.InvokeAsync(Model);
+    }
+}
