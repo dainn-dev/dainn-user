@@ -95,6 +95,109 @@ public class DainnStripePaymentWebhookHandlerTests
         payment.StripePaymentIntentId.Should().Be("pi_1");
     }
 
+    [Fact]
+    public async Task HandleAsync_ChargeRefunded_CreatesRefundRecord()
+    {
+        await using var fixture = await CreateFixtureAsync();
+        var paymentId = Guid.NewGuid();
+        fixture.DbContext.DainnStripePayments.Add(new DainnStripePayment
+        {
+            Id = paymentId,
+            OwnerId = "user_1",
+            StripePaymentIntentId = "pi_refund_1",
+            Amount = 5000,
+            Currency = "usd",
+            Status = DainnStripePaymentStatus.Succeeded
+        });
+        await fixture.DbContext.SaveChangesAsync();
+
+        var handler = new DainnStripePaymentWebhookHandler(fixture.DbContext);
+        var record = new StripeWebhookEventRecord
+        {
+            StripeEventId = "evt_ref",
+            EventType = "charge.refunded",
+            Payload = """
+            {
+              "data": {
+                "object": {
+                  "id": "ch_1",
+                  "payment_intent": "pi_refund_1",
+                  "amount_refunded": 2000,
+                  "currency": "usd",
+                  "refunds": {
+                    "data": [
+                      {
+                        "id": "re_1",
+                        "charge": "ch_1",
+                        "amount": 2000,
+                        "currency": "usd",
+                        "status": "succeeded",
+                        "reason": "requested_by_customer"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+            """
+        };
+
+        await handler.HandleAsync(new Event { Id = "evt_ref", Type = "charge.refunded" }, record);
+
+        var refund = await fixture.DbContext.DainnStripeRefundRecords.SingleAsync();
+        refund.StripeRefundId.Should().Be("re_1");
+        refund.Amount.Should().Be(2000);
+        refund.Status.Should().Be(DainnStripe.Enums.DainnStripeRefundStatus.Succeeded);
+        refund.Reason.Should().Be("requested_by_customer");
+        refund.PaymentId.Should().Be(paymentId);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ChargeRefunded_SkipsDuplicateRefundId()
+    {
+        await using var fixture = await CreateFixtureAsync();
+        var paymentId = Guid.NewGuid();
+        fixture.DbContext.DainnStripePayments.Add(new DainnStripePayment
+        {
+            Id = paymentId,
+            OwnerId = "user_1",
+            StripePaymentIntentId = "pi_dup_ref",
+            Amount = 5000,
+            Currency = "usd",
+            Status = DainnStripePaymentStatus.Succeeded
+        });
+        await fixture.DbContext.SaveChangesAsync();
+
+        var handler = new DainnStripePaymentWebhookHandler(fixture.DbContext);
+        var record = new StripeWebhookEventRecord
+        {
+            StripeEventId = "evt_dup",
+            EventType = "charge.refunded",
+            Payload = """
+            {
+              "data": {
+                "object": {
+                  "id": "ch_dup",
+                  "payment_intent": "pi_dup_ref",
+                  "amount_refunded": 1000,
+                  "currency": "usd",
+                  "refunds": {
+                    "data": [
+                      { "id": "re_dup", "amount": 1000, "currency": "usd", "status": "succeeded" }
+                    ]
+                  }
+                }
+              }
+            }
+            """
+        };
+
+        await handler.HandleAsync(new Event { Id = "evt_dup", Type = "charge.refunded" }, record);
+        await handler.HandleAsync(new Event { Id = "evt_dup", Type = "charge.refunded" }, record);
+
+        (await fixture.DbContext.DainnStripeRefundRecords.CountAsync()).Should().Be(1);
+    }
+
     private static async Task<TestFixture> CreateFixtureAsync()
     {
         var connection = new SqliteConnection("Data Source=:memory:");

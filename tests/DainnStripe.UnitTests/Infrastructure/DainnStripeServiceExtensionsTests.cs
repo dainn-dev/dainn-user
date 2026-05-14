@@ -37,7 +37,9 @@ public class DainnStripeServiceExtensionsTests
         scope.ServiceProvider.GetRequiredService<IDainnStripeBalanceClient>().Should().BeOfType<DainnStripeBalanceClient>();
         scope.ServiceProvider.GetRequiredService<IDainnStripeMoneyMovementService>().Should().BeOfType<DainnStripeMoneyMovementService>();
         scope.ServiceProvider.GetRequiredService<IDainnStripeReconciliationService>().Should().BeOfType<DainnStripeReconciliationService>();
+        scope.ServiceProvider.GetRequiredService<IDainnStripeSubscriptionClient>().Should().BeOfType<DainnStripeSubscriptionClient>();
         scope.ServiceProvider.GetRequiredService<IDainnStripeSubscriptionService>().Should().BeOfType<DainnStripeSubscriptionService>();
+        scope.ServiceProvider.GetRequiredService<IDainnStripeCatalogSyncService>().Should().BeOfType<DainnStripeCatalogSyncService>();
         scope.ServiceProvider.GetServices<IStripeWebhookHandler>().Should()
             .ContainSingle(handler => handler.GetType() == typeof(DainnStripePaymentWebhookHandler));
         scope.ServiceProvider.GetServices<IStripeWebhookHandler>().Should()
@@ -46,6 +48,8 @@ public class DainnStripeServiceExtensionsTests
             .ContainSingle(handler => handler.GetType() == typeof(DainnStripePayoutWebhookHandler));
         scope.ServiceProvider.GetServices<IStripeWebhookHandler>().Should()
             .ContainSingle(handler => handler.GetType() == typeof(DainnStripeBalanceWebhookHandler));
+        scope.ServiceProvider.GetServices<IStripeWebhookHandler>().Should()
+            .ContainSingle(handler => handler.GetType() == typeof(DainnStripeSubscriptionWebhookHandler));
         scope.ServiceProvider.GetRequiredService<IStripeWebhookIdempotencyService>().Should().BeOfType<StripeWebhookIdempotencyService>();
         scope.ServiceProvider.GetRequiredService<IStripeWebhookService>().Should().BeOfType<StripeWebhookService>();
     }
@@ -95,6 +99,52 @@ public class DainnStripeServiceExtensionsTests
     }
 
     [Fact]
+    public void MapDainnStripeCatalogEndpoints_RegistersCatalogRoutes()
+    {
+        var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder();
+        builder.Services.AddLogging();
+        builder.Services.AddAuthorization();
+        builder.Services.AddDainnStripe(CreateConfiguration());
+
+        using var app = builder.Build();
+        app.MapDainnStripeCatalogEndpoints(requireAuthorization: false);
+
+        var endpoints = ((Microsoft.AspNetCore.Routing.IEndpointRouteBuilder)app)
+            .DataSources
+            .SelectMany(dataSource => dataSource.Endpoints)
+            .Select(endpoint => endpoint.DisplayName)
+            .ToList();
+
+        endpoints.Should().Contain(displayName => displayName!.Contains("GET /dainnstripe/catalog/products"));
+        endpoints.Should().Contain(displayName => displayName!.Contains("POST /dainnstripe/catalog/products"));
+        endpoints.Should().Contain(displayName => displayName!.Contains("POST /dainnstripe/catalog/prices"));
+        endpoints.Should().Contain(displayName => displayName!.Contains("POST /dainnstripe/catalog/sync"));
+    }
+
+    [Fact]
+    public void MapDainnStripeCommerceEndpoints_RegistersCommerceRoutes()
+    {
+        var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder();
+        builder.Services.AddLogging();
+        builder.Services.AddAuthorization();
+        builder.Services.AddDainnStripe(CreateConfiguration());
+
+        using var app = builder.Build();
+        app.MapDainnStripeCommerceEndpoints(requireAuthorization: false);
+
+        var endpoints = ((Microsoft.AspNetCore.Routing.IEndpointRouteBuilder)app)
+            .DataSources
+            .SelectMany(dataSource => dataSource.Endpoints)
+            .Select(endpoint => endpoint.DisplayName)
+            .ToList();
+
+        endpoints.Should().Contain(displayName => displayName!.Contains("POST /dainnstripe/commerce/payments/checkout"));
+        endpoints.Should().Contain(displayName => displayName!.Contains("POST /dainnstripe/commerce/payments/intent"));
+        endpoints.Should().Contain(displayName => displayName!.Contains("POST /dainnstripe/commerce/subscriptions"));
+        endpoints.Should().Contain(displayName => displayName!.Contains("DELETE /dainnstripe/commerce/subscriptions"));
+    }
+
+    [Fact]
     public void AddDainnStripe_WithMissingSecretKey_ThrowsSafeMessage()
     {
         var services = new ServiceCollection();
@@ -103,6 +153,55 @@ public class DainnStripeServiceExtensionsTests
         services.Invoking(s => s.AddDainnStripe(configuration))
             .Should().Throw<InvalidOperationException>()
             .WithMessage("DainnStripe secret key is not configured*");
+    }
+
+    [Fact]
+    public void AddDainnStripe_WithMissingWebhookSigningSecret_ThrowsSafeMessage()
+    {
+        var services = new ServiceCollection();
+        var configuration = CreateConfiguration(("DainnStripe:WebhookSigningSecret", ""));
+
+        services.Invoking(s => s.AddDainnStripe(configuration))
+            .Should().Throw<InvalidOperationException>()
+            .WithMessage("DainnStripe webhook signing secret is not configured*");
+    }
+
+    [Fact]
+    public void AddDainnStripe_WithMissingDatabaseProvider_ThrowsSafeMessage()
+    {
+        var services = new ServiceCollection();
+        var configuration = CreateConfiguration(("DainnStripe:Database:Provider", ""));
+
+        services.Invoking(s => s.AddDainnStripe(configuration))
+            .Should().Throw<InvalidOperationException>()
+            .WithMessage("DainnStripe database provider is not configured*");
+    }
+
+    [Fact]
+    public void AddDainnStripe_WithMissingConnectionString_ThrowsSafeMessage()
+    {
+        var services = new ServiceCollection();
+        var configuration = CreateConfiguration(("DainnStripe:Database:ConnectionString", ""));
+
+        services.Invoking(s => s.AddDainnStripe(configuration))
+            .Should().Throw<InvalidOperationException>()
+            .WithMessage("DainnStripe database connection string is not configured*");
+    }
+
+    [Fact]
+    public void AddDainnStripe_WhenDisabled_SkipsConfigValidation()
+    {
+        var services = new ServiceCollection();
+        var configuration = CreateConfiguration(
+            ("DainnStripe:Enabled", "false"),
+            ("DainnStripe:SecretKey", ""),
+            ("DainnStripe:WebhookSigningSecret", ""),
+            ("DainnStripe:Database:Provider", ""),
+            ("DainnStripe:Database:ConnectionString", ""));
+
+        // When disabled, missing required config should not throw at registration time
+        services.Invoking(s => s.AddDainnStripe(configuration))
+            .Should().NotThrow();
     }
 
     [Fact]

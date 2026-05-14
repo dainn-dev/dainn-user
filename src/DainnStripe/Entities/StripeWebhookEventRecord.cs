@@ -43,6 +43,12 @@ public class StripeWebhookEventRecord
     public string Payload { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the SHA-256 hex fingerprint of <see cref="Payload"/>.
+    /// Used to detect replays where the event ID matches but the content differs.
+    /// </summary>
+    public string PayloadHash { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the processing status.
     /// </summary>
     public StripeWebhookProcessingStatus Status { get; set; } = StripeWebhookProcessingStatus.Received;

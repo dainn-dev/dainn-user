@@ -1,6 +1,9 @@
+using System.Security.Cryptography;
+using System.Text;
 using DainnStripe.Data;
 using DainnStripe.Entities;
 using DainnStripe.Enums;
+using DainnStripe.Exceptions;
 using DainnStripe.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
@@ -31,16 +34,21 @@ public class StripeWebhookIdempotencyService : IStripeWebhookIdempotencyService
         ArgumentNullException.ThrowIfNull(stripeEvent);
         ArgumentException.ThrowIfNullOrWhiteSpace(payload);
 
+        var payloadHash = ComputePayloadHash(payload);
+
         var existing = await _dbContext.StripeWebhookEvents
             .FirstOrDefaultAsync(record => record.StripeEventId == stripeEvent.Id, cancellationToken);
 
         if (existing is not null)
         {
-            existing.EventType = stripeEvent.Type;
-            existing.ApiVersion = stripeEvent.ApiVersion;
-            existing.StripeAccountId = stripeEvent.Account;
-            existing.Livemode = stripeEvent.Livemode;
-            existing.Payload = payload;
+            if (existing.PayloadHash != payloadHash)
+            {
+                throw new StripeWebhookFingerprintConflictException(
+                    stripeEvent.Id,
+                    existing.PayloadHash,
+                    payloadHash);
+            }
+
             existing.UpdatedAt = DateTime.UtcNow;
             return existing;
         }
@@ -54,6 +62,7 @@ public class StripeWebhookIdempotencyService : IStripeWebhookIdempotencyService
             StripeAccountId = stripeEvent.Account,
             Livemode = stripeEvent.Livemode,
             Payload = payload,
+            PayloadHash = payloadHash,
             Status = StripeWebhookProcessingStatus.Received,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -110,6 +119,12 @@ public class StripeWebhookIdempotencyService : IStripeWebhookIdempotencyService
         record.ErrorMessage = Truncate(errorMessage, 2048);
         record.UpdatedAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static string ComputePayloadHash(string payload)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
+        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
     private static string Truncate(string value, int maxLength)

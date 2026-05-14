@@ -33,6 +33,10 @@ public class StripeWebhookEventRecordConfiguration : IEntityTypeConfiguration<St
         builder.Property(record => record.Payload)
             .IsRequired();
 
+        builder.Property(record => record.PayloadHash)
+            .IsRequired()
+            .HasMaxLength(64);
+
         builder.Property(record => record.Status)
             .IsRequired()
             .HasConversion<int>();

@@ -9,7 +9,7 @@ using Stripe;
 namespace DainnStripe.Services;
 
 /// <summary>
-/// Finalizes local payments from Stripe payment webhook events.
+/// Finalizes local payments and records refunds from Stripe payment webhook events.
 /// </summary>
 public class DainnStripePaymentWebhookHandler : IStripeWebhookHandler
 {
@@ -19,7 +19,8 @@ public class DainnStripePaymentWebhookHandler : IStripeWebhookHandler
         "payment_intent.payment_failed",
         "payment_intent.canceled",
         "checkout.session.completed",
-        "checkout.session.expired"
+        "checkout.session.expired",
+        "charge.refunded"
     };
 
     private readonly DainnStripeDbContext _dbContext;
@@ -41,6 +42,12 @@ public class DainnStripePaymentWebhookHandler : IStripeWebhookHandler
         StripeWebhookEventRecord record,
         CancellationToken cancellationToken = default)
     {
+        if (record.EventType == "charge.refunded")
+        {
+            await HandleRefundAsync(record.Payload, cancellationToken);
+            return;
+        }
+
         var paymentRef = PaymentWebhookReference.FromPayload(record.Payload, record.EventType);
         if (paymentRef is null)
         {
@@ -77,6 +84,99 @@ public class DainnStripePaymentWebhookHandler : IStripeWebhookHandler
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task HandleRefundAsync(string payload, CancellationToken cancellationToken)
+    {
+        using var document = JsonDocument.Parse(payload);
+        if (!document.RootElement.TryGetProperty("data", out var data)
+            || !data.TryGetProperty("object", out var charge))
+        {
+            return;
+        }
+
+        var chargeId = ReadString(charge, "id");
+        var paymentIntentId = ReadString(charge, "payment_intent");
+
+        // Find parent payment
+        DainnStripePayment? payment = null;
+        if (!string.IsNullOrWhiteSpace(paymentIntentId))
+        {
+            payment = await _dbContext.DainnStripePayments
+                .SingleOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
+        }
+
+        if (payment is null)
+        {
+            return;
+        }
+
+        // Extract the most recent refund from the refunds array
+        if (!charge.TryGetProperty("refunds", out var refundsObj)
+            || !refundsObj.TryGetProperty("data", out var refundsData)
+            || refundsData.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+
+        foreach (var refundElement in refundsData.EnumerateArray())
+        {
+            var refundId = ReadString(refundElement, "id");
+            if (string.IsNullOrWhiteSpace(refundId))
+            {
+                continue;
+            }
+
+            var alreadyRecorded = await _dbContext.DainnStripeRefundRecords
+                .AnyAsync(r => r.StripeRefundId == refundId, cancellationToken);
+
+            if (alreadyRecorded)
+            {
+                continue;
+            }
+
+            var statusStr = ReadString(refundElement, "status");
+            var refundStatus = statusStr switch
+            {
+                "succeeded" => DainnStripeRefundStatus.Succeeded,
+                "failed" => DainnStripeRefundStatus.Failed,
+                "canceled" => DainnStripeRefundStatus.Canceled,
+                _ => DainnStripeRefundStatus.Pending
+            };
+
+            _dbContext.DainnStripeRefundRecords.Add(new DainnStripeRefundRecord
+            {
+                Id = Guid.NewGuid(),
+                PaymentId = payment.Id,
+                StripeRefundId = refundId,
+                StripeChargeId = chargeId,
+                StripePaymentIntentId = paymentIntentId,
+                Amount = ReadInt64(refundElement, "amount") ?? 0,
+                Currency = ReadString(refundElement, "currency")?.ToLowerInvariant() ?? "usd",
+                Reason = ReadString(refundElement, "reason"),
+                Status = refundStatus,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static string? ReadString(JsonElement obj, string propertyName)
+    {
+        return obj.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String
+            ? property.GetString()
+            : null;
+    }
+
+    private static long? ReadInt64(JsonElement obj, string propertyName)
+    {
+        return obj.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.Number
+            ? property.GetInt64()
+            : null;
     }
 
     private async Task<DainnStripePayment?> FindPaymentAsync(

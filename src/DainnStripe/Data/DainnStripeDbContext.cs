@@ -71,6 +71,31 @@ public class DainnStripeDbContext : DbContext
     /// </summary>
     public DbSet<DainnStripeBalanceSnapshot> DainnStripeBalanceSnapshots { get; set; } = null!;
 
+    /// <summary>
+    /// Gets or sets payment attempt records.
+    /// </summary>
+    public DbSet<DainnStripePaymentAttempt> DainnStripePaymentAttempts { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets refund records.
+    /// </summary>
+    public DbSet<DainnStripeRefundRecord> DainnStripeRefundRecords { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets invoice records.
+    /// </summary>
+    public DbSet<DainnStripeInvoice> DainnStripeInvoices { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets credit note records.
+    /// </summary>
+    public DbSet<DainnStripeCreditNote> DainnStripeCreditNotes { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets catalog sync run audit records.
+    /// </summary>
+    public DbSet<DainnStripeCatalogSyncRun> DainnStripeCatalogSyncRuns { get; set; } = null!;
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

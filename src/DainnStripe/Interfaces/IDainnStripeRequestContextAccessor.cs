@@ -18,7 +18,13 @@ public interface IDainnStripeRequestContextAccessor
     void SetConnectedAccount(string stripeAccountId, string? tenantId = null);
 
     /// <summary>
-    /// Clears the current request context.
+    /// Sets an idempotency key that will be forwarded as the <c>Idempotency-Key</c> header
+    /// on the next Stripe write operation performed within this scope.
+    /// </summary>
+    void SetIdempotencyKey(string idempotencyKey);
+
+    /// <summary>
+    /// Clears the current request context, including any idempotency key.
     /// </summary>
     void Clear();
 }

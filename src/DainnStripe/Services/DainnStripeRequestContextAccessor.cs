@@ -24,9 +24,17 @@ public class DainnStripeRequestContextAccessor : IDainnStripeRequestContextAcces
     }
 
     /// <inheritdoc />
+    public void SetIdempotencyKey(string idempotencyKey)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
+        Current.IdempotencyKey = idempotencyKey;
+    }
+
+    /// <inheritdoc />
     public void Clear()
     {
         Current.StripeAccountId = null;
         Current.TenantId = null;
+        Current.IdempotencyKey = null;
     }
 }

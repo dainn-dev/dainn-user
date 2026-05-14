@@ -39,4 +39,16 @@ public class DainnStripeOptions
     /// Gets or sets the default webhook route mapped by the endpoint extension.
     /// </summary>
     public string WebhookPath { get; set; } = "/stripe/webhooks";
+
+    /// <summary>
+    /// Returns a safe string representation that never exposes <see cref="SecretKey"/> or
+    /// <see cref="WebhookSigningSecret"/> in logs or exception messages.
+    /// </summary>
+    public override string ToString()
+    {
+        var keyHint = SecretKey.Length > 8
+            ? $"{SecretKey[..8]}…[redacted]"
+            : "[not set]";
+        return $"DainnStripeOptions {{ Enabled={Enabled}, SecretKey={keyHint}, WebhookPath={WebhookPath} }}";
+    }
 }

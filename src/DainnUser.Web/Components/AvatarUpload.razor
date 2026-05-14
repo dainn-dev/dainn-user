@@ -1,0 +1,99 @@
+@namespace DainnUser.Web.Components
+
+<div class="du-avatar-upload @CssClass">
+
+    <div class="mb-3 text-center">
+        @if (!string.IsNullOrWhiteSpace(CurrentAvatarUrl))
+        {
+            <img src="@CurrentAvatarUrl" alt="Current avatar"
+                 class="rounded-circle mb-2"
+                 style="width:96px;height:96px;object-fit:cover;" />
+        }
+        else
+        {
+            <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mb-2 mx-auto"
+                 style="width:96px;height:96px;" aria-hidden="true">
+                <span class="text-white fs-2">&#128100;</span>
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@SuccessMessage</div>
+    }
+
+    <div class="d-flex gap-2 align-items-center flex-wrap justify-content-center">
+        <label class="btn btn-outline-secondary @(IsSubmitting ? "disabled" : "")" role="button">
+            @(IsSubmitting ? UploadingText : SelectText)
+            <InputFile accept="image/*" style="display:none;"
+                       OnChange="HandleFileSelectedAsync"
+                       disabled="@IsSubmitting"
+                       aria-label="Select avatar image" />
+        </label>
+
+        @if (!string.IsNullOrWhiteSpace(CurrentAvatarUrl))
+        {
+            <button type="button" class="btn btn-outline-danger"
+                    @onclick="HandleRemoveAsync"
+                    disabled="@IsSubmitting"
+                    aria-label="Remove current avatar">
+                @RemoveText
+            </button>
+        }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_validationError))
+    {
+        <div class="text-danger mt-1 small" role="alert">@_validationError</div>
+    }
+
+    <p class="form-text text-center mt-1">@HintText</p>
+</div>
+
+@code {
+    private string? _validationError;
+
+    [Parameter] public string? CurrentAvatarUrl { get; set; }
+    [Parameter] public EventCallback<IBrowserFile> OnFileSelected { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+    [Parameter] public bool IsSubmitting { get; set; }
+    [Parameter] public long MaxFileSizeBytes { get; set; } = 2 * 1024 * 1024;
+    [Parameter] public string SelectText { get; set; } = "Change photo";
+    [Parameter] public string UploadingText { get; set; } = "Uploading...";
+    [Parameter] public string RemoveText { get; set; } = "Remove photo";
+    [Parameter] public string HintText { get; set; } = "JPG, PNG or GIF · Max 2 MB";
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public string? SuccessMessage { get; set; }
+    [Parameter] public string? CssClass { get; set; }
+
+    private async Task HandleFileSelectedAsync(InputFileChangeEventArgs e)
+    {
+        _validationError = null;
+        var file = e.File;
+
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            _validationError = "Please select an image file (JPG, PNG, GIF, or WebP).";
+            return;
+        }
+
+        if (file.Size > MaxFileSizeBytes)
+        {
+            _validationError = $"File must be smaller than {MaxFileSizeBytes / (1024 * 1024)} MB.";
+            return;
+        }
+
+        await OnFileSelected.InvokeAsync(file);
+    }
+
+    private async Task HandleRemoveAsync()
+    {
+        await OnRemove.InvokeAsync();
+    }
+}

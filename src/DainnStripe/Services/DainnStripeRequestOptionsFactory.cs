@@ -21,15 +21,18 @@ public class DainnStripeRequestOptionsFactory : IDainnStripeRequestOptionsFactor
     /// <inheritdoc />
     public RequestOptions? Create()
     {
-        var stripeAccountId = _requestContextAccessor.Current.StripeAccountId;
-        if (string.IsNullOrWhiteSpace(stripeAccountId))
+        var ctx = _requestContextAccessor.Current;
+        var hasAccount = !string.IsNullOrWhiteSpace(ctx.StripeAccountId);
+        var hasIdempotencyKey = !string.IsNullOrWhiteSpace(ctx.IdempotencyKey);
+
+        if (!hasAccount && !hasIdempotencyKey)
         {
             return null;
         }
 
-        return new RequestOptions
-        {
-            StripeAccount = stripeAccountId
-        };
+        var options = new RequestOptions();
+        if (hasAccount) options.StripeAccount = ctx.StripeAccountId;
+        if (hasIdempotencyKey) options.IdempotencyKey = ctx.IdempotencyKey;
+        return options;
     }
 }

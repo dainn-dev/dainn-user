@@ -4,7 +4,7 @@ using DainnStripe.Models;
 namespace DainnStripe.Interfaces;
 
 /// <summary>
-/// Synchronizes local subscription state from Stripe data.
+/// Manages local subscription state and orchestrates Stripe subscription operations.
 /// </summary>
 public interface IDainnStripeSubscriptionService
 {
@@ -13,5 +13,20 @@ public interface IDainnStripeSubscriptionService
     /// </summary>
     Task<DainnStripeSubscription> SyncAsync(
         SyncSubscriptionRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a Stripe subscription via API and persists it locally.
+    /// </summary>
+    Task<DainnStripeSubscription> CreateAsync(
+        CreateSubscriptionRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Immediately cancels a Stripe subscription and marks it canceled locally.
+    /// </summary>
+    Task<DainnStripeSubscription> CancelAsync(
+        string ownerId,
+        string stripeSubscriptionId,
         CancellationToken cancellationToken = default);
 }

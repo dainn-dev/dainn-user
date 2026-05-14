@@ -66,13 +66,16 @@ public static class DainnStripeServiceExtensions
         services.TryAddScoped<IDainnStripeBalanceClient, DainnStripeBalanceClient>();
         services.TryAddScoped<IDainnStripeMoneyMovementService, DainnStripeMoneyMovementService>();
         services.TryAddScoped<IDainnStripeReconciliationService, DainnStripeReconciliationService>();
+        services.TryAddScoped<IDainnStripeSubscriptionClient, DainnStripeSubscriptionClient>();
         services.TryAddScoped<IDainnStripeSubscriptionService, DainnStripeSubscriptionService>();
+        services.TryAddScoped<IDainnStripeCatalogSyncService, DainnStripeCatalogSyncService>();
         services.TryAddScoped<IStripeWebhookIdempotencyService, StripeWebhookIdempotencyService>();
         services.TryAddScoped<IStripeWebhookService, StripeWebhookService>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IStripeWebhookHandler, DainnStripePaymentWebhookHandler>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IStripeWebhookHandler, DainnStripeConnectAccountWebhookHandler>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IStripeWebhookHandler, DainnStripePayoutWebhookHandler>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IStripeWebhookHandler, DainnStripeBalanceWebhookHandler>());
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IStripeWebhookHandler, DainnStripeSubscriptionWebhookHandler>());
 
         return services;
     }
@@ -200,6 +203,111 @@ public static class DainnStripeServiceExtensions
         {
             var result = await reconciliationService.ReconcileMoneyMovementAsync(request, cancellationToken);
             return Results.Ok(result);
+        });
+
+        return endpoints;
+    }
+
+    /// <summary>
+    /// Maps catalog management endpoints (product/price upsert, catalog listing, and Stripe sync).
+    /// </summary>
+    public static IEndpointRouteBuilder MapDainnStripeCatalogEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        string pattern = "/dainnstripe/catalog",
+        bool requireAuthorization = true)
+    {
+        var group = endpoints.MapGroup(pattern);
+        if (requireAuthorization)
+        {
+            group.RequireAuthorization();
+        }
+
+        group.MapGet("/products", async (
+            IDainnStripeCatalogService catalogService,
+            CancellationToken cancellationToken) =>
+        {
+            var products = await catalogService.GetActiveCatalogAsync(cancellationToken);
+            return Results.Ok(products);
+        });
+
+        group.MapPost("/products", async (
+            UpsertCatalogProductRequest request,
+            IDainnStripeCatalogService catalogService,
+            CancellationToken cancellationToken) =>
+        {
+            var product = await catalogService.UpsertProductAsync(request, cancellationToken);
+            return Results.Ok(product);
+        });
+
+        group.MapPost("/prices", async (
+            UpsertCatalogPriceRequest request,
+            IDainnStripeCatalogService catalogService,
+            CancellationToken cancellationToken) =>
+        {
+            var price = await catalogService.UpsertPriceAsync(request, cancellationToken);
+            return Results.Ok(price);
+        });
+
+        group.MapPost("/sync", async (
+            IDainnStripeCatalogSyncService syncService,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await syncService.SyncFromStripeAsync("api", cancellationToken);
+            return Results.Ok(result);
+        });
+
+        return endpoints;
+    }
+
+    /// <summary>
+    /// Maps commerce endpoints for payment and subscription management.
+    /// </summary>
+    public static IEndpointRouteBuilder MapDainnStripeCommerceEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        string pattern = "/dainnstripe/commerce",
+        bool requireAuthorization = true)
+    {
+        var group = endpoints.MapGroup(pattern);
+        if (requireAuthorization)
+        {
+            group.RequireAuthorization();
+        }
+
+        group.MapPost("/payments/checkout", async (
+            CreateCheckoutSessionRequest request,
+            IDainnStripeCheckoutService checkoutService,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await checkoutService.CreateAsync(request, cancellationToken);
+            return Results.Ok(result);
+        });
+
+        group.MapPost("/payments/intent", async (
+            CreatePaymentIntentRequest request,
+            IDainnStripePaymentService paymentService,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await paymentService.CreatePaymentIntentAsync(request, cancellationToken);
+            return Results.Ok(result);
+        });
+
+        group.MapPost("/subscriptions", async (
+            CreateSubscriptionRequest request,
+            IDainnStripeSubscriptionService subscriptionService,
+            CancellationToken cancellationToken) =>
+        {
+            var subscription = await subscriptionService.CreateAsync(request, cancellationToken);
+            return Results.Ok(subscription);
+        });
+
+        group.MapDelete("/subscriptions/{stripeSubscriptionId}", async (
+            string stripeSubscriptionId,
+            string ownerId,
+            IDainnStripeSubscriptionService subscriptionService,
+            CancellationToken cancellationToken) =>
+        {
+            var subscription = await subscriptionService.CancelAsync(ownerId, stripeSubscriptionId, cancellationToken);
+            return Results.Ok(subscription);
         });
 
         return endpoints;

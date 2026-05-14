@@ -1,0 +1,267 @@
+@namespace DainnUser.Web.Components
+@using DainnUser.Core.Models.Authentication
+
+<div class="du-2fa-setup @CssClass">
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+    }
+
+    @* Step 3: Backup codes shown once after enabling *@
+    @if (BackupCodes is { Count: > 0 })
+    {
+        <div class="alert alert-warning" role="alert">
+            <strong>Save these backup codes.</strong> Store them somewhere safe —
+            you will need them if you lose access to your authenticator app.
+            Each code can only be used once.
+        </div>
+        <ul class="list-group mb-3" aria-label="Backup codes">
+            @foreach (var code in BackupCodes)
+            {
+                <li class="list-group-item font-monospace user-select-all">@(code)</li>
+            }
+        </ul>
+        <button type="button" class="btn btn-primary" @onclick="HandleBackupCodesAcknowledgedAsync">
+            I have saved my backup codes
+        </button>
+    }
+
+    @* Step 2: QR / manual secret + confirmation code *@
+    else if (SetupResult is not null)
+    {
+        <p class="mb-3">
+            Scan the QR code with your authenticator app, or
+            <a href="@SetupResult.OtpAuthUri" target="_blank" rel="noopener noreferrer">open directly in your app</a>.
+            Then enter the 6-digit code below to confirm setup.
+        </p>
+
+        @if (QrCode is not null)
+        {
+            <div class="mb-3" aria-label="QR code for authenticator app">
+                @QrCode
+            </div>
+        }
+
+        <div class="mb-3">
+            <label class="form-label fw-semibold" for="@_secretId">Or enter this key manually</label>
+            <div class="input-group">
+                <input id="@_secretId" type="text" class="form-control font-monospace"
+                       value="@SetupResult.Secret" readonly
+                       aria-label="TOTP secret key" />
+            </div>
+            <div class="form-text">Time-based one-time password (TOTP) — compatible with Google Authenticator, Authy, and others.</div>
+        </div>
+
+        <EditForm Model="_enableModel" OnValidSubmit="HandleConfirmEnableAsync">
+            <DataAnnotationsValidator />
+            <div class="mb-3">
+                <label class="form-label" for="@_enableCodeId">Verification code</label>
+                <InputText id="@_enableCodeId" class="form-control" inputmode="numeric"
+                           autocomplete="one-time-code" maxlength="6"
+                           @bind-Value="_enableModel.Code"
+                           aria-required="true" />
+                <ValidationMessage For="@(() => _enableModel.Code)" class="text-danger" />
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@IsSubmitting">
+                    @(IsSubmitting ? "Enabling..." : "Enable two-factor authentication")
+                </button>
+                <button type="button" class="btn btn-outline-secondary"
+                        @onclick="HandleCancelSetupAsync" disabled="@IsSubmitting">
+                    Cancel
+                </button>
+            </div>
+        </EditForm>
+    }
+
+    @* Enabled state: manage 2FA *@
+    else if (IsEnabled)
+    {
+        <div class="alert alert-success d-flex align-items-center gap-2" role="status">
+            <span aria-hidden="true">&#9989;</span>
+            Two-factor authentication is <strong>enabled</strong>.
+        </div>
+
+        @if (_showRegenerateForm)
+        {
+            <EditForm Model="_regenerateModel" OnValidSubmit="HandleRegenerateAsync">
+                <DataAnnotationsValidator />
+                <p>Enter your current authenticator code to regenerate backup codes.</p>
+                <div class="mb-3">
+                    <label class="form-label" for="@_regenerateCodeId">Authentication code</label>
+                    <InputText id="@_regenerateCodeId" class="form-control" inputmode="numeric"
+                               autocomplete="one-time-code" maxlength="6"
+                               @bind-Value="_regenerateModel.Code"
+                               aria-required="true" />
+                    <ValidationMessage For="@(() => _regenerateModel.Code)" class="text-danger" />
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-warning" disabled="@IsSubmitting">
+                        @(IsSubmitting ? "Regenerating..." : "Regenerate backup codes")
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary"
+                            @onclick="CancelRegenerate">
+                        Cancel
+                    </button>
+                </div>
+            </EditForm>
+        }
+        else if (_showDisableForm)
+        {
+            <EditForm Model="_disableModel" OnValidSubmit="HandleDisableAsync">
+                <DataAnnotationsValidator />
+                <p>Enter your current authenticator code to disable two-factor authentication.</p>
+                <div class="mb-3">
+                    <label class="form-label" for="@_disableCodeId">Authentication code</label>
+                    <InputText id="@_disableCodeId" class="form-control" inputmode="numeric"
+                               autocomplete="one-time-code" maxlength="6"
+                               @bind-Value="_disableModel.Code"
+                               aria-required="true" />
+                    <ValidationMessage For="@(() => _disableModel.Code)" class="text-danger" />
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger" disabled="@IsSubmitting">
+                        @(IsSubmitting ? "Disabling..." : "Disable two-factor authentication")
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary"
+                            @onclick="CancelDisable">
+                        Cancel
+                    </button>
+                </div>
+            </EditForm>
+        }
+        else
+        {
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="button" class="btn btn-outline-secondary"
+                        @onclick="() => _showRegenerateForm = true">
+                    Regenerate backup codes
+                </button>
+                <button type="button" class="btn btn-outline-danger"
+                        @onclick="() => _showDisableForm = true">
+                    Disable two-factor authentication
+                </button>
+            </div>
+        }
+    }
+
+    @* Not enabled, no setup in progress *@
+    else
+    {
+        <p class="text-muted mb-3">
+            Add an extra layer of security to your account. Once enabled, you will need
+            a code from your authenticator app to sign in.
+        </p>
+        <button type="button" class="btn btn-primary"
+                @onclick="HandlePrepareEnableAsync"
+                disabled="@IsSubmitting">
+            @(IsSubmitting ? "Loading..." : "Enable two-factor authentication")
+        </button>
+    }
+</div>
+
+@code {
+    private readonly string _secretId = $"du-2fa-secret-{Guid.NewGuid():N}";
+    private readonly string _enableCodeId = $"du-2fa-enable-code-{Guid.NewGuid():N}";
+    private readonly string _disableCodeId = $"du-2fa-disable-code-{Guid.NewGuid():N}";
+    private readonly string _regenerateCodeId = $"du-2fa-regen-code-{Guid.NewGuid():N}";
+
+    private TwoFactorConfirmModel _enableModel = new();
+    private TwoFactorConfirmModel _disableModel = new();
+    private TwoFactorConfirmModel _regenerateModel = new();
+    private bool _showDisableForm;
+    private bool _showRegenerateForm;
+
+    /// <summary>Whether 2FA is currently active for this user.</summary>
+    [Parameter] public bool IsEnabled { get; set; }
+
+    /// <summary>
+    /// Provided by the parent after handling <see cref="OnPrepareEnable"/>.
+    /// When non-null the component shows the QR / secret + confirmation form.
+    /// </summary>
+    [Parameter] public TwoFactorSetupResult? SetupResult { get; set; }
+
+    /// <summary>
+    /// Plain-text backup codes to display once after a successful enable.
+    /// The parent provides them after <see cref="OnConfirmEnable"/> succeeds,
+    /// and clears them after <see cref="OnBackupCodesAcknowledged"/> fires.
+    /// </summary>
+    [Parameter] public IReadOnlyList<string>? BackupCodes { get; set; }
+
+    /// <summary>
+    /// Optional QR code render fragment. When supplied it is rendered above the manual secret.
+    /// The host app should render a QR code image from <see cref="TwoFactorSetupResult.OtpAuthUri"/>.
+    /// </summary>
+    [Parameter] public RenderFragment? QrCode { get; set; }
+
+    [Parameter] public bool IsSubmitting { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public string? CssClass { get; set; }
+
+    /// <summary>User clicked "Enable". Parent should call <c>PrepareEnableAsync</c> and update <see cref="SetupResult"/>.</summary>
+    [Parameter] public EventCallback OnPrepareEnable { get; set; }
+
+    /// <summary>User confirmed setup with a code. Argument is the 6-digit TOTP code.</summary>
+    [Parameter] public EventCallback<string> OnConfirmEnable { get; set; }
+
+    /// <summary>User cancelled the in-progress setup. Parent should clear <see cref="SetupResult"/>.</summary>
+    [Parameter] public EventCallback OnCancelSetup { get; set; }
+
+    /// <summary>User confirmed disable. Argument is the 6-digit TOTP code.</summary>
+    [Parameter] public EventCallback<string> OnDisable { get; set; }
+
+    /// <summary>User wants to regenerate backup codes. Argument is the confirming TOTP code.</summary>
+    [Parameter] public EventCallback<string> OnRegenerateBackupCodes { get; set; }
+
+    /// <summary>User confirmed they saved their backup codes. Parent should clear <see cref="BackupCodes"/>.</summary>
+    [Parameter] public EventCallback OnBackupCodesAcknowledged { get; set; }
+
+    private async Task HandlePrepareEnableAsync()
+    {
+        await OnPrepareEnable.InvokeAsync();
+    }
+
+    private async Task HandleConfirmEnableAsync()
+    {
+        await OnConfirmEnable.InvokeAsync(_enableModel.Code);
+        _enableModel = new();
+    }
+
+    private async Task HandleCancelSetupAsync()
+    {
+        _enableModel = new();
+        await OnCancelSetup.InvokeAsync();
+    }
+
+    private async Task HandleDisableAsync()
+    {
+        await OnDisable.InvokeAsync(_disableModel.Code);
+        _disableModel = new();
+        _showDisableForm = false;
+    }
+
+    private async Task HandleRegenerateAsync()
+    {
+        await OnRegenerateBackupCodes.InvokeAsync(_regenerateModel.Code);
+        _regenerateModel = new();
+        _showRegenerateForm = false;
+    }
+
+    private async Task HandleBackupCodesAcknowledgedAsync()
+    {
+        await OnBackupCodesAcknowledged.InvokeAsync();
+    }
+
+    private void CancelDisable()
+    {
+        _showDisableForm = false;
+        _disableModel = new();
+    }
+
+    private void CancelRegenerate()
+    {
+        _showRegenerateForm = false;
+        _regenerateModel = new();
+    }
+}

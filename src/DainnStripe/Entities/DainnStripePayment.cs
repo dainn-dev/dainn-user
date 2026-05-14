@@ -61,4 +61,14 @@ public class DainnStripePayment
     /// Gets or sets the update timestamp.
     /// </summary>
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the payment attempt history.
+    /// </summary>
+    public ICollection<DainnStripePaymentAttempt> Attempts { get; set; } = new List<DainnStripePaymentAttempt>();
+
+    /// <summary>
+    /// Gets or sets the refunds issued against this payment.
+    /// </summary>
+    public ICollection<DainnStripeRefundRecord> Refunds { get; set; } = new List<DainnStripeRefundRecord>();
 }
