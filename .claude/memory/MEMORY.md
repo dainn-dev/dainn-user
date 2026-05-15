@@ -13,7 +13,10 @@
 - Active branch: master
 - Last completed: PSA-61, PSA-75, PSA-79, PSA-80, PSA-56/57/58 (sync), PSA-85, PSA-76 — all 2026-05-10. **All 11 Urgent tasks now Done.**
 - Auth loop end-to-end: register → verify → login → refresh → logout. Admin: unlock-account.
-- Tests: 133 unit + 54 security + 16 integration passing (1 skipped — pre-existing InMemory provider quirk). Total **203 tests**.
+- Tests: 455 unit + 59 security + 114 integration + 70 DainnStripe **all passing** (1 skipped — pre-existing InMemory provider quirk).
+- `CustomWebApplicationFactory.EmailTokens` (EmailTokenCapture) captures plain verification/reset tokens via mock callbacks — required because the DB column stores SHA-256 hashes, not the plain token. Tests must use `_factory.EmailTokens.GetVerification(email)` / `GetPasswordReset(email)` rather than reading `TokenValue` from `UserTokens`.
+- Tenant-customizable email subjects via `DainnUser:Email:Subjects:*` (`EmailSubjectsOptions` in Core/Configuration). Defaults preserve old strings. `EmailService` + `EmailContactVerificationSender` consume it.
+- `DainnUserOptions.EmailVerificationTokenExpirationHours` (default 24) drives both the persisted `ExpiresAt` (RegisterAsync + ResendVerificationEmailAsync) and the body line in the verification email template.
 - Security suite: `tests/DainnUser.SecurityTests/Owasp/A0{1,2,3,4,5,7}*.cs` — adversarial tests organized by OWASP Top 10 2021 category, share `SecurityTestFixture` (in-memory db + real service wiring).
 - Uncommitted — changes spanning PSA-61/75/79 still staged. Awaiting decision on commit/PR strategy.
 

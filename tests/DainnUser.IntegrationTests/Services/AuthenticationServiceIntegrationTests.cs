@@ -91,19 +91,23 @@ public class AuthenticationServiceIntegrationTests : IClassFixture<DatabaseFixtu
     [Fact]
     public async Task VerifyEmailAsync_EndToEnd_UpdatesUserInDatabase()
     {
-        // Arrange
+        // Arrange — capture the plain verification token from the mocked email service.
+        // The DB stores SHA-256 hash, so reading TokenValue would not yield a usable token.
+        string? capturedToken = null;
+        _emailServiceMock
+            .Setup(x => x.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, string, CancellationToken>((_, _, plainToken, _) => capturedToken = plainToken)
+            .Returns(Task.CompletedTask);
+
         var email = "verify@example.com";
         var username = "verifyuser";
         var password = "Test123!@#";
 
         var userId = await _authenticationService.RegisterAsync(email, username, password);
-        var userInDb = await _fixture.DbContext.Users
-            .Include(u => u.Tokens)
-            .FirstOrDefaultAsync(u => u.Id == userId);
-        var token = userInDb!.Tokens.First().TokenValue;
+        capturedToken.Should().NotBeNull("email service should have received the plain verification token");
 
         // Act
-        var result = await _authenticationService.VerifyEmailAsync(userId, token);
+        var result = await _authenticationService.VerifyEmailAsync(userId, capturedToken!);
 
         // Assert
         result.Should().BeTrue();

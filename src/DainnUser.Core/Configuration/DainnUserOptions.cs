@@ -77,6 +77,12 @@ public class DainnUserOptions
     public int PasswordResetTokenExpirationHours { get; set; } = 1;
 
     /// <summary>
+    /// Gets or sets the email-verification token expiration in hours. Tokens are one-time-use and
+    /// invalidated on first verification; this value bounds the time-of-use window.
+    /// </summary>
+    public int EmailVerificationTokenExpirationHours { get; set; } = 24;
+
+    /// <summary>
     /// Gets or sets the maximum number of active sessions allowed per user.
     /// When exceeded, the oldest session is deactivated.
     /// </summary>

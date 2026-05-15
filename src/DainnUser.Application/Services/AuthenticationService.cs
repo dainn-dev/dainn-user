@@ -95,7 +95,7 @@ public class AuthenticationService : IAuthenticationService
             UserId = user.Id,
             TokenType = TokenType.EmailVerification,
             TokenValue = verificationTokenHash,
-            ExpiresAt = DateTime.UtcNow.AddHours(24),
+            ExpiresAt = DateTime.UtcNow.AddHours(_options.EmailVerificationTokenExpirationHours),
             IsUsed = false,
             IsRevoked = false,
             CreatedAt = DateTime.UtcNow
@@ -696,7 +696,7 @@ public class AuthenticationService : IAuthenticationService
             UserId = user.Id,
             TokenType = TokenType.EmailVerification,
             TokenValue = verificationTokenHash,
-            ExpiresAt = DateTime.UtcNow.AddHours(24),
+            ExpiresAt = DateTime.UtcNow.AddHours(_options.EmailVerificationTokenExpirationHours),
             IsUsed = false,
             IsRevoked = false,
             CreatedAt = DateTime.UtcNow

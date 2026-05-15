@@ -47,16 +47,8 @@ public class DiagnosticTests : IClassFixture<CustomWebApplicationFactory>
         var registerResult = await registerResponse.Content.ReadFromJsonAsync<ApiResponse<RegisterResponse>>();
         var userId = registerResult!.Data!.UserId;
 
-        // Verify
-        string verificationToken;
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<DainnUserDbContext>();
-            var token = await dbContext.UserTokens
-                .Where(t => t.UserId == userId && t.TokenType == TokenType.EmailVerification && !t.IsUsed)
-                .FirstOrDefaultAsync();
-            verificationToken = token!.TokenValue;
-        }
+        // Verify — use the plain token captured from the mocked email service.
+        var verificationToken = _factory.EmailTokens.GetVerification("diag@test.com");
 
         var verifyRequest = new VerifyEmailRequest { UserId = userId, Token = verificationToken };
         var verifyResponse = await _client.PostAsJsonAsync("/api/auth/verify-email", verifyRequest);

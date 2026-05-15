@@ -48,17 +48,9 @@ public class AuthControllerEndToEndTests : IClassFixture<CustomWebApplicationFac
         var userId = registerResult.Data!.UserId;
         userId.Should().NotBeEmpty();
 
-        // Step 2: Get verification token from database (simulating email link)
-        string verificationToken;
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<DainnUserDbContext>();
-            var token = await dbContext.UserTokens
-                .Where(t => t.UserId == userId && t.TokenType == TokenType.EmailVerification && !t.IsUsed)
-                .FirstOrDefaultAsync();
-            token.Should().NotBeNull();
-            verificationToken = token!.TokenValue;
-        }
+        // Step 2: Read the plain verification token captured by the mocked email service
+        // (DB stores SHA-256 hash, which is unusable as the token input).
+        var verificationToken = _factory.EmailTokens.GetVerification("e2e1@test.com");
 
         // Step 3: Verify email
         var verifyRequest = new VerifyEmailRequest
@@ -117,16 +109,8 @@ public class AuthControllerEndToEndTests : IClassFixture<CustomWebApplicationFac
         var registerResult = await registerResponse.Content.ReadFromJsonAsync<ApiResponse<RegisterResponse>>();
         var userId = registerResult!.Data!.UserId;
 
-        // Step 2: Verify email
-        string verificationToken;
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<DainnUserDbContext>();
-            var token = await dbContext.UserTokens
-                .Where(t => t.UserId == userId && t.TokenType == TokenType.EmailVerification && !t.IsUsed)
-                .FirstOrDefaultAsync();
-            verificationToken = token!.TokenValue;
-        }
+        // Step 2: Verify email using the plain token captured by the mocked email service.
+        var verificationToken = _factory.EmailTokens.GetVerification("e2e2@test.com");
 
         var verifyRequest = new VerifyEmailRequest
         {
@@ -203,16 +187,8 @@ public class AuthControllerEndToEndTests : IClassFixture<CustomWebApplicationFac
         var registerResult = await registerResponse.Content.ReadFromJsonAsync<ApiResponse<RegisterResponse>>();
         var userId = registerResult!.Data!.UserId;
 
-        // Verify email
-        string verificationToken;
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<DainnUserDbContext>();
-            var token = await dbContext.UserTokens
-                .Where(t => t.UserId == userId && t.TokenType == TokenType.EmailVerification && !t.IsUsed)
-                .FirstOrDefaultAsync();
-            verificationToken = token!.TokenValue;
-        }
+        // Verify email using the plain token captured by the mocked email service.
+        var verificationToken = _factory.EmailTokens.GetVerification("e2e3@test.com");
 
         var verifyRequest = new VerifyEmailRequest
         {
@@ -230,31 +206,8 @@ public class AuthControllerEndToEndTests : IClassFixture<CustomWebApplicationFac
         var forgotPasswordResponse = await _client.PostAsJsonAsync("/api/auth/forgot-password", forgotPasswordRequest);
         forgotPasswordResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Step 3: Get reset token.
-        // ForgotPasswordAsync stores SHA-256 hash of the plain token in DB and emails the plain token.
-        // In tests we can't intercept the email, so we overwrite the stored hash with a known value,
-        // then pass the known plain token to the reset endpoint.
-        string resetToken;
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<DainnUserDbContext>();
-
-            var knownPlainToken = "test-reset-token-known-12345678";
-            var hashBytes = System.Security.Cryptography.SHA256.HashData(
-                System.Text.Encoding.UTF8.GetBytes(knownPlainToken));
-            var hashHex = Convert.ToHexString(hashBytes).ToLowerInvariant();
-
-            var existingToken = await dbContext.UserTokens
-                .Where(t => t.UserId == userId && t.TokenType == TokenType.PasswordReset && !t.IsUsed)
-                .OrderByDescending(t => t.CreatedAt)
-                .FirstOrDefaultAsync();
-
-            existingToken.Should().NotBeNull();
-            existingToken!.TokenValue = hashHex;
-            await dbContext.SaveChangesAsync();
-
-            resetToken = knownPlainToken;
-        }
+        // Step 3: Read the plain reset token captured by the mocked email service.
+        var resetToken = _factory.EmailTokens.GetPasswordReset("e2e3@test.com");
 
         // Step 4: Reset password
         var resetPasswordRequest = new ResetPasswordDto

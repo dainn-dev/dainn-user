@@ -1,3 +1,4 @@
+using DainnUser.Core.Configuration;
 using DainnUser.Core.Interfaces.Services;
 using DainnUser.Infrastructure.Configuration;
 using DainnUser.Infrastructure.Middleware;
@@ -25,6 +26,9 @@ public static class InfrastructureServiceExtensions
     {
         // Configure email options
         services.Configure<EmailOptions>(configuration.GetSection("DainnUser:Email"));
+
+        // Configure tenant-customizable email subjects (defaults preserve previous strings)
+        services.Configure<EmailSubjectsOptions>(configuration.GetSection("DainnUser:Email:Subjects"));
 
         // Configure JWT options
         services.Configure<JwtOptions>(configuration.GetSection("DainnUser:Jwt"));

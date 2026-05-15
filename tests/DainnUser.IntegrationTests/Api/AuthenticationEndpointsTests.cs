@@ -126,22 +126,13 @@ public class AuthenticationEndpointsTests : IClassFixture<CustomWebApplicationFa
         registerResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var registerResult = await registerResponse.Content.ReadFromJsonAsync<ApiResponse<RegisterResponse>>();
 
-        // Get verification token from database
-        string verificationToken;
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<DainnUserDbContext>();
-            var token = await dbContext.UserTokens
-                .Where(t => t.UserId == registerResult!.Data!.UserId && t.TokenType == TokenType.EmailVerification && !t.IsUsed)
-                .FirstOrDefaultAsync();
-            token.Should().NotBeNull("Token should exist for verification");
-            verificationToken = token!.TokenValue;
-        }
+        // Read the plain verification token captured by the mocked email service.
+        var verificationToken = _factory.EmailTokens.GetVerification(uniqueEmail);
 
         // Verify email
         var verifyRequest = new VerifyEmailRequest
         {
-            UserId = registerResult.Data.UserId,
+            UserId = registerResult!.Data!.UserId,
             Token = verificationToken
         };
         var verifyResponse = await _client.PostAsJsonAsync("/api/auth/verify-email", verifyRequest);
@@ -282,21 +273,12 @@ public class AuthenticationEndpointsTests : IClassFixture<CustomWebApplicationFa
         registerResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var registerResult = await registerResponse.Content.ReadFromJsonAsync<ApiResponse<RegisterResponse>>();
 
-        // Get verification token from database
-        string verificationToken;
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<DainnUserDbContext>();
-            var token = await dbContext.UserTokens
-                .Where(t => t.UserId == registerResult!.Data!.UserId && t.TokenType == TokenType.EmailVerification && !t.IsUsed)
-                .FirstOrDefaultAsync();
-            token.Should().NotBeNull();
-            verificationToken = token!.TokenValue;
-        }
+        // Read the plain verification token captured by the mocked email service.
+        var verificationToken = _factory.EmailTokens.GetVerification(uniqueEmail);
 
         var verifyRequest = new VerifyEmailRequest
         {
-            UserId = registerResult.Data!.UserId,
+            UserId = registerResult!.Data!.UserId,
             Token = verificationToken
         };
 

@@ -1,4 +1,6 @@
+using DainnUser.Core.Configuration;
 using DainnUser.Core.Interfaces.Services;
+using Microsoft.Extensions.Options;
 
 namespace DainnUser.Application.Services;
 
@@ -8,10 +10,12 @@ namespace DainnUser.Application.Services;
 public class EmailContactVerificationSender : IContactVerificationSender
 {
     private readonly IEmailService _emailService;
+    private readonly EmailSubjectsOptions _subjects;
 
-    public EmailContactVerificationSender(IEmailService emailService)
+    public EmailContactVerificationSender(IEmailService emailService, IOptions<EmailSubjectsOptions> subjects)
     {
         _emailService = emailService;
+        _subjects = subjects.Value;
     }
 
     public string ContactType => "Email";
@@ -29,6 +33,6 @@ public class EmailContactVerificationSender : IContactVerificationSender
             </html>
             """;
 
-        await _emailService.SendEmailAsync(contactValue, null, "Verify Contact", body, null, cancellationToken);
+        await _emailService.SendEmailAsync(contactValue, null, _subjects.ContactVerification, body, null, cancellationToken);
     }
 }

@@ -1,5 +1,7 @@
+using DainnUser.Core.Configuration;
 using DainnUser.Core.Interfaces.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DainnUser.Infrastructure.Services;
 
@@ -10,16 +12,26 @@ public class EmailService : IEmailService
 {
     private readonly IEmailProvider _provider;
     private readonly ILogger<EmailService> _logger;
+    private readonly EmailSubjectsOptions _subjects;
+    private readonly DainnUserOptions _userOptions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EmailService"/> class.
     /// </summary>
     /// <param name="provider">The email provider.</param>
     /// <param name="logger">The logger.</param>
-    public EmailService(IEmailProvider provider, ILogger<EmailService> logger)
+    /// <param name="subjects">Tenant-customizable email subjects.</param>
+    /// <param name="userOptions">DainnUser options (token expirations).</param>
+    public EmailService(
+        IEmailProvider provider,
+        ILogger<EmailService> logger,
+        IOptions<EmailSubjectsOptions> subjects,
+        DainnUserOptions userOptions)
     {
         _provider = provider;
         _logger = logger;
+        _subjects = subjects.Value;
+        _userOptions = userOptions;
     }
 
     /// <inheritdoc/>
@@ -46,46 +58,41 @@ public class EmailService : IEmailService
     /// <inheritdoc/>
     public async Task SendEmailVerificationAsync(string email, string username, string verificationToken, CancellationToken cancellationToken = default)
     {
-        var subject = "Verify Your Email Address";
-        var body = BuildEmailVerificationTemplate(username, verificationToken);
+        var body = BuildEmailVerificationTemplate(username, verificationToken, _userOptions.EmailVerificationTokenExpirationHours);
 
-        await SendEmailAsync(email, subject, body, cancellationToken);
+        await SendEmailAsync(email, _subjects.EmailVerification, body, cancellationToken);
     }
 
     /// <inheritdoc/>
     public async Task SendPasswordResetAsync(string email, string username, string resetToken, CancellationToken cancellationToken = default)
     {
-        var subject = "Reset Your Password";
         var body = BuildPasswordResetTemplate(username, resetToken);
 
-        await SendEmailAsync(email, subject, body, cancellationToken);
+        await SendEmailAsync(email, _subjects.PasswordReset, body, cancellationToken);
     }
 
     /// <inheritdoc/>
     public async Task SendTwoFactorCodeAsync(string email, string username, string code, CancellationToken cancellationToken = default)
     {
-        var subject = "Your Two-Factor Authentication Code";
         var body = BuildTwoFactorCodeTemplate(username, code);
 
-        await SendEmailAsync(email, subject, body, cancellationToken);
+        await SendEmailAsync(email, _subjects.TwoFactorCode, body, cancellationToken);
     }
 
     /// <inheritdoc/>
     public async Task SendPasswordChangedNotificationAsync(string email, string username, CancellationToken cancellationToken = default)
     {
-        var subject = "Your Password Has Been Changed";
         var body = BuildPasswordChangedTemplate(username);
 
-        await SendEmailAsync(email, subject, body, cancellationToken);
+        await SendEmailAsync(email, _subjects.PasswordChanged, body, cancellationToken);
     }
 
     /// <inheritdoc/>
     public async Task SendAccountLockoutNotificationAsync(string email, string username, DateTime lockoutEnd, CancellationToken cancellationToken = default)
     {
-        var subject = "Account Locked - Security Alert";
         var body = BuildAccountLockoutTemplate(username, lockoutEnd);
 
-        await SendEmailAsync(email, subject, body, cancellationToken);
+        await SendEmailAsync(email, _subjects.AccountLockout, body, cancellationToken);
     }
 
     private async Task SendEmailAsync(string toEmail, string subject, string htmlBody, CancellationToken cancellationToken)
@@ -102,8 +109,9 @@ public class EmailService : IEmailService
         }
     }
 
-    private static string BuildEmailVerificationTemplate(string username, string verificationToken)
+    private static string BuildEmailVerificationTemplate(string username, string verificationToken, int expirationHours)
     {
+        var expiresPhrase = expirationHours == 1 ? "1 hour" : $"{expirationHours} hours";
         return $@"
                 <!DOCTYPE html>
                 <html>
@@ -129,7 +137,7 @@ public class EmailService : IEmailService
                             <p>Thank you for registering! Please verify your email address to activate your account.</p>
                             <p>Your verification token is:</p>
                             <div class=""token"">{verificationToken}</div>
-                            <p>This token will expire in 24 hours.</p>
+                            <p>This token will expire in {expiresPhrase}.</p>
                             <p>If you didn't create an account, please ignore this email.</p>
                         </div>
                         <div class=""footer"">
