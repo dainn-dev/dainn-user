@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DainnUser + DainnStripe - Integration Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #176b64;
+            --secondary: #635bff;
+            --primary-dark: #0a2540;
+            --bg: #ffffff;
+            --bg-secondary: #f6f9fc;
+            --text: #0a2540;
+            --text-secondary: #425466;
+            --border: #e3e8ee;
+            --code-bg: #f6f9fc;
+            --success: #00d924;
+            --warning: #ff9800;
+            --danger: #df1b41;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--primary-dark) 100%);
+            color: white;
+            padding: 3rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.95;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .badge-large {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        nav {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            padding: 0;
+        }
+
+        nav li {
+            margin: 0;
+        }
+
+        nav a {
+            display: block;
+            padding: 1rem 1.5rem;
+            color: var(--text);
+            text-decoration: none;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        nav a:hover {
+            background: var(--bg);
+            border-bottom-color: var(--primary);
+        }
+
+        main {
+            padding: 3rem 0;
+        }
+
+        section {
+            margin-bottom: 4rem;
+            scroll-margin-top: 80px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem;
+            color: var(--text);
+        }
+
+        h4 {
+            font-size: 1.2rem;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--text);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: var(--primary);
+        }
+
+        pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .badge-user { background: #d1fae5; color: #065f46; }
+        .badge-stripe { background: #e8e5ff; color: #635bff; }
+        .badge-both { background: #fef3c7; color: #92400e; }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border-color: var(--primary);
+            color: #1e40af;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border-color: var(--warning);
+            color: #92400e;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border-color: var(--success);
+            color: #065f46;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .feature-card h4 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .architecture-diagram {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .flow-step {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+        }
+
+        .flow-step strong {
+            color: var(--primary);
+        }
+
+        footer {
+            background: var(--bg-secondary);
+            padding: 2rem 0;
+            margin-top: 4rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            nav ul {
+                flex-direction: column;
+            }
+
+            nav a {
+                padding: 0.75rem 1rem;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .header-badges {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>DainnUser + DainnStripe</h1>
+            <p>Complete Integration Guide - Build Production-Ready SaaS & Marketplace Applications</p>
+            <div class="header-badges">
+                <span class="badge-large">🔐 Authentication & Authorization</span>
+                <span class="badge-large">💳 Payments & Subscriptions</span>
+                <span class="badge-large">🏢 Multi-Tenant Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#quickstart">Quickstart</a></li>
+                <li><a href="#linking">User-Payment Linking</a></li>
+                <li><a href="#saas">SaaS Example</a></li>
+                <li><a href="#marketplace">Marketplace Example</a></li>
+                <li><a href="#checklist">Production Checklist</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#next-steps">Next Steps</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Overview -->
+        <section id="overview">
+            <h2>Overview</h2>
+
+            <p>
+                This guide shows you how to integrate <strong>DainnUser</strong> and <strong>DainnStripe</strong> to build
+                complete SaaS applications and marketplace platforms with authentication, user management, and payment processing.
+            </p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>🔐 DainnUser</h4>
+                    <p><strong>User Management Library</strong></p>
+                    <ul>
+                        <li>Authentication (JWT, 2FA, Social Login)</li>
+                        <li>Authorization (RBAC, Permissions)</li>
+                        <li>Profile Management</li>
+                        <li>Session Management</li>
+                        <li>Security Features</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h4>💳 DainnStripe</h4>
+                    <p><strong>Stripe Integration Library</strong></p>
+                    <ul>
+                        <li>Payment Processing</li>
+                        <li>Subscription Management</li>
+                        <li>Webhook Handling</li>
+                        <li>Catalog Management</li>
+                        <li>Stripe Connect (Marketplaces)</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h4>🚀 Together</h4>
+                    <p><strong>Complete Solution</strong></p>
+                    <ul>
+                        <li>User → Customer mapping</li>
+                        <li>Subscription-based access control</li>
+                        <li>Multi-tenant billing</li>
+                        <li>Marketplace platforms</li>
+                        <li>Production-ready architecture</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>What You'll Build</h3>
+            <p>By following this guide, you'll learn to build:</p>
+            <ul>
+                <li><strong>SaaS Applications:</strong> Subscription-based software with tiered pricing</li>
+                <li><strong>Marketplace Platforms:</strong> Multi-tenant platforms with seller onboarding and payouts</li>
+                <li><strong>E-commerce Sites:</strong> User accounts with payment processing</li>
+                <li><strong>Membership Sites:</strong> Gated content with recurring billing</li>
+            </ul>
+
+            <h3>Prerequisites</h3>
+            <ul>
+                <li>.NET 8.0 SDK or later</li>
+                <li>Basic understanding of ASP.NET Core</li>
+                <li>Stripe account (sign up at <a href="https://stripe.com" target="_blank">stripe.com</a>)</li>
+                <li>Database (SQL Server, PostgreSQL, MySQL, or SQLite)</li>
+            </ul>
+        </section>
+
+        <!-- Architecture -->
+        <section id="architecture">
+            <h2>Architecture</h2>
+
+            <h3>System Overview</h3>
+            <div class="architecture-diagram">
+                <pre style="text-align: left; background: transparent; border: none; padding: 0;">
+┌─────────────────────────────────────────────────────────────┐
+│                      Your Application                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────┐         ┌──────────────────┐         │
+│  │   DainnUser      │         │   DainnStripe    │         │
+│  │                  │         │                  │         │
+│  │  • Auth/Login    │◄────────┤  • Payments      │         │
+│  │  • Users/Roles   │  Link   │  • Subscriptions │         │
+│  │  • Permissions   │ User→   │  • Webhooks      │         │
+│  │  • Sessions      │Customer │  • Catalog       │         │
+│  └────────┬─────────┘         └────────┬─────────┘         │
+│           │                            │                    │
+└───────────┼────────────────────────────┼────────────────────┘
+            │                            │
+            ▼                            ▼
+    ┌───────────────┐          ┌──────────────────┐
+    │   Database    │          │  Stripe API      │
+    │               │          │                  │
+    │  • Users      │          │  • Customers     │
+    │  • Roles      │          │  • Payments      │
+    │  • Sessions   │          │  • Subscriptions │
+    │  • Payments   │          │  • Webhooks      │
+    │  • Subs       │          │                  │
+    └───────────────┘          └──────────────────┘
+                </pre>
+            </div>
+
+            <h3>Data Flow</h3>
+            <div class="flow-step">
+                <strong>1. User Registration:</strong> User signs up → DainnUser creates User record →
+                DainnStripe creates Stripe Customer → Link User.Id ↔ Customer.Id
+            </div>
+            <div class="flow-step">
+                <strong>2. Subscription Purchase:</strong> User selects plan → DainnStripe creates Checkout Session →
+                User completes payment → Webhook updates subscription status → DainnUser grants access
+            </div>
+            <div class="flow-step">
+                <strong>3. Access Control:</strong> User requests resource → DainnUser checks authentication →
+                Check subscription status → Grant/deny access based on plan
+            </div>
+            <div class="flow-step">
+                <strong>4. Webhook Processing:</strong> Stripe sends event → DainnStripe verifies signature →
+                Process event → Update database → Trigger business logic
+            </div>
+
+            <h3>Database Schema Integration</h3>
+            <p>Both libraries use separate database contexts but can share the same database:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Library</th>
+                        <th>DbContext</th>
+                        <th>Key Tables</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>DainnUser</strong></td>
+                        <td><code>DainnUserDbContext</code></td>
+                        <td>Users, Roles, Permissions, Sessions</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DainnStripe</strong></td>
+                        <td><code>DainnStripeDbContext</code></td>
+                        <td>Payments, Subscriptions, Products, Webhooks</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Your App</strong></td>
+                        <td><code>ApplicationDbContext</code></td>
+                        <td>User-Customer mappings, Business data</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Complete Quickstart -->
+        <section id="quickstart">
+            <h2>Complete Quickstart</h2>
+            <p>Build a complete SaaS application with authentication and payments in 15 minutes.</p>
+
+            <h3>Step 1: Create New Project</h3>
+            <pre><code>dotnet new webapi -n MySaasApp
+cd MySaasApp</code></pre>
+
+            <h3>Step 2: Install Packages</h3>
+            <pre><code>dotnet add package DainnUser.Core
+dotnet add package DainnUser.Infrastructure
+dotnet add package DainnUser.Application
+dotnet add package DainnUser.Api
+dotnet add package DainnStripe</code></pre>
+
+            <h3>Step 3: Configure appsettings.json</h3>
+            <pre><code>{
+  "DainnUser": {
+    "Database": {
+      "Provider": "SQLite",
+      "ConnectionString": "Data Source=myapp.db"
+    },
+    "Jwt": {
+      "SecretKey": "your-super-secret-jwt-key-min-32-chars",
+      "Issuer": "MySaasApp",
+      "Audience": "MySaasAppUsers",
+      "ExpirationMinutes": 60
+    },
+    "Email": {
+      "SmtpHost": "localhost",
+      "SmtpPort": 1025,
+      "FromEmail": "dev@localhost"
+    }
+  },
+  "DainnStripe": {
+    "SecretKey": "sk_test_your_stripe_secret_key",
+    "PublishableKey": "pk_test_your_stripe_publishable_key",
+    "WebhookSigningSecret": "whsec_your_webhook_secret"
+  },
+  "ConnectionStrings": {
+    "DainnStripe": "Data Source=myapp.db"
+  }
+}</code></pre>
+
+            <h3>Step 4: Configure Program.cs</h3>
+            <pre><code>using DainnUser.Api;
+using DainnUser.Application;
+using DainnUser.Infrastructure;
+using DainnStripe;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add DainnUser services
+builder.Services.AddDainnUser(builder.Configuration, options =>
+{
+    options.EnableSocialLogin = false;
+    options.EnableTwoFactor = false;
+    options.RequireEmailVerification = true;
+});
+
+// Add DainnStripe services
+builder.Services.AddDainnStripe(builder.Configuration);
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+
+// Add DainnUser middleware (includes Authentication & Authorization)
+app.UseDainnUser();
+
+// Add DainnStripe middleware
+app.UseDainnStripe();
+
+// Map Stripe webhooks
+app.MapDainnStripeWebhooks();
+
+app.MapControllers();
+
+app.Run();</code></pre>
+
+            <h3>Step 5: Run Migrations</h3>
+            <pre><code># Create migrations for both libraries
+dotnet ef migrations add InitialDainnUser --context DainnUserDbContext
+dotnet ef migrations add InitialDainnStripe --context DainnStripeDbContext
+
+# Apply migrations
+dotnet ef database update --context DainnUserDbContext
+dotnet ef database update --context DainnStripeDbContext</code></pre>
+
+            <h3>Step 6: Create User-Customer Mapping Entity</h3>
+            <pre><code>// Models/UserCustomerMapping.cs
+public class UserCustomerMapping
+{
+    public Guid Id { get; set; }
+    public string UserId { get; set; } = string.Empty;
+    public string StripeCustomerId { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}</code></pre>
+
+            <h3>Step 7: Create Integration Service</h3>
+            <pre><code>// Services/UserPaymentService.cs
+using DainnStripe.Interfaces;
+using Stripe;
+
+public interface IUserPaymentService
+{
+    Task&lt;string&gt; GetOrCreateStripeCustomerAsync(string userId, string email);
+}
+
+public class UserPaymentService : IUserPaymentService
+{
+    private readonly IDainnStripeClientFactory _stripeClientFactory;
+    private readonly ApplicationDbContext _dbContext;
+
+    public UserPaymentService(
+        IDainnStripeClientFactory stripeClientFactory,
+        ApplicationDbContext dbContext)
+    {
+        _stripeClientFactory = stripeClientFactory;
+        _dbContext = dbContext;
+    }
+
+    public async Task&lt;string&gt; GetOrCreateStripeCustomerAsync(string userId, string email)
+    {
+        // Check if mapping exists
+        var mapping = await _dbContext.UserCustomerMappings
+            .FirstOrDefaultAsync(m => m.UserId == userId);
+
+        if (mapping != null)
+            return mapping.StripeCustomerId;
+
+        // Create Stripe customer
+        var customerService = new CustomerService();
+        var customer = await customerService.CreateAsync(new CustomerCreateOptions
+        {
+            Email = email,
+            Metadata = new Dictionary&lt;string, string&gt;
+            {
+                { "user_id", userId }
+            }
+        });
+
+        // Save mapping
+        mapping = new UserCustomerMapping
+        {
+            UserId = userId,
+            StripeCustomerId = customer.Id
+        };
+        _dbContext.UserCustomerMappings.Add(mapping);
+        await _dbContext.SaveChangesAsync();
+
+        return customer.Id;
+    }
+}</code></pre>
+
+            <h3>Step 8: Test the Integration</h3>
+            <pre><code>dotnet run</code></pre>
+
+            <p>Navigate to <code>https://localhost:5001/swagger</code> to test:</p>
+            <ol>
+                <li>Register a new user via <code>/api/auth/register</code></li>
+                <li>Login via <code>/api/auth/login</code> to get JWT token</li>
+                <li>Create a payment using the token</li>
+            </ol>
+
+            <div class="alert alert-success">
+                <strong>✅ Success!</strong> You now have a working integration with user authentication and payment processing.
+            </div>
+        </section>
+
+        <!-- User-Payment Linking Patterns -->
+        <section id="linking">
+            <h2>User-Payment Linking Patterns</h2>
+
+            <h3>Pattern 1: Direct Mapping Table</h3>
+            <p><span class="badge badge-both">Recommended</span> Simple and explicit mapping between User and Stripe Customer.</p>
+
+            <pre><code>public class UserCustomerMapping
+{
+    public Guid Id { get; set; }
+    public string UserId { get; set; }
+    public string StripeCustomerId { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+// Usage
+var customerId = await _dbContext.UserCustomerMappings
+    .Where(m => m.UserId == userId)
+    .Select(m => m.StripeCustomerId)
+    .FirstOrDefaultAsync();</code></pre>
+
+            <h3>Pattern 2: Extended User Entity</h3>
+            <p><span class="badge badge-user">Simple</span> Add Stripe fields directly to User entity.</p>
+
+            <pre><code>public class ApplicationUser : User
+{
+    public string? StripeCustomerId { get; set; }
+    public string? StripeSubscriptionId { get; set; }
+    public DateTime? SubscriptionExpiresAt { get; set; }
+}
+
+// Usage
+var user = await _userManager.GetUserAsync(User);
+var customerId = user.StripeCustomerId;</code></pre>
+
+            <h3>Pattern 3: Metadata-Based Linking</h3>
+            <p><span class="badge badge-stripe">Stripe-First</span> Store User ID in Stripe Customer metadata.</p>
+
+            <pre><code>// Create customer with metadata
+var customer = await customerService.CreateAsync(new CustomerCreateOptions
+{
+    Email = user.Email,
+    Metadata = new Dictionary&lt;string, string&gt;
+    {
+        { "user_id", user.Id },
+        { "tenant_id", tenantId }
+    }
+});
+
+// Query by metadata (requires Stripe API call)
+var customers = await customerService.ListAsync(new CustomerListOptions
+{
+    Email = email
+});</code></pre>
+
+            <h3>Comparison</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pattern</th>
+                        <th>Pros</th>
+                        <th>Cons</th>
+                        <th>Best For</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Mapping Table</strong></td>
+                        <td>Clean separation, flexible, easy to query</td>
+                        <td>Extra table</td>
+                        <td>Most applications</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Extended Entity</strong></td>
+                        <td>Simple, fewer queries</td>
+                        <td>Couples User to Stripe</td>
+                        <td>Simple SaaS apps</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Metadata</strong></td>
+                        <td>No local storage needed</td>
+                        <td>Requires API calls, slower</td>
+                        <td>Stripe-centric apps</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- SaaS Integration Example -->
+        <section id="saas">
+            <h2>SaaS Integration Example</h2>
+            <p>Build a subscription-based SaaS application with tiered pricing and feature gating.</p>
+
+            <h3>Scenario</h3>
+            <p>A project management SaaS with three tiers:</p>
+            <ul>
+                <li><strong>Free:</strong> 3 projects, 5 team members</li>
+                <li><strong>Pro ($29/month):</strong> Unlimited projects, 20 team members</li>
+                <li><strong>Enterprise ($99/month):</strong> Everything + priority support</li>
+            </ul>
+
+            <h3>Step 1: Define Subscription Plans</h3>
+            <pre><code>// Models/SubscriptionPlan.cs
+public enum SubscriptionTier
+{
+    Free,
+    Pro,
+    Enterprise
+}
+
+public class SubscriptionPlan
+{
+    public SubscriptionTier Tier { get; set; }
+    public string StripePriceId { get; set; } = string.Empty;
+    public int MaxProjects { get; set; }
+    public int MaxTeamMembers { get; set; }
+    public bool HasPrioritySupport { get; set; }
+}
+
+// Configuration
+public static class Plans
+{
+    public static readonly SubscriptionPlan Free = new()
+    {
+        Tier = SubscriptionTier.Free,
+        StripePriceId = "",
+        MaxProjects = 3,
+        MaxTeamMembers = 5,
+        HasPrioritySupport = false
+    };
+
+    public static readonly SubscriptionPlan Pro = new()
+    {
+        Tier = SubscriptionTier.Pro,
+        StripePriceId = "price_pro_monthly",
+        MaxProjects = int.MaxValue,
+        MaxTeamMembers = 20,
+        HasPrioritySupport = false
+    };
+
+    public static readonly SubscriptionPlan Enterprise = new()
+    {
+        Tier = SubscriptionTier.Enterprise,
+        StripePriceId = "price_enterprise_monthly",
+        MaxProjects = int.MaxValue,
+        MaxTeamMembers = int.MaxValue,
+        HasPrioritySupport = true
+    };
+}</code></pre>
+
+            <h3>Step 2: Create Subscription Service</h3>
+            <pre><code>public interface ISubscriptionService
+{
+    Task&lt;string&gt; CreateCheckoutSessionAsync(string userId, SubscriptionTier tier);
+    Task&lt;SubscriptionTier&gt; GetUserSubscriptionTierAsync(string userId);
+    Task&lt;bool&gt; CanUserAccessFeatureAsync(string userId, string feature);
+}
+
+public class SubscriptionService : ISubscriptionService
+{
+    private readonly IUserPaymentService _userPaymentService;
+    private readonly IDainnStripeCheckoutService _checkoutService;
+    private readonly ApplicationDbContext _dbContext;
+
+    public async Task&lt;string&gt; CreateCheckoutSessionAsync(string userId, SubscriptionTier tier)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        var customerId = await _userPaymentService.GetOrCreateStripeCustomerAsync(userId, user.Email);
+
+        var plan = tier switch
+        {
+            SubscriptionTier.Pro => Plans.Pro,
+            SubscriptionTier.Enterprise => Plans.Enterprise,
+            _ => throw new ArgumentException("Invalid tier")
+        };
+
+        var request = new CreateCheckoutSessionRequest
+        {
+            CustomerId = customerId,
+            Mode = DainnStripeCheckoutMode.Subscription,
+            SuccessUrl = "https://myapp.com/subscription/success?session_id={CHECKOUT_SESSION_ID}",
+            CancelUrl = "https://myapp.com/pricing",
+            LineItems = new List&lt;CreateCheckoutSessionLineItem&gt;
+            {
+                new() { PriceId = plan.StripePriceId, Quantity = 1 }
+            }
+        };
+
+        var result = await _checkoutService.CreateCheckoutSessionAsync(request);
+        return result.Url;
+    }
+
+    public async Task&lt;SubscriptionTier&gt; GetUserSubscriptionTierAsync(string userId)
+    {
+        var subscription = await _dbContext.UserSubscriptions
+            .Where(s => s.UserId == userId && s.Status == "active")
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        return subscription?.Tier ?? SubscriptionTier.Free;
+    }
+
+    public async Task&lt;bool&gt; CanUserAccessFeatureAsync(string userId, string feature)
+    {
+        var tier = await GetUserSubscriptionTierAsync(userId);
+        var plan = GetPlanForTier(tier);
+
+        return feature switch
+        {
+            "unlimited_projects" => plan.MaxProjects == int.MaxValue,
+            "priority_support" => plan.HasPrioritySupport,
+            _ => true
+        };
+    }
+}</code></pre>
+
+            <h3>Step 3: Feature Gating with Authorization</h3>
+            <pre><code>// Authorization/SubscriptionRequirement.cs
+public class SubscriptionRequirement : IAuthorizationRequirement
+{
+    public SubscriptionTier MinimumTier { get; }
+
+    public SubscriptionRequirement(SubscriptionTier minimumTier)
+    {
+        MinimumTier = minimumTier;
+    }
+}
+
+public class SubscriptionHandler : AuthorizationHandler&lt;SubscriptionRequirement&gt;
+{
+    private readonly ISubscriptionService _subscriptionService;
+
+    public SubscriptionHandler(ISubscriptionService subscriptionService)
+    {
+        _subscriptionService = subscriptionService;
+    }
+
+    protected override async Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        SubscriptionRequirement requirement)
+    {
+        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null)
+        {
+            context.Fail();
+            return;
+        }
+
+        var userTier = await _subscriptionService.GetUserSubscriptionTierAsync(userId);
+        if (userTier >= requirement.MinimumTier)
+        {
+            context.Succeed(requirement);
+        }
+    }
+}
+
+// Register in Program.cs
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequiresPro", policy =>
+        policy.Requirements.Add(new SubscriptionRequirement(SubscriptionTier.Pro)));
+
+    options.AddPolicy("RequiresEnterprise", policy =>
+        policy.Requirements.Add(new SubscriptionRequirement(SubscriptionTier.Enterprise)));
+});
+
+builder.Services.AddScoped&lt;IAuthorizationHandler, SubscriptionHandler&gt;();</code></pre>
+
+            <h3>Step 4: Protect Endpoints</h3>
+            <pre><code>[ApiController]
+[Route("api/[controller]")]
+[Authorize] // Requires authentication
+public class ProjectsController : ControllerBase
+{
+    [HttpPost]
+    [Authorize(Policy = "RequiresPro")] // Requires Pro or higher
+    public async Task&lt;IActionResult&gt; CreateProject([FromBody] CreateProjectRequest request)
+    {
+        // Only Pro and Enterprise users can create unlimited projects
+        return Ok();
+    }
+
+    [HttpGet("analytics")]
+    [Authorize(Policy = "RequiresEnterprise")] // Requires Enterprise
+    public async Task&lt;IActionResult&gt; GetAnalytics()
+    {
+        // Enterprise-only feature
+        return Ok();
+    }
+}</code></pre>
+
+            <h3>Step 5: Handle Subscription Webhooks</h3>
+            <pre><code>public class SubscriptionWebhookHandler : IStripeWebhookHandler
+{
+    private readonly ApplicationDbContext _dbContext;
+
+    public bool CanHandle(Event stripeEvent)
+    {
+        return stripeEvent.Type.StartsWith("customer.subscription.");
+    }
+
+    public async Task&lt;StripeWebhookProcessResult&gt; HandleAsync(Event stripeEvent)
+    {
+        var subscription = stripeEvent.Data.Object as Subscription;
+        var userId = subscription.Metadata["user_id"];
+
+        switch (stripeEvent.Type)
+        {
+            case "customer.subscription.created":
+            case "customer.subscription.updated":
+                await UpdateUserSubscriptionAsync(userId, subscription);
+                break;
+
+            case "customer.subscription.deleted":
+                await CancelUserSubscriptionAsync(userId);
+                break;
+        }
+
+        return StripeWebhookProcessResult.Success();
+    }
+
+    private async Task UpdateUserSubscriptionAsync(string userId, Subscription subscription)
+    {
+        var userSub = await _dbContext.UserSubscriptions
+            .FirstOrDefaultAsync(s => s.UserId == userId);
+
+        if (userSub == null)
+        {
+            userSub = new UserSubscription { UserId = userId };
+            _dbContext.UserSubscriptions.Add(userSub);
+        }
+
+        userSub.StripeSubscriptionId = subscription.Id;
+        userSub.Status = subscription.Status;
+        userSub.CurrentPeriodEnd = subscription.CurrentPeriodEnd;
+        userSub.Tier = DetermineTierFromPriceId(subscription.Items.Data[0].Price.Id);
+
+        await _dbContext.SaveChangesAsync();
+    }
+}</code></pre>
+        </section>
+
+        <!-- Marketplace Integration Example -->
+        <section id="marketplace">
+            <h2>Marketplace Integration Example</h2>
+            <p>Build a multi-tenant marketplace platform with seller onboarding and split payments using Stripe Connect.</p>
+
+            <h3>Scenario</h3>
+            <p>An online marketplace where:</p>
+            <ul>
+                <li>Sellers create accounts and list products</li>
+                <li>Buyers purchase from sellers</li>
+                <li>Platform takes 10% commission</li>
+                <li>Sellers receive payouts to their bank accounts</li>
+            </ul>
+
+            <h3>Step 1: Extend User Model for Sellers</h3>
+            <pre><code>public class ApplicationUser : User
+{
+    public UserType Type { get; set; } = UserType.Buyer;
+    public string? StripeCustomerId { get; set; }
+    public string? StripeConnectedAccountId { get; set; }
+    public bool IsSellerOnboarded { get; set; }
+}
+
+public enum UserType
+{
+    Buyer,
+    Seller
+}</code></pre>
+
+            <h3>Step 2: Seller Onboarding Service</h3>
+            <pre><code>public interface ISellerOnboardingService
+{
+    Task&lt;string&gt; CreateSellerAccountAsync(string userId);
+    Task&lt;string&gt; CreateOnboardingLinkAsync(string userId);
+    Task&lt;bool&gt; IsSellerOnboardedAsync(string userId);
+}
+
+public class SellerOnboardingService : ISellerOnboardingService
+{
+    private readonly IDainnStripeConnectService _connectService;
+    private readonly ApplicationDbContext _dbContext;
+
+    public async Task&lt;string&gt; CreateSellerAccountAsync(string userId)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+
+        // Create Stripe Connected Account
+        var request = new CreateConnectedAccountRequest
+        {
+            Type = "express", // or "standard" for more control
+            Email = user.Email,
+            Metadata = new Dictionary&lt;string, string&gt;
+            {
+                { "user_id", userId }
+            }
+        };
+
+        var result = await _connectService.CreateConnectedAccountAsync(request);
+
+        // Save to user
+        user.StripeConnectedAccountId = result.AccountId;
+        await _dbContext.SaveChangesAsync();
+
+        return result.AccountId;
+    }
+
+    public async Task&lt;string&gt; CreateOnboardingLinkAsync(string userId)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+
+        if (string.IsNullOrEmpty(user.StripeConnectedAccountId))
+        {
+            await CreateSellerAccountAsync(userId);
+            user = await _dbContext.Users.FindAsync(userId);
+        }
+
+        var linkRequest = new CreateConnectedAccountLinkRequest
+        {
+            AccountId = user.StripeConnectedAccountId,
+            RefreshUrl = "https://mymarketplace.com/seller/onboarding/refresh",
+            ReturnUrl = "https://mymarketplace.com/seller/dashboard",
+            Type = "account_onboarding"
+        };
+
+        var result = await _connectService.CreateAccountLinkAsync(linkRequest);
+        return result.Url;
+    }
+
+    public async Task&lt;bool&gt; IsSellerOnboardedAsync(string userId)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        return user.IsSellerOnboarded;
+    }
+}</code></pre>
+
+            <h3>Step 3: Split Payment Processing</h3>
+            <pre><code>public class MarketplacePaymentService
+{
+    private readonly IDainnStripePaymentService _paymentService;
+    private readonly ApplicationDbContext _dbContext;
+    private const decimal PLATFORM_FEE_PERCENTAGE = 0.10m; // 10%
+
+    public async Task&lt;PaymentIntentResult&gt; CreateMarketplacePaymentAsync(
+        string buyerId,
+        string sellerId,
+        decimal amount,
+        string orderId)
+    {
+        var seller = await _dbContext.Users.FindAsync(sellerId);
+        var buyer = await _dbContext.Users.FindAsync(buyerId);
+
+        if (string.IsNullOrEmpty(seller.StripeConnectedAccountId))
+            throw new InvalidOperationException("Seller not onboarded");
+
+        // Calculate platform fee
+        var platformFee = (long)(amount * PLATFORM_FEE_PERCENTAGE * 100); // in cents
+
+        var request = new CreatePaymentIntentRequest
+        {
+            Amount = (long)(amount * 100), // Convert to cents
+            Currency = "usd",
+            CustomerId = buyer.StripeCustomerId,
+            ApplicationFeeAmount = platformFee,
+            TransferData = new PaymentIntentTransferDataOptions
+            {
+                Destination = seller.StripeConnectedAccountId
+            },
+            Metadata = new Dictionary&lt;string, string&gt;
+            {
+                { "order_id", orderId },
+                { "buyer_id", buyerId },
+                { "seller_id", sellerId }
+            }
+        };
+
+        return await _paymentService.CreatePaymentIntentAsync(request);
+    }
+}</code></pre>
+
+            <h3>Step 4: Seller Dashboard Controller</h3>
+            <pre><code>[ApiController]
+[Route("api/seller")]
+[Authorize]
+public class SellerController : ControllerBase
+{
+    private readonly ISellerOnboardingService _onboardingService;
+
+    [HttpPost("onboard")]
+    public async Task&lt;IActionResult&gt; StartOnboarding()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var onboardingUrl = await _onboardingService.CreateOnboardingLinkAsync(userId);
+
+        return Ok(new { url = onboardingUrl });
+    }
+
+    [HttpGet("status")]
+    public async Task&lt;IActionResult&gt; GetOnboardingStatus()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var isOnboarded = await _onboardingService.IsSellerOnboardedAsync(userId);
+
+        return Ok(new { isOnboarded });
+    }
+}</code></pre>
+
+            <h3>Step 5: Handle Connect Webhooks</h3>
+            <pre><code>public class ConnectWebhookHandler : IStripeWebhookHandler
+{
+    private readonly ApplicationDbContext _dbContext;
+
+    public bool CanHandle(Event stripeEvent)
+    {
+        return stripeEvent.Type.StartsWith("account.");
+    }
+
+    public async Task&lt;StripeWebhookProcessResult&gt; HandleAsync(Event stripeEvent)
+    {
+        var account = stripeEvent.Data.Object as Account;
+        var userId = account.Metadata["user_id"];
+
+        switch (stripeEvent.Type)
+        {
+            case "account.updated":
+                await UpdateSellerAccountStatusAsync(userId, account);
+                break;
+
+            case "account.external_account.created":
+                // Seller added bank account
+                await NotifySellerBankAccountAddedAsync(userId);
+                break;
+        }
+
+        return StripeWebhookProcessResult.Success();
+    }
+
+    private async Task UpdateSellerAccountStatusAsync(string userId, Account account)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        user.IsSellerOnboarded = account.ChargesEnabled && account.PayoutsEnabled;
+        await _dbContext.SaveChangesAsync();
+    }
+}</code></pre>
+
+            <h3>Architecture Overview</h3>
+            <div class="architecture-diagram">
+                <pre style="text-align: left; background: transparent; border: none; padding: 0;">
+Marketplace Flow:
+
+1. Seller Onboarding:
+   User registers → DainnUser creates User
+   → User becomes Seller → DainnStripe creates Connected Account
+   → Stripe onboarding → Seller verified
+
+2. Product Listing:
+   Seller creates product → Store in database
+   → Link to Seller's Connected Account
+
+3. Purchase Flow:
+   Buyer selects product → Create Payment Intent
+   → Split payment: 90% to Seller, 10% to Platform
+   → Webhook confirms payment → Update order status
+
+4. Payout:
+   Stripe automatically pays out to Seller's bank account
+   → Platform keeps commission
+                </pre>
+            </div>
+        </section>
+
+        <!-- Production Checklist -->
+        <section id="checklist">
+            <h2>Production Checklist</h2>
+
+            <h3>Security</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Use HTTPS everywhere</td>
+                        <td>☐</td>
+                        <td>Required for webhooks and JWT tokens</td>
+                    </tr>
+                    <tr>
+                        <td>Rotate API keys to production</td>
+                        <td>☐</td>
+                        <td>Use <code>sk_live_</code> and <code>pk_live_</code></td>
+                    </tr>
+                    <tr>
+                        <td>Store secrets in secure vault</td>
+                        <td>☐</td>
+                        <td>Azure Key Vault, AWS Secrets Manager, etc.</td>
+                    </tr>
+                    <tr>
+                        <td>Enable webhook signature verification</td>
+                        <td>☐</td>
+                        <td>Always verify <code>WebhookSigningSecret</code></td>
+                    </tr>
+                    <tr>
+                        <td>Implement rate limiting</td>
+                        <td>☐</td>
+                        <td>Protect against abuse</td>
+                    </tr>
+                    <tr>
+                        <td>Enable CORS properly</td>
+                        <td>☐</td>
+                        <td>Only allow trusted origins</td>
+                    </tr>
+                    <tr>
+                        <td>Use strong JWT secret key</td>
+                        <td>☐</td>
+                        <td>Minimum 32 characters, random</td>
+                    </tr>
+                    <tr>
+                        <td>Enable account lockout</td>
+                        <td>☐</td>
+                        <td>Prevent brute force attacks</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Database</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Run all migrations</td>
+                        <td>☐</td>
+                        <td>Test in staging first</td>
+                    </tr>
+                    <tr>
+                        <td>Enable connection pooling</td>
+                        <td>☐</td>
+                        <td>Improve performance</td>
+                    </tr>
+                    <tr>
+                        <td>Add indexes on foreign keys</td>
+                        <td>☐</td>
+                        <td>UserId, CustomerId, SubscriptionId</td>
+                    </tr>
+                    <tr>
+                        <td>Set up automated backups</td>
+                        <td>☐</td>
+                        <td>Daily backups with retention policy</td>
+                    </tr>
+                    <tr>
+                        <td>Test disaster recovery</td>
+                        <td>☐</td>
+                        <td>Verify backup restoration works</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Stripe Configuration</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Activate Stripe account</td>
+                        <td>☐</td>
+                        <td>Complete business verification</td>
+                    </tr>
+                    <tr>
+                        <td>Configure webhook endpoints</td>
+                        <td>☐</td>
+                        <td>Point to production URL</td>
+                    </tr>
+                    <tr>
+                        <td>Set up email receipts</td>
+                        <td>☐</td>
+                        <td>Configure in Stripe Dashboard</td>
+                    </tr>
+                    <tr>
+                        <td>Configure payment methods</td>
+                        <td>☐</td>
+                        <td>Cards, ACH, etc.</td>
+                    </tr>
+                    <tr>
+                        <td>Set up Radar rules</td>
+                        <td>☐</td>
+                        <td>Fraud prevention</td>
+                    </tr>
+                    <tr>
+                        <td>Test webhook delivery</td>
+                        <td>☐</td>
+                        <td>Send test events from dashboard</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Monitoring & Logging</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Set up application logging</td>
+                        <td>☐</td>
+                        <td>Serilog, Application Insights, etc.</td>
+                    </tr>
+                    <tr>
+                        <td>Monitor webhook failures</td>
+                        <td>☐</td>
+                        <td>Alert on repeated failures</td>
+                    </tr>
+                    <tr>
+                        <td>Track payment success rate</td>
+                        <td>☐</td>
+                        <td>Monitor for issues</td>
+                    </tr>
+                    <tr>
+                        <td>Set up error tracking</td>
+                        <td>☐</td>
+                        <td>Sentry, Raygun, etc.</td>
+                    </tr>
+                    <tr>
+                        <td>Monitor API response times</td>
+                        <td>☐</td>
+                        <td>Both your API and Stripe API</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Testing</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Test user registration flow</td>
+                        <td>☐</td>
+                        <td>Including email verification</td>
+                    </tr>
+                    <tr>
+                        <td>Test payment flow end-to-end</td>
+                        <td>☐</td>
+                        <td>Use Stripe test cards</td>
+                    </tr>
+                    <tr>
+                        <td>Test subscription lifecycle</td>
+                        <td>☐</td>
+                        <td>Create, update, cancel</td>
+                    </tr>
+                    <tr>
+                        <td>Test webhook processing</td>
+                        <td>☐</td>
+                        <td>All critical events</td>
+                    </tr>
+                    <tr>
+                        <td>Test failed payment scenarios</td>
+                        <td>☐</td>
+                        <td>Declined cards, insufficient funds</td>
+                    </tr>
+                    <tr>
+                        <td>Load test critical endpoints</td>
+                        <td>☐</td>
+                        <td>Ensure scalability</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- FAQ -->
+        <section id="faq">
+            <h2>FAQ</h2>
+
+            <h3>General Questions</h3>
+
+            <h4>Q: Can I use DainnUser without DainnStripe?</h4>
+            <p><strong>A:</strong> Yes! Both libraries are independent. Use DainnUser for authentication/authorization
+            and integrate with any payment provider you prefer.</p>
+
+            <h4>Q: Can I use DainnStripe without DainnUser?</h4>
+            <p><strong>A:</strong> Yes! DainnStripe works with any authentication system. You'll need to manage
+            User-Customer mappings yourself.</p>
+
+            <h4>Q: Do both libraries share the same database?</h4>
+            <p><strong>A:</strong> They can, but use separate DbContexts. Each library manages its own tables.
+            You create the linking tables in your application's DbContext.</p>
+
+            <h3>Integration Questions</h3>
+
+            <h4>Q: How do I link a User to a Stripe Customer?</h4>
+            <p><strong>A:</strong> Three patterns:</p>
+            <ol>
+                <li><strong>Mapping Table (Recommended):</strong> Create a <code>UserCustomerMapping</code> table</li>
+                <li><strong>Extended Entity:</strong> Add <code>StripeCustomerId</code> to your User entity</li>
+                <li><strong>Metadata:</strong> Store <code>user_id</code> in Stripe Customer metadata</li>
+            </ol>
+
+            <h4>Q: When should I create the Stripe Customer?</h4>
+            <p><strong>A:</strong> Two approaches:</p>
+            <ul>
+                <li><strong>On Registration:</strong> Create immediately when user signs up (simpler)</li>
+                <li><strong>On First Payment:</strong> Create when user makes first payment (lazy loading)</li>
+            </ul>
+
+            <h4>Q: How do I handle subscription-based access control?</h4>
+            <p><strong>A:</strong> Use custom authorization policies that check subscription status.
+            See the SaaS example in this guide.</p>
+
+            <h3>Webhook Questions</h3>
+
+            <h4>Q: What happens if a webhook fails?</h4>
+            <p><strong>A:</strong> Stripe automatically retries failed webhooks with exponential backoff.
+            DainnStripe tracks processing status in the database.</p>
+
+            <h4>Q: How do I test webhooks locally?</h4>
+            <p><strong>A:</strong> Use Stripe CLI: <code>stripe listen --forward-to https://localhost:5001/stripe/webhooks</code></p>
+
+            <h4>Q: Can I process the same webhook event twice?</h4>
+            <p><strong>A:</strong> No. DainnStripe automatically handles idempotency using the
+            <code>StripeWebhookEventRecords</code> table.</p>
+
+            <h3>Payment Questions</h3>
+
+            <h4>Q: Should I use Payment Intents or Checkout Sessions?</h4>
+            <p><strong>A:</strong></p>
+            <ul>
+                <li><strong>Payment Intents:</strong> For custom payment flows with your own UI</li>
+                <li><strong>Checkout Sessions:</strong> For hosted Stripe payment pages (easier, faster)</li>
+            </ul>
+
+            <h4>Q: How do I handle failed payments?</h4>
+            <p><strong>A:</strong> Listen to <code>payment_intent.payment_failed</code> webhook.
+            Notify user and optionally retry or downgrade subscription.</p>
+
+            <h4>Q: Can I offer free trials?</h4>
+            <p><strong>A:</strong> Yes! Set <code>TrialPeriodDays</code> when creating subscription.
+            Stripe won't charge until trial ends.</p>
+
+            <h3>Marketplace Questions</h3>
+
+            <h4>Q: What's the difference between Express and Standard Connect accounts?</h4>
+            <p><strong>A:</strong></p>
+            <ul>
+                <li><strong>Express:</strong> Stripe handles onboarding UI (easier, recommended)</li>
+                <li><strong>Standard:</strong> You build custom onboarding (more control)</li>
+            </ul>
+
+            <h4>Q: How do I handle platform fees?</h4>
+            <p><strong>A:</strong> Use <code>ApplicationFeeAmount</code> when creating Payment Intent.
+            Platform keeps the fee, seller receives the rest.</p>
+
+            <h4>Q: Can sellers see buyer information?</h4>
+            <p><strong>A:</strong> Depends on your implementation. With Express accounts, sellers
+            see limited buyer info. Control this via your application logic.</p>
+        </section>
+
+        <!-- Next Steps -->
+        <section id="next-steps">
+            <h2>Next Steps</h2>
+
+            <h3>Learning Resources</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>📚 Documentation</h4>
+                    <ul>
+                        <li><a href="dainnuser-guide.html">DainnUser Complete Guide</a></li>
+                        <li><a href="dainnstripe-guide.html">DainnStripe Complete Guide</a></li>
+                        <li><a href="https://stripe.com/docs" target="_blank">Stripe Documentation</a></li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h4>🔧 Tools</h4>
+                    <ul>
+                        <li><a href="https://github.com/stripe/stripe-cli" target="_blank">Stripe CLI</a></li>
+                        <li><a href="https://dashboard.stripe.com" target="_blank">Stripe Dashboard</a></li>
+                        <li><a href="https://github.com/mailhog/MailHog" target="_blank">MailHog (Email Testing)</a></li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h4>💬 Community</h4>
+                    <ul>
+                        <li><a href="https://github.com/dainn/dainn-user/issues" target="_blank">GitHub Issues</a></li>
+                        <li>Stack Overflow: <code>dainnuser</code> <code>dainnstripe</code></li>
+                        <li><a href="https://support.stripe.com" target="_blank">Stripe Support</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Implementation Roadmap</h3>
+
+            <h4>Phase 1: Foundation (Week 1)</h4>
+            <ol>
+                <li>Set up project with both libraries</li>
+                <li>Configure database and run migrations</li>
+                <li>Implement user registration and login</li>
+                <li>Create User-Customer mapping</li>
+                <li>Test basic authentication flow</li>
+            </ol>
+
+            <h4>Phase 2: Payments (Week 2)</h4>
+            <ol>
+                <li>Set up Stripe account and get API keys</li>
+                <li>Implement payment processing</li>
+                <li>Configure webhook endpoints</li>
+                <li>Test payment flow with test cards</li>
+                <li>Handle payment success/failure scenarios</li>
+            </ol>
+
+            <h4>Phase 3: Subscriptions (Week 3)</h4>
+            <ol>
+                <li>Define subscription plans and pricing</li>
+                <li>Implement subscription creation</li>
+                <li>Set up subscription webhooks</li>
+                <li>Implement feature gating based on plans</li>
+                <li>Test subscription lifecycle</li>
+            </ol>
+
+            <h4>Phase 4: Production (Week 4)</h4>
+            <ol>
+                <li>Complete production checklist</li>
+                <li>Set up monitoring and logging</li>
+                <li>Load test critical endpoints</li>
+                <li>Deploy to staging and test</li>
+                <li>Go live!</li>
+            </ol>
+
+            <h3>Best Practices Summary</h3>
+            <div class="alert alert-success">
+                <strong>✅ Do:</strong>
+                <ul>
+                    <li>Always verify webhook signatures</li>
+                    <li>Use HTTPS in production</li>
+                    <li>Store secrets securely (Key Vault, Secrets Manager)</li>
+                    <li>Implement proper error handling and logging</li>
+                    <li>Test thoroughly with Stripe test mode</li>
+                    <li>Monitor webhook processing and payment success rates</li>
+                    <li>Keep libraries updated to latest versions</li>
+                </ul>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>⚠️ Don't:</strong>
+                <ul>
+                    <li>Commit API keys to source control</li>
+                    <li>Skip webhook signature verification</li>
+                    <li>Use test keys in production</li>
+                    <li>Trust client-side payment amounts</li>
+                    <li>Ignore failed webhook events</li>
+                    <li>Deploy without testing in staging first</li>
+                </ul>
+            </div>
+
+            <h3>Support & Feedback</h3>
+            <p>Need help or have feedback?</p>
+            <ul>
+                <li><strong>Bug Reports:</strong> <a href="https://github.com/dainn/dainn-user/issues" target="_blank">GitHub Issues</a></li>
+                <li><strong>Feature Requests:</strong> <a href="https://github.com/dainn/dainn-user/discussions" target="_blank">GitHub Discussions</a></li>
+                <li><strong>Email:</strong> support@dainn.com</li>
+            </ul>
+
+            <div class="alert alert-info">
+                <strong>🎉 Ready to Build?</strong> You now have everything you need to build production-ready
+                SaaS applications and marketplace platforms with DainnUser and DainnStripe. Good luck!
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p><strong>DainnUser + DainnStripe</strong> - Complete .NET Integration</p>
+            <p>Version 1.0.0 | MIT License | &copy; 2024 Dainn Team</p>
+            <p>
+                <a href="dainnuser-guide.html">DainnUser Guide</a> |
+                <a href="dainnstripe-guide.html">DainnStripe Guide</a> |
+                <a href="https://github.com/dainn/dainn-user" target="_blank">GitHub</a> |
+                <a href="https://stripe.com/docs" target="_blank">Stripe Docs</a>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

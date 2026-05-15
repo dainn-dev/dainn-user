@@ -50,6 +50,8 @@ public static class ApplicationServiceExtensions
             services.AddHttpClient<IRecaptchaService, RecaptchaService>();
         }
 
+        services.TryAddScoped<IGenericOidcService, GenericOidcService>();
+
         return services;
     }
 }

@@ -120,17 +120,21 @@ public class DainnStripeReconciliationService : IDainnStripeReconciliationServic
         CancellationToken cancellationToken)
     {
         var accountIds = await ResolveBalanceAccountIdsAsync(request, cancellationToken);
+
+        // Pre-fetch all connected accounts in a single query to avoid N+1
+        var nonNullIds = accountIds.Where(id => !string.IsNullOrWhiteSpace(id)).Select(id => id!).ToList();
+        var connectedAccountMap = nonNullIds.Count == 0
+            ? new Dictionary<string, DainnStripeConnectedAccount>()
+            : await _dbContext.DainnStripeConnectedAccounts
+                .Where(item => nonNullIds.Contains(item.StripeAccountId))
+                .ToDictionaryAsync(item => item.StripeAccountId, cancellationToken);
+
         var count = 0;
 
         foreach (var accountId in accountIds)
         {
             var snapshot = await _balanceClient.GetAsync(accountId, cancellationToken);
-            var connectedAccount = string.IsNullOrWhiteSpace(snapshot.StripeAccountId)
-                ? null
-                : await _dbContext.DainnStripeConnectedAccounts
-                    .SingleOrDefaultAsync(
-                        item => item.StripeAccountId == snapshot.StripeAccountId,
-                        cancellationToken);
+            connectedAccountMap.TryGetValue(snapshot.StripeAccountId ?? string.Empty, out var connectedAccount);
             var now = DateTime.UtcNow;
 
             _dbContext.DainnStripeBalanceSnapshots.Add(new DainnStripeBalanceSnapshot
@@ -145,6 +149,7 @@ public class DainnStripeReconciliationService : IDainnStripeReconciliationServic
                 UpdatedAt = now
             });
             count++;
+
         }
 
         return count;

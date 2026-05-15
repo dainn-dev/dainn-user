@@ -7,6 +7,7 @@ using DainnStripe.Services;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Stripe;
 
 namespace DainnStripe.UnitTests.Services;
@@ -28,7 +29,7 @@ public class DainnStripeConnectAccountWebhookHandlerTests
             TenantId = "tenant_1",
             OwnerId = "owner_1"
         });
-        var handler = new DainnStripeConnectAccountWebhookHandler(service);
+        var handler = new DainnStripeConnectAccountWebhookHandler(service, NullLogger<DainnStripeConnectAccountWebhookHandler>.Instance);
         var record = new StripeWebhookEventRecord
         {
             StripeEventId = "evt_1",

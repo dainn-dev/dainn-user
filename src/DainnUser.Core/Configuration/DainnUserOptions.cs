@@ -183,4 +183,14 @@ public class DainnUserOptions
     /// Gets or sets the rate limit requests per minute.
     /// </summary>
     public int RateLimitRequestsPerMinute { get; set; } = 60;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether generic OIDC provider support is enabled.
+    /// </summary>
+    public bool EnableGenericOidc { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the list of configured generic OIDC providers.
+    /// </summary>
+    public List<OidcProviderConfig> OidcProviders { get; set; } = new();
 }

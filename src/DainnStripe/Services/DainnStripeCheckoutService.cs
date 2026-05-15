@@ -53,14 +53,27 @@ public class DainnStripeCheckoutService : IDainnStripeCheckoutService
                 UpdatedAt = now
             });
         }
-        else if (!string.IsNullOrWhiteSpace(result.StripeSubscriptionId))
+        else if (request.Mode == DainnStripeCheckoutMode.Subscription)
         {
+            if (string.IsNullOrWhiteSpace(result.StripeSubscriptionId))
+            {
+                throw new InvalidOperationException(
+                    $"Stripe checkout session '{result.SessionId}' was created in subscription mode but returned no subscription ID.");
+            }
+
+            var customerId = result.StripeCustomerId ?? request.StripeCustomerId;
+            if (string.IsNullOrWhiteSpace(customerId))
+            {
+                throw new InvalidOperationException(
+                    $"Stripe checkout session '{result.SessionId}' returned no customer ID for subscription.");
+            }
+
             _dbContext.DainnStripeSubscriptions.Add(new DainnStripeSubscription
             {
                 Id = Guid.NewGuid(),
                 OwnerId = request.OwnerId,
                 StripeSubscriptionId = result.StripeSubscriptionId,
-                StripeCustomerId = result.StripeCustomerId ?? request.StripeCustomerId ?? string.Empty,
+                StripeCustomerId = customerId,
                 StripePriceId = request.LineItems.FirstOrDefault()?.StripePriceId,
                 Status = DainnStripeSubscriptionStatus.Incomplete,
                 MetadataJson = TryGetMetadataJson(request),

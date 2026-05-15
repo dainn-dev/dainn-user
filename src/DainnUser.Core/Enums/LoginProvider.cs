@@ -28,5 +28,11 @@ public enum LoginProvider
     /// <summary>
     /// Microsoft OAuth provider.
     /// </summary>
-    Microsoft = 4
+    Microsoft = 4,
+
+    /// <summary>
+    /// Generic OIDC provider (Auth0, Okta, Keycloak, IdentityServer, etc.).
+    /// The specific provider ID is stored in UserLogin.ProviderKey as "oidc:{providerId}:{sub}".
+    /// </summary>
+    GenericOidc = 5
 }

@@ -3,6 +3,7 @@ using DainnStripe.Entities;
 using DainnStripe.Enums;
 using DainnStripe.Interfaces;
 using DainnStripe.Models;
+using Microsoft.Extensions.Logging;
 using Stripe;
 
 namespace DainnStripe.Services;
@@ -13,13 +14,17 @@ namespace DainnStripe.Services;
 public class DainnStripeConnectAccountWebhookHandler : IStripeWebhookHandler
 {
     private readonly IDainnStripeConnectService _connectService;
+    private readonly ILogger<DainnStripeConnectAccountWebhookHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DainnStripeConnectAccountWebhookHandler"/> class.
     /// </summary>
-    public DainnStripeConnectAccountWebhookHandler(IDainnStripeConnectService connectService)
+    public DainnStripeConnectAccountWebhookHandler(
+        IDainnStripeConnectService connectService,
+        ILogger<DainnStripeConnectAccountWebhookHandler> logger)
     {
         _connectService = connectService;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -37,6 +42,9 @@ public class DainnStripeConnectAccountWebhookHandler : IStripeWebhookHandler
         var accountState = AccountWebhookState.FromPayload(record.Payload);
         if (accountState is null)
         {
+            _logger.LogWarning(
+                "Could not parse account state from webhook payload. EventId={StripeEventId}",
+                record.StripeEventId);
             return;
         }
 

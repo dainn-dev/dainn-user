@@ -489,11 +489,6 @@ public class SocialLoginService : ISocialLoginService
             .Distinct()
             .ToList() ?? new List<string>();
 
-        var sessionId = Guid.NewGuid();
-        var accessToken = permissions.Count == 0
-            ? _jwtTokenService.GenerateAccessToken(user, roleNames, sessionId)
-            : _jwtTokenService.GenerateAccessToken(user, roleNames, permissions, sessionId);
-
         var refreshToken = _jwtTokenService.GenerateRefreshToken();
         var refreshTokenHash = _jwtTokenService.HashRefreshToken(refreshToken);
         var refreshExpiresAt = DateTime.UtcNow.AddDays(_options.RefreshTokenExpirationDays);
@@ -510,12 +505,17 @@ public class SocialLoginService : ISocialLoginService
             CreatedAt = DateTime.UtcNow
         }, ct);
 
+        var sessionId = Guid.NewGuid();
         if (_options.EnableSessionManagement && _sessionService is not null)
         {
             var session = await _sessionService.CreateSessionAsync(
                 user.Id, refreshTokenHash, ipAddress, userAgent, ct);
             sessionId = session.Id;
         }
+
+        var accessToken = permissions.Count == 0
+            ? _jwtTokenService.GenerateAccessToken(user, roleNames, sessionId)
+            : _jwtTokenService.GenerateAccessToken(user, roleNames, permissions, sessionId);
 
         await _unitOfWork.SaveChangesAsync(ct);
 
