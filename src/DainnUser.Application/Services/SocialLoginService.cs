@@ -371,32 +371,22 @@ public class SocialLoginService : ISocialLoginService
         LoginProvider provider,
         CancellationToken ct = default)
     {
-        var user = await _userRepository.GetByIdAsync(userId, ct);
+        var user = await _userRepository.GetByIdWithLoginsAsync(userId, ct);
         if (user is null)
             throw new UserNotFoundException(userId);
 
-        // Load logins if not already loaded
-        if (user.Logins is null)
-        {
-            user = await _userRepository.GetByExternalLoginAsync(provider, string.Empty, ct);
-            if (user is null || user.Id != userId)
-            {
-                user = await _userRepository.GetByIdAsync(userId, ct);
-            }
-        }
-
-        var login = user!.Logins?.FirstOrDefault(l => l.Provider == provider);
+        var login = user.Logins.FirstOrDefault(l => l.Provider == provider);
         if (login is null)
             return; // Already unlinked
 
         // Don't allow unlinking if it's the only login method
         var hasPassword = !string.IsNullOrWhiteSpace(user.PasswordHash);
-        var externalLoginCount = user.Logins?.Count(l => l.Provider != provider) ?? 0;
+        var otherExternalLoginCount = user.Logins.Count(l => l.Provider != provider);
 
-        if (!hasPassword && externalLoginCount == 0)
+        if (!hasPassword && otherExternalLoginCount == 0)
             throw new InvalidOperationException("Cannot unlink the only login method.");
 
-        user.Logins!.Remove(login);
+        user.Logins.Remove(login);
         await _unitOfWork.SaveChangesAsync(ct);
     }
 
@@ -439,11 +429,11 @@ public class SocialLoginService : ISocialLoginService
     private async Task<GoogleUserInfo> FetchGoogleUserInfoAsync(
         string accessToken, CancellationToken ct)
     {
-        _httpClient.DefaultRequestHeaders.Authorization =
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/oauth2/v3/userinfo");
+        request.Headers.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-        var response = await _httpClient.GetAsync(
-            "https://www.googleapis.com/oauth2/v3/userinfo", ct);
+        var response = await _httpClient.SendAsync(request, ct);
 
         if (!response.IsSuccessStatusCode)
             throw new InvalidOperationException("Failed to fetch Google user information.");
@@ -468,6 +458,11 @@ public class SocialLoginService : ISocialLoginService
     private async Task<LoginResult> IssueLoginResult(
         User user, string? ipAddress, string? userAgent, CancellationToken ct)
     {
+        if (user.Status is UserStatus.Suspended or UserStatus.Deactivated or UserStatus.Locked)
+        {
+            throw new AccountInactiveException(user.Status);
+        }
+
         // Load roles if not already loaded
         if (user.UserRoles is null)
         {
@@ -549,10 +544,9 @@ public class SocialLoginService : ISocialLoginService
         if (isTaken)
         {
             // Append random 4-digit suffix
-            var random = new Random();
             for (int i = 0; i < 10; i++)
             {
-                username = $"{prefix}{random.Next(1000, 9999)}";
+                username = $"{prefix}{Random.Shared.Next(1000, 9999)}";
                 isTaken = await _userRepository.IsUsernameTakenAsync(username, null, ct);
                 if (!isTaken)
                     break;
@@ -571,9 +565,17 @@ public class SocialLoginService : ISocialLoginService
     private async Task<string> ExchangeCodeForFacebookTokensAsync(
         string code, string callbackUrl, CancellationToken ct)
     {
-        var url = $"https://graph.facebook.com/v18.0/oauth/access_token?client_id={Uri.EscapeDataString(_options.FacebookAppId)}&client_secret={Uri.EscapeDataString(_options.FacebookAppSecret)}&redirect_uri={Uri.EscapeDataString(callbackUrl)}&code={Uri.EscapeDataString(code)}";
+        var payload = new Dictionary<string, string>
+        {
+            ["client_id"] = _options.FacebookAppId,
+            ["client_secret"] = _options.FacebookAppSecret,
+            ["redirect_uri"] = callbackUrl,
+            ["code"] = code
+        };
 
-        var response = await _httpClient.GetAsync(url, ct);
+        var response = await _httpClient.PostAsync(
+            "https://graph.facebook.com/v18.0/oauth/access_token",
+            new FormUrlEncodedContent(payload), ct);
 
         if (!response.IsSuccessStatusCode)
             throw new InvalidOperationException("Invalid Facebook authorization code.");

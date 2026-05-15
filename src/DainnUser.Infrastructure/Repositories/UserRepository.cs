@@ -84,6 +84,14 @@ public class UserRepository : Repository<User>, IUserRepository
     }
 
     /// <inheritdoc/>
+    public async Task<User?> GetByIdWithLoginsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(u => u.Logins)
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+    }
+
+    /// <inheritdoc/>
     public async Task<User?> GetByExternalLoginAsync(LoginProvider provider, string providerKey, CancellationToken cancellationToken = default)
     {
         return await _dbSet

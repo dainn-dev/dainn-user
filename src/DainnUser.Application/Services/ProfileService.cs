@@ -125,6 +125,12 @@ public class ProfileService : IProfileService
 
         if (dto.AvatarUrl is not null)
         {
+            if (!Uri.TryCreate(dto.AvatarUrl, UriKind.Absolute, out var avatarUri)
+                || (avatarUri.Scheme != Uri.UriSchemeHttps && avatarUri.Scheme != Uri.UriSchemeHttp))
+            {
+                throw new ArgumentException("AvatarUrl must be a valid http or https URL.", nameof(dto));
+            }
+
             profile.AvatarUrl = dto.AvatarUrl;
         }
     }

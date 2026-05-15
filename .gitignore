@@ -442,4 +442,6 @@ docs/api/*.yml
 docs/api/.manifest
 docs/obj/
 docs/*
-!docs/developer-guide.html
+!docs/dainnuser-guide.html
+!docs/dainnstripe-guide.html
+!docs/integration-guide.html

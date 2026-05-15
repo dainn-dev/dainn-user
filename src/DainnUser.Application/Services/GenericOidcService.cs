@@ -60,6 +60,8 @@ public class GenericOidcService : IGenericOidcService
             throw new InvalidOperationException("Email claim not found in OIDC response");
         }
 
+        email = email.Trim().ToLowerInvariant();
+
         if (!IsValidEmail(email))
         {
             throw new InvalidOperationException($"Invalid email format: {email}");
@@ -225,6 +227,11 @@ public class GenericOidcService : IGenericOidcService
         string? userAgent,
         CancellationToken cancellationToken)
     {
+        if (user.Status is UserStatus.Suspended or UserStatus.Deactivated or UserStatus.Locked)
+        {
+            throw new Core.Exceptions.AccountInactiveException(user.Status);
+        }
+
         // Load roles if not already loaded
         if (user.UserRoles is null)
         {

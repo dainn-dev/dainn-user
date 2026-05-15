@@ -424,7 +424,7 @@ public class SocialLoginServiceTests
         };
         user.Logins.Add(googleLogin);
 
-        _userRepositoryMock.Setup(x => x.GetByIdAsync(userId, default))
+        _userRepositoryMock.Setup(x => x.GetByIdWithLoginsAsync(userId, default))
             .ReturnsAsync(user);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(default))
             .ReturnsAsync(1);
@@ -456,7 +456,7 @@ public class SocialLoginServiceTests
         };
         user.Logins.Add(googleLogin);
 
-        _userRepositoryMock.Setup(x => x.GetByIdAsync(userId, default))
+        _userRepositoryMock.Setup(x => x.GetByIdWithLoginsAsync(userId, default))
             .ReturnsAsync(user);
 
         // Act
@@ -489,7 +489,7 @@ public class SocialLoginServiceTests
         };
         user.Logins.Add(googleLogin);
 
-        _userRepositoryMock.Setup(x => x.GetByIdAsync(userId, default))
+        _userRepositoryMock.Setup(x => x.GetByIdWithLoginsAsync(userId, default))
             .ReturnsAsync(user);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(default))
             .ReturnsAsync(1);
@@ -530,7 +530,7 @@ public class SocialLoginServiceTests
         user.Logins.Add(googleLogin);
         user.Logins.Add(facebookLogin);
 
-        _userRepositoryMock.Setup(x => x.GetByIdAsync(userId, default))
+        _userRepositoryMock.Setup(x => x.GetByIdWithLoginsAsync(userId, default))
             .ReturnsAsync(user);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(default))
             .ReturnsAsync(1);
@@ -1109,7 +1109,7 @@ public class SocialLoginServiceTests
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.Is<HttpRequestMessage>(req =>
-                    req.Method == HttpMethod.Get &&
+                    req.Method == HttpMethod.Post &&
                     req.RequestUri!.ToString().StartsWith("https://graph.facebook.com/v18.0/oauth/access_token")),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage

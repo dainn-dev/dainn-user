@@ -82,24 +82,24 @@ public class AuthenticationService : IAuthenticationService
         // Hash password
         user.PasswordHash = _passwordHasher.HashPassword(user, password);
 
-        // Generate email verification token
+        // Generate email verification token — store only the SHA-256 hash, send the plain token to the user.
         var verificationToken = GenerateSecureToken();
-        var token = new UserToken
+        var verificationTokenHash = ComputeSha256(verificationToken);
+
+        // Save user to database first, then add token via repository (not navigation property)
+        // to avoid inconsistent EF Core tracking behaviour with InMemory provider.
+        await _userRepository.AddAsync(user, cancellationToken);
+        await _userRepository.AddTokenAsync(new UserToken
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
             TokenType = TokenType.EmailVerification,
-            TokenValue = verificationToken,
+            TokenValue = verificationTokenHash,
             ExpiresAt = DateTime.UtcNow.AddHours(24),
             IsUsed = false,
             IsRevoked = false,
             CreatedAt = DateTime.UtcNow
-        };
-
-        user.Tokens.Add(token);
-
-        // Save user to database
-        await _userRepository.AddAsync(user, cancellationToken);
+        }, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Send verification email
@@ -202,8 +202,6 @@ public class AuthenticationService : IAuthenticationService
             }
         }
 
-        var sessionId = Guid.NewGuid();
-        var accessToken = GenerateAccessToken(user, roleNames, loginPermissions, sessionId);
         var refreshToken = _jwtTokenService.GenerateRefreshToken();
         var refreshTokenHash = _jwtTokenService.HashRefreshToken(refreshToken);
         var refreshExpiresAt = DateTime.UtcNow.AddDays(_options.RefreshTokenExpirationDays);
@@ -223,8 +221,9 @@ public class AuthenticationService : IAuthenticationService
             CreatedAt = DateTime.UtcNow
         }, cancellationToken);
 
-        // Create session if session management is enabled. SessionToken is the same SHA-256 of
-        // the refresh token so that the future refresh endpoint can resolve session + token in one lookup.
+        // Create session before generating the access token so the JWT's sid claim
+        // matches the actual session record stored in the database.
+        var sessionId = Guid.NewGuid();
         if (_options.EnableSessionManagement)
         {
             if (_sessionService is not null)
@@ -249,6 +248,8 @@ public class AuthenticationService : IAuthenticationService
                 }, cancellationToken);
             }
         }
+
+        var accessToken = GenerateAccessToken(user, roleNames, loginPermissions, sessionId);
 
         // Reset lockout counters on successful auth and stamp last-login.
         user.FailedLoginAttempts = 0;
@@ -629,10 +630,11 @@ public class AuthenticationService : IAuthenticationService
             return false;
         }
 
-        // Find valid verification token
+        // Find valid verification token — compare against the stored SHA-256 hash of the presented token.
+        var tokenHash = ComputeSha256(token.Trim());
         var verificationToken = user.Tokens.FirstOrDefault(t =>
             t.TokenType == TokenType.EmailVerification &&
-            t.TokenValue == token &&
+            t.TokenValue == tokenHash &&
             !t.IsUsed &&
             !t.IsRevoked &&
             t.ExpiresAt > DateTime.UtcNow);
@@ -684,24 +686,23 @@ public class AuthenticationService : IAuthenticationService
             existingToken.RevokedAt = DateTime.UtcNow;
         }
 
-        // Generate new verification token
+        // Generate new verification token — store only the SHA-256 hash.
         var verificationToken = GenerateSecureToken();
-        var token = new UserToken
+        var verificationTokenHash = ComputeSha256(verificationToken);
+
+        await _userRepository.AddTokenAsync(new UserToken
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
             TokenType = TokenType.EmailVerification,
-            TokenValue = verificationToken,
+            TokenValue = verificationTokenHash,
             ExpiresAt = DateTime.UtcNow.AddHours(24),
             IsUsed = false,
             IsRevoked = false,
             CreatedAt = DateTime.UtcNow
-        };
+        }, cancellationToken);
 
-        user.Tokens.Add(token);
         user.UpdatedAt = DateTime.UtcNow;
-
-        // No need to call Update() - entity is already tracked and EF Core will detect changes
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Send verification email

@@ -73,6 +73,14 @@ public interface IUserRepository : IRepository<User>
     Task<IEnumerable<User>> GetByStatusAsync(UserStatus status, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets a user by ID with their external logins loaded.
+    /// </summary>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The user with logins if found, otherwise null.</returns>
+    Task<User?> GetByIdWithLoginsAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets a user by external login provider.
     /// </summary>
     /// <param name="provider">The login provider.</param>

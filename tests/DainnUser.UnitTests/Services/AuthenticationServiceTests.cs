@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using DainnUser.Core.Configuration;
 using DainnUser.Application.Services;
 using DainnUser.Core.Entities;
@@ -67,6 +69,8 @@ public class AuthenticationServiceTests
             .Returns(hashedPassword);
         _userRepositoryMock.Setup(x => x.AddAsync(It.IsAny<User>(), default))
             .Returns(Task.CompletedTask);
+        _userRepositoryMock.Setup(x => x.AddTokenAsync(It.IsAny<UserToken>(), default))
+            .Returns(Task.CompletedTask);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(default))
             .ReturnsAsync(1);
         _emailServiceMock.Setup(x => x.SendEmailVerificationAsync(email, username, It.IsAny<string>(), default))
@@ -82,9 +86,12 @@ public class AuthenticationServiceTests
             u.Username == username &&
             u.PasswordHash == hashedPassword &&
             u.Status == UserStatus.Pending &&
-            !u.EmailVerified &&
-            u.Tokens.Count == 1 &&
-            u.Tokens.First().TokenType == TokenType.EmailVerification
+            !u.EmailVerified
+        ), default), Times.Once);
+        _userRepositoryMock.Verify(x => x.AddTokenAsync(It.Is<UserToken>(t =>
+            t.TokenType == TokenType.EmailVerification &&
+            !t.IsUsed &&
+            !t.IsRevoked
         ), default), Times.Once);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(default), Times.Once);
         _emailServiceMock.Verify(x => x.SendEmailVerificationAsync(email, username, It.IsAny<string>(), default), Times.Once);
@@ -174,23 +181,24 @@ public class AuthenticationServiceTests
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(default))
             .ReturnsAsync(1);
 
-        User? capturedUser = null;
         _userRepositoryMock.Setup(x => x.AddAsync(It.IsAny<User>(), default))
-            .Callback<User, CancellationToken>((user, _) => capturedUser = user)
+            .Returns(Task.CompletedTask);
+
+        UserToken? capturedToken = null;
+        _userRepositoryMock.Setup(x => x.AddTokenAsync(It.IsAny<UserToken>(), default))
+            .Callback<UserToken, CancellationToken>((t, _) => capturedToken = t)
             .Returns(Task.CompletedTask);
 
         // Act
         await _authenticationService.RegisterAsync(email, username, password);
 
         // Assert
-        capturedUser.Should().NotBeNull();
-        capturedUser!.Tokens.Should().HaveCount(1);
-        var token = capturedUser.Tokens.First();
-        token.TokenType.Should().Be(TokenType.EmailVerification);
-        token.TokenValue.Should().NotBeNullOrEmpty();
-        token.ExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddHours(24), TimeSpan.FromMinutes(1));
-        token.IsUsed.Should().BeFalse();
-        token.IsRevoked.Should().BeFalse();
+        capturedToken.Should().NotBeNull();
+        capturedToken!.TokenType.Should().Be(TokenType.EmailVerification);
+        capturedToken.TokenValue.Should().NotBeNullOrEmpty();
+        capturedToken.ExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddHours(24), TimeSpan.FromMinutes(1));
+        capturedToken.IsUsed.Should().BeFalse();
+        capturedToken.IsRevoked.Should().BeFalse();
     }
 
     [Fact]
@@ -199,6 +207,7 @@ public class AuthenticationServiceTests
         // Arrange
         var userId = Guid.NewGuid();
         var token = "valid_token";
+        var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token))).ToLowerInvariant();
         var user = new User
         {
             Id = userId,
@@ -212,7 +221,7 @@ public class AuthenticationServiceTests
             Id = Guid.NewGuid(),
             UserId = userId,
             TokenType = TokenType.EmailVerification,
-            TokenValue = token,
+            TokenValue = tokenHash,
             ExpiresAt = DateTime.UtcNow.AddHours(1),
             IsUsed = false,
             IsRevoked = false
@@ -337,6 +346,8 @@ public class AuthenticationServiceTests
 
         _userRepositoryMock.Setup(x => x.GetByEmailWithTokensAsync(email, default))
             .ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.AddTokenAsync(It.IsAny<UserToken>(), default))
+            .Returns(Task.CompletedTask);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(default))
             .ReturnsAsync(1);
 
@@ -347,11 +358,12 @@ public class AuthenticationServiceTests
         result.Should().BeTrue();
         oldToken.IsRevoked.Should().BeTrue();
         oldToken.RevokedAt.Should().NotBeNull();
-        user.Tokens.Should().HaveCount(2);
-        var newToken = user.Tokens.Last();
-        newToken.TokenType.Should().Be(TokenType.EmailVerification);
-        newToken.IsUsed.Should().BeFalse();
-        newToken.IsRevoked.Should().BeFalse();
+        _userRepositoryMock.Verify(x => x.AddTokenAsync(
+            It.Is<UserToken>(t =>
+                t.TokenType == TokenType.EmailVerification &&
+                !t.IsUsed &&
+                !t.IsRevoked),
+            default), Times.Once);
         _emailServiceMock.Verify(x => x.SendEmailVerificationAsync(email, user.Username, It.IsAny<string>(), default), Times.Once);
     }
 
