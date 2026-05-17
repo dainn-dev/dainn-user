@@ -71,37 +71,149 @@
             font-weight: 600;
         }
 
-        nav {
+        /* ── Sidebar layout ── */
+        .page-layout {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .sidebar {
+            width: 260px;
+            flex-shrink: 0;
             background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: width 0.25s ease;
+            z-index: 50;
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+        }
+
+        .sidebar-inner {
+            min-width: 260px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1rem 0.75rem;
             border-bottom: 1px solid var(--border);
             position: sticky;
             top: 0;
-            z-index: 100;
+            background: var(--bg-secondary);
+            z-index: 1;
         }
 
-        nav ul {
+        .sidebar-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+        }
+
+        .sidebar-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0.1rem 0.3rem;
+            border-radius: 4px;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .sidebar-close:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .sidebar nav ul {
             list-style: none;
-            display: flex;
-            flex-wrap: wrap;
-            padding: 0;
+            padding: 0.5rem 0 1.5rem;
         }
 
-        nav li {
+        .sidebar nav li {
             margin: 0;
         }
 
-        nav a {
+        .sidebar nav a {
             display: block;
-            padding: 1rem 1.5rem;
+            padding: 0.55rem 1.25rem;
             color: var(--text);
             text-decoration: none;
-            transition: all 0.2s;
-            border-bottom: 2px solid transparent;
+            font-size: 0.875rem;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            border-left: 3px solid transparent;
         }
 
-        nav a:hover {
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
             background: var(--bg);
-            border-bottom-color: var(--primary);
+            border-left-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* ── Main content area ── */
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .topbar {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .sidebar-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.45rem 0.9rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text);
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            font-family: inherit;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .toggle-icon {
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        /* ── Overlay (mobile) ── */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 200;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
         }
 
         main {
@@ -282,25 +394,37 @@
         }
 
         @media (max-width: 768px) {
-            nav ul {
-                flex-direction: column;
-            }
+            header h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+            .header-badges { flex-direction: column; }
+        }
 
-            nav a {
-                padding: 0.75rem 1rem;
+        @media (max-width: 1023px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: 280px;
+                z-index: 300;
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
             }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .sidebar.collapsed {
+                width: 280px;
+                transform: translateX(-100%);
+            }
+            .topbar { display: flex; }
+            .sidebar-toggle { display: flex; }
+        }
 
-            header h1 {
-                font-size: 2rem;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
-
-            .header-badges {
-                flex-direction: column;
-            }
+        @media (min-width: 1024px) {
+            .sidebar-overlay { display: none !important; }
+            .topbar { display: none; }
+            .sidebar.collapsed ~ .main-content .topbar { display: flex; }
         }
     </style>
 </head>
@@ -317,21 +441,37 @@
         </div>
     </header>
 
-    <nav>
-        <div class="container">
-            <ul>
-                <li><a href="#overview">Overview</a></li>
-                <li><a href="#architecture">Architecture</a></li>
-                <li><a href="#quickstart">Quickstart</a></li>
-                <li><a href="#linking">User-Payment Linking</a></li>
-                <li><a href="#saas">SaaS Example</a></li>
-                <li><a href="#marketplace">Marketplace Example</a></li>
-                <li><a href="#checklist">Production Checklist</a></li>
-                <li><a href="#faq">FAQ</a></li>
-                <li><a href="#next-steps">Next Steps</a></li>
-            </ul>
-        </div>
-    </nav>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="page-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <span class="sidebar-title">Integration Guide</span>
+                    <button class="sidebar-close" id="sidebarClose" aria-label="Close sidebar">&#x2715;</button>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#overview">Overview</a></li>
+                        <li><a href="#architecture">Architecture</a></li>
+                        <li><a href="#quickstart">Quickstart</a></li>
+                        <li><a href="#linking">User-Payment Linking</a></li>
+                        <li><a href="#saas">SaaS Example</a></li>
+                        <li><a href="#marketplace">Marketplace Example</a></li>
+                        <li><a href="#checklist">Production Checklist</a></li>
+                        <li><a href="#faq">FAQ</a></li>
+                        <li><a href="#next-steps">Next Steps</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <div class="main-content">
+            <div class="topbar">
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+                    <span class="toggle-icon">&#9776;</span>
+                </button>
+            </div>
 
     <main class="container">
         <!-- Overview -->
@@ -497,7 +637,8 @@ cd MySaasApp</code></pre>
 dotnet add package DainnUser.Infrastructure
 dotnet add package DainnUser.Application
 dotnet add package DainnUser.Api
-dotnet add package DainnStripe</code></pre>
+dotnet add package DainnStripe
+dotnet add package DainnStripe.DainnUser  # adapter for automatic user→customer linking</code></pre>
 
             <h3>Step 3: Configure appsettings.json</h3>
             <pre><code>{
@@ -507,45 +648,49 @@ dotnet add package DainnStripe</code></pre>
       "ConnectionString": "Data Source=myapp.db"
     },
     "Jwt": {
-      "SecretKey": "your-super-secret-jwt-key-min-32-chars",
+      "Secret": "your-super-secret-jwt-key-min-32-chars",
       "Issuer": "MySaasApp",
       "Audience": "MySaasAppUsers",
       "ExpirationMinutes": 60
     },
     "Email": {
+      "Provider": "Smtp",
       "SmtpHost": "localhost",
       "SmtpPort": 1025,
       "FromEmail": "dev@localhost"
-    }
+    },
+    "RequireEmailVerification": false,
+    "EnableAccountLockout": true
   },
   "DainnStripe": {
     "SecretKey": "sk_test_your_stripe_secret_key",
     "PublishableKey": "pk_test_your_stripe_publishable_key",
-    "WebhookSigningSecret": "whsec_your_webhook_secret"
-  },
-  "ConnectionStrings": {
-    "DainnStripe": "Data Source=myapp.db"
+    "WebhookSigningSecret": "whsec_your_webhook_secret",
+    "Database": {
+      "Provider": "SQLite",
+      "ConnectionString": "Data Source=myapp.db"
+    }
   }
 }</code></pre>
 
             <h3>Step 4: Configure Program.cs</h3>
-            <pre><code>using DainnUser.Api;
-using DainnUser.Application;
+            <pre><code>using DainnUser.Api.Extensions;
 using DainnUser.Infrastructure;
 using DainnStripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add DainnUser services
-builder.Services.AddDainnUser(builder.Configuration, options =>
-{
-    options.EnableSocialLogin = false;
-    options.EnableTwoFactor = false;
-    options.RequireEmailVerification = true;
-});
+// Add DainnUser core services
+builder.Services.AddDainnUser(builder.Configuration);
+
+// Add JWT Bearer authentication
+builder.Services.AddDainnUserJwtAuthentication(builder.Configuration);
 
 // Add DainnStripe services
 builder.Services.AddDainnStripe(builder.Configuration);
+
+// Add DainnStripe.DainnUser adapter (maps JWT user → Stripe customer automatically)
+builder.Services.AddDainnStripeDainnUserIntegration();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -561,95 +706,92 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Add DainnUser middleware (includes Authentication & Authorization)
+// DainnUser rate limiting (optional)
 app.UseDainnUser();
 
-// Add DainnStripe middleware
+// DainnStripe request logging (optional)
 app.UseDainnStripe();
 
-// Map Stripe webhooks
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Map Stripe webhooks and commerce endpoints
 app.MapDainnStripeWebhooks();
+app.MapDainnStripeCommerceEndpoints();
 
 app.MapControllers();
 
 app.Run();</code></pre>
 
             <h3>Step 5: Run Migrations</h3>
-            <pre><code># Create migrations for both libraries
-dotnet ef migrations add InitialDainnUser --context DainnUserDbContext
-dotnet ef migrations add InitialDainnStripe --context DainnStripeDbContext
+            <pre><code># Create migrations specifying each DbContext
+dotnet ef migrations add InitialDainnUser \
+    --context DainnUserDbContext \
+    --project src/DainnUser.Infrastructure
+
+dotnet ef migrations add InitialDainnStripe \
+    --context DainnStripeDbContext \
+    --project src/DainnStripe
 
 # Apply migrations
 dotnet ef database update --context DainnUserDbContext
 dotnet ef database update --context DainnStripeDbContext</code></pre>
 
-            <h3>Step 6: Create User-Customer Mapping Entity</h3>
-            <pre><code>// Models/UserCustomerMapping.cs
-public class UserCustomerMapping
+            <h3>Step 6: Install the Adapter Package</h3>
+            <pre><code>dotnet add package DainnStripe.DainnUser</code></pre>
+
+            <div class="alert alert-info">
+                <strong>💡 DainnStripe.DainnUser Adapter:</strong> The adapter bridges DainnUser's JWT identity
+                with DainnStripe's customer system. It automatically resolves the current user's Stripe
+                Customer, creating one on first use. Register it with <code>AddDainnStripeDainnUserIntegration()</code>.
+            </div>
+
+            <h3>Step 7: Use the Adapter in Your Services</h3>
+            <pre><code>// The adapter registers IDainnUserStripeCustomerResolver for you.
+// Inject it wherever you need to look up or lazily create the Stripe Customer
+// for the authenticated user.
+
+using DainnStripe.DainnUser.Interfaces;
+
+public class BillingService
 {
-    public Guid Id { get; set; }
-    public string UserId { get; set; } = string.Empty;
-    public string StripeCustomerId { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-}</code></pre>
+    private readonly IDainnUserStripeCustomerResolver _customerResolver;
+    private readonly IDainnStripeCheckoutService _checkoutService;
 
-            <h3>Step 7: Create Integration Service</h3>
-            <pre><code>// Services/UserPaymentService.cs
-using DainnStripe.Interfaces;
-using Stripe;
-
-public interface IUserPaymentService
-{
-    Task&lt;string&gt; GetOrCreateStripeCustomerAsync(string userId, string email);
-}
-
-public class UserPaymentService : IUserPaymentService
-{
-    private readonly IDainnStripeClientFactory _stripeClientFactory;
-    private readonly ApplicationDbContext _dbContext;
-
-    public UserPaymentService(
-        IDainnStripeClientFactory stripeClientFactory,
-        ApplicationDbContext dbContext)
+    public BillingService(
+        IDainnUserStripeCustomerResolver customerResolver,
+        IDainnStripeCheckoutService checkoutService)
     {
-        _stripeClientFactory = stripeClientFactory;
-        _dbContext = dbContext;
+        _customerResolver = customerResolver;
+        _checkoutService = checkoutService;
     }
 
-    public async Task&lt;string&gt; GetOrCreateStripeCustomerAsync(string userId, string email)
+    public async Task&lt;string&gt; StartCheckoutAsync(string priceId)
     {
-        // Check if mapping exists
-        var mapping = await _dbContext.UserCustomerMappings
-            .FirstOrDefaultAsync(m => m.UserId == userId);
+        // Resolves or lazily creates the Stripe Customer from the current JWT claims
+        var customerId = await _customerResolver.ResolveOrCreateAsync();
 
-        if (mapping != null)
-            return mapping.StripeCustomerId;
-
-        // Create Stripe customer
-        var customerService = new CustomerService();
-        var customer = await customerService.CreateAsync(new CustomerCreateOptions
+        var session = await _checkoutService.CreateAsync(new CreateCheckoutSessionRequest
         {
-            Email = email,
-            Metadata = new Dictionary&lt;string, string&gt;
-            {
-                { "user_id", userId }
-            }
+            StripeCustomerId = customerId,
+            Mode = DainnStripeCheckoutMode.Subscription,
+            SuccessUrl = "https://myapp.com/billing/success?session_id={CHECKOUT_SESSION_ID}",
+            CancelUrl = "https://myapp.com/pricing",
+            LineItems = new() { new() { PriceId = priceId, Quantity = 1 } }
         });
 
-        // Save mapping
-        mapping = new UserCustomerMapping
-        {
-            UserId = userId,
-            StripeCustomerId = customer.Id
-        };
-        _dbContext.UserCustomerMappings.Add(mapping);
-        await _dbContext.SaveChangesAsync();
-
-        return customer.Id;
+        return session.Url;
     }
-}</code></pre>
+}
+</code></pre>
 
-            <h3>Step 8: Test the Integration</h3>
+            <div class="alert alert-info">
+                <strong>💡 StripeCustomerMapping:</strong> DainnStripe stores the Owner→Customer link in the
+                built-in <code>StripeCustomerMapping</code> entity (<code>DainnStripeDbContext</code>).
+                You don't need to create your own mapping table.
+            </div>
+
+            <h3>Step 9: Test the Integration</h3>
             <pre><code>dotnet run</code></pre>
 
             <p>Navigate to <code>https://localhost:5001/swagger</code> to test:</p>
@@ -668,24 +810,35 @@ public class UserPaymentService : IUserPaymentService
         <section id="linking">
             <h2>User-Payment Linking Patterns</h2>
 
-            <h3>Pattern 1: Direct Mapping Table</h3>
-            <p><span class="badge badge-both">Recommended</span> Simple and explicit mapping between User and Stripe Customer.</p>
+            <h3>Pattern 1: Built-in Adapter (Recommended)</h3>
+            <p><span class="badge badge-both">Recommended</span> Install <code>DainnStripe.DainnUser</code> and call
+            <code>AddDainnStripeDainnUserIntegration()</code>. The adapter uses the built-in
+            <code>StripeCustomerMapping</code> entity and <code>IDainnUserStripeCustomerResolver</code>
+            to lazily create Stripe Customers from JWT claims. No extra table needed.</p>
 
-            <pre><code>public class UserCustomerMapping
+            <pre><code>// Register adapter in Program.cs
+builder.Services.AddDainnStripeDainnUserIntegration();
+
+// Use resolver in your service
+public class BillingService(IDainnUserStripeCustomerResolver resolver)
 {
-    public Guid Id { get; set; }
-    public string UserId { get; set; }
-    public string StripeCustomerId { get; set; }
-    public DateTime CreatedAt { get; set; }
-}
+    public async Task&lt;string&gt; GetCustomerIdAsync()
+        =&gt; await resolver.ResolveOrCreateAsync(); // creates if not found
+}</code></pre>
 
-// Usage
-var customerId = await _dbContext.UserCustomerMappings
-    .Where(m => m.UserId == userId)
-    .Select(m => m.StripeCustomerId)
-    .FirstOrDefaultAsync();</code></pre>
+            <h3>Pattern 2: Direct Mapping Table (Manual)</h3>
+            <p><span class="badge badge-both">Alternative</span> Use the built-in <code>StripeCustomerMapping</code> entity directly from <code>DainnStripeDbContext</code>.</p>
 
-            <h3>Pattern 2: Extended User Entity</h3>
+            <pre><code>using DainnStripe.Entities;
+
+// Query the built-in mapping table
+var mapping = await _dainnStripeDbContext.StripeCustomerMappings
+    .FirstOrDefaultAsync(m => m.OwnerId == userId);
+
+if (mapping != null)
+    return mapping.StripeCustomerId;</code></pre>
+
+            <h3>Pattern 3: Extended User Entity</h3>
             <p><span class="badge badge-user">Simple</span> Add Stripe fields directly to User entity.</p>
 
             <pre><code>public class ApplicationUser : User
@@ -699,7 +852,7 @@ var customerId = await _dbContext.UserCustomerMappings
 var user = await _userManager.GetUserAsync(User);
 var customerId = user.StripeCustomerId;</code></pre>
 
-            <h3>Pattern 3: Metadata-Based Linking</h3>
+            <h3>Pattern 4: Metadata-Based Linking</h3>
             <p><span class="badge badge-stripe">Stripe-First</span> Store User ID in Stripe Customer metadata.</p>
 
             <pre><code>// Create customer with metadata
@@ -731,21 +884,27 @@ var customers = await customerService.ListAsync(new CustomerListOptions
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>Mapping Table</strong></td>
-                        <td>Clean separation, flexible, easy to query</td>
-                        <td>Extra table</td>
+                        <td><strong>Adapter (DainnStripe.DainnUser)</strong></td>
+                        <td>Zero boilerplate, automatic customer creation, built-in mapping table</td>
+                        <td>Extra package dependency</td>
                         <td>Most applications</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Built-in Mapping Table</strong></td>
+                        <td>Clean separation, flexible, easy to query locally</td>
+                        <td>Need to manage customer creation yourself</td>
+                        <td>Custom resolution logic</td>
                     </tr>
                     <tr>
                         <td><strong>Extended Entity</strong></td>
                         <td>Simple, fewer queries</td>
-                        <td>Couples User to Stripe</td>
-                        <td>Simple SaaS apps</td>
+                        <td>Couples User entity to Stripe concepts</td>
+                        <td>Simple single-tenant SaaS</td>
                     </tr>
                     <tr>
                         <td><strong>Metadata</strong></td>
                         <td>No local storage needed</td>
-                        <td>Requires API calls, slower</td>
+                        <td>Requires API calls, slower lookups</td>
                         <td>Stripe-centric apps</td>
                     </tr>
                 </tbody>
@@ -852,7 +1011,7 @@ public class SubscriptionService : ISubscriptionService
             }
         };
 
-        var result = await _checkoutService.CreateCheckoutSessionAsync(request);
+        var result = await _checkoutService.CreateAsync(request);
         return result.Url;
     }
 
@@ -960,12 +1119,13 @@ public class ProjectsController : ControllerBase
 {
     private readonly ApplicationDbContext _dbContext;
 
-    public bool CanHandle(Event stripeEvent)
-    {
-        return stripeEvent.Type.StartsWith("customer.subscription.");
-    }
+    public bool CanHandle(string eventType)
+        =&gt; eventType.StartsWith("customer.subscription.");
 
-    public async Task&lt;StripeWebhookProcessResult&gt; HandleAsync(Event stripeEvent)
+    public async Task HandleAsync(
+        Event stripeEvent,
+        StripeWebhookEventRecord record,
+        CancellationToken cancellationToken = default)
     {
         var subscription = stripeEvent.Data.Object as Subscription;
         var userId = subscription.Metadata["user_id"];
@@ -981,8 +1141,6 @@ public class ProjectsController : ControllerBase
                 await CancelUserSubscriptionAsync(userId);
                 break;
         }
-
-        return StripeWebhookProcessResult.Success();
     }
 
     private async Task UpdateUserSubscriptionAsync(string userId, Subscription subscription)
@@ -1090,7 +1248,7 @@ public class SellerOnboardingService : ISellerOnboardingService
             Type = "account_onboarding"
         };
 
-        var result = await _connectService.CreateAccountLinkAsync(linkRequest);
+        var result = await _connectService.CreateOnboardingLinkAsync(linkRequest);
         return result.Url;
     }
 
@@ -1177,12 +1335,13 @@ public class SellerController : ControllerBase
 {
     private readonly ApplicationDbContext _dbContext;
 
-    public bool CanHandle(Event stripeEvent)
-    {
-        return stripeEvent.Type.StartsWith("account.");
-    }
+    public bool CanHandle(string eventType)
+        =&gt; eventType.StartsWith("account.");
 
-    public async Task&lt;StripeWebhookProcessResult&gt; HandleAsync(Event stripeEvent)
+    public async Task HandleAsync(
+        Event stripeEvent,
+        StripeWebhookEventRecord record,
+        CancellationToken cancellationToken = default)
     {
         var account = stripeEvent.Data.Object as Account;
         var userId = account.Metadata["user_id"];
@@ -1198,8 +1357,6 @@ public class SellerController : ControllerBase
                 await NotifySellerBankAccountAddedAsync(userId);
                 break;
         }
-
-        return StripeWebhookProcessResult.Success();
     }
 
     private async Task UpdateSellerAccountStatusAsync(string userId, Account account)
@@ -1477,11 +1634,12 @@ Marketplace Flow:
             <h3>Integration Questions</h3>
 
             <h4>Q: How do I link a User to a Stripe Customer?</h4>
-            <p><strong>A:</strong> Three patterns:</p>
+            <p><strong>A:</strong> Four patterns, from simplest to most custom:</p>
             <ol>
-                <li><strong>Mapping Table (Recommended):</strong> Create a <code>UserCustomerMapping</code> table</li>
+                <li><strong>Adapter (Recommended):</strong> Install <code>DainnStripe.DainnUser</code>, call <code>AddDainnStripeDainnUserIntegration()</code>, inject <code>IDainnUserStripeCustomerResolver</code></li>
+                <li><strong>Built-in Mapping Table:</strong> Query <code>DainnStripeDbContext.StripeCustomerMappings</code> (already exists, no extra table needed)</li>
                 <li><strong>Extended Entity:</strong> Add <code>StripeCustomerId</code> to your User entity</li>
-                <li><strong>Metadata:</strong> Store <code>user_id</code> in Stripe Customer metadata</li>
+                <li><strong>Metadata:</strong> Store <code>owner_id</code> in Stripe Customer metadata</li>
             </ol>
 
             <h4>Q: When should I create the Stripe Customer?</h4>
@@ -1655,11 +1813,13 @@ Marketplace Flow:
             </div>
         </section>
     </main>
+        </div><!-- /.main-content -->
+    </div><!-- /.page-layout -->
 
     <footer>
         <div class="container">
             <p><strong>DainnUser + DainnStripe</strong> - Complete .NET Integration</p>
-            <p>Version 1.0.0 | MIT License | &copy; 2024 Dainn Team</p>
+            <p>Version 1.1.0 | MIT License | &copy; 2025 Dainn Team</p>
             <p>
                 <a href="dainnuser-guide.html">DainnUser Guide</a> |
                 <a href="dainnstripe-guide.html">DainnStripe Guide</a> |
@@ -1668,5 +1828,62 @@ Marketplace Flow:
             </p>
         </div>
     </footer>
+
+    <script>
+    (function () {
+        var sidebar = document.getElementById('sidebar');
+        var toggle  = document.getElementById('sidebarToggle');
+        var close   = document.getElementById('sidebarClose');
+        var overlay = document.getElementById('sidebarOverlay');
+
+        function isMobile() { return window.innerWidth < 1024; }
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebar.classList.remove('collapsed');
+            overlay.classList.add('active');
+        }
+
+        function closeSidebar() {
+            if (isMobile()) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            } else {
+                sidebar.classList.add('collapsed');
+            }
+        }
+
+        toggle.addEventListener('click', function () {
+            if (isMobile()) {
+                sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+            } else {
+                sidebar.classList.contains('collapsed')
+                    ? sidebar.classList.remove('collapsed')
+                    : sidebar.classList.add('collapsed');
+            }
+        });
+
+        close.addEventListener('click', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        document.querySelectorAll('.sidebar a').forEach(function (a) {
+            a.addEventListener('click', function () {
+                if (isMobile()) closeSidebar();
+            });
+        });
+
+        var sections = document.querySelectorAll('section[id]');
+        var links    = document.querySelectorAll('.sidebar a[href^="#"]');
+        window.addEventListener('scroll', function () {
+            var cur = '';
+            sections.forEach(function (s) {
+                if (window.scrollY >= s.offsetTop - 120) cur = s.id;
+            });
+            links.forEach(function (a) {
+                a.classList.toggle('active', a.getAttribute('href') === '#' + cur);
+            });
+        }, { passive: true });
+    })();
+    </script>
 </body>
 </html>

@@ -55,41 +55,153 @@
             opacity: 0.9;
         }
 
-        nav {
+        /* ── Sidebar layout ── */
+        .page-layout {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .sidebar {
+            width: 260px;
+            flex-shrink: 0;
             background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: width 0.25s ease;
+            z-index: 50;
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+        }
+
+        .sidebar-inner {
+            min-width: 260px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1rem 0.75rem;
             border-bottom: 1px solid var(--border);
             position: sticky;
             top: 0;
-            z-index: 100;
+            background: var(--bg-secondary);
+            z-index: 1;
         }
 
-        nav ul {
+        .sidebar-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+        }
+
+        .sidebar-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0.1rem 0.3rem;
+            border-radius: 4px;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .sidebar-close:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .sidebar nav ul {
             list-style: none;
-            display: flex;
-            flex-wrap: wrap;
-            padding: 0;
+            padding: 0.5rem 0 1.5rem;
         }
 
-        nav li {
+        .sidebar nav li {
             margin: 0;
         }
 
-        nav a {
+        .sidebar nav a {
             display: block;
-            padding: 1rem 1.5rem;
+            padding: 0.55rem 1.25rem;
             color: var(--text);
             text-decoration: none;
-            transition: all 0.2s;
-            border-bottom: 2px solid transparent;
+            font-size: 0.875rem;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            border-left: 3px solid transparent;
         }
 
-        nav a:hover {
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
             background: var(--bg);
-            border-bottom-color: var(--primary);
+            border-left-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* ── Main content area ── */
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .topbar {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .sidebar-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.45rem 0.9rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text);
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            font-family: inherit;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .toggle-icon {
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        /* ── Overlay (mobile) ── */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 200;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
         }
 
         main {
-            padding: 3rem 0;
+            padding: 2.5rem 0;
         }
 
         section {
@@ -245,14 +357,6 @@
         }
 
         @media (max-width: 768px) {
-            nav ul {
-                flex-direction: column;
-            }
-
-            nav a {
-                padding: 0.75rem 1rem;
-            }
-
             header h1 {
                 font-size: 2rem;
             }
@@ -260,6 +364,41 @@
             h2 {
                 font-size: 1.5rem;
             }
+        }
+
+        /* Mobile: sidebar as overlay */
+        @media (max-width: 1023px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: 280px;
+                z-index: 300;
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+            }
+
+            .sidebar.collapsed {
+                width: 280px;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-inner {
+                min-width: 280px;
+            }
+        }
+
+        /* Desktop: sidebar always visible, collapsible */
+        @media (min-width: 1024px) {
+            .sidebar-overlay { display: none !important; }
+            .topbar { display: none; }
+            /* Show toggle button when sidebar is collapsed so user can reopen */
+            .sidebar.collapsed ~ .main-content .topbar { display: flex; }
         }
     </style>
 </head>
@@ -271,24 +410,43 @@
         </div>
     </header>
 
-    <nav>
-        <div class="container">
-            <ul>
-                <li><a href="#introduction">Introduction</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#installation">Installation</a></li>
-                <li><a href="#configuration">Configuration</a></li>
-                <li><a href="#quickstart">Quickstart</a></li>
-                <li><a href="#program-setup">Program.cs</a></li>
-                <li><a href="#migrations">Migrations</a></li>
-                <li><a href="#jwt">JWT Auth</a></li>
-                <li><a href="#social-login">Social Login</a></li>
-                <li><a href="#api-reference">API Reference</a></li>
-                <li><a href="#customization">Customization</a></li>
-                <li><a href="#troubleshooting">Troubleshooting</a></li>
-            </ul>
-        </div>
-    </nav>
+    <div class="page-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <span class="sidebar-title">Contents</span>
+                    <button class="sidebar-close" id="sidebarClose" aria-label="Close sidebar">✕</button>
+                </div>
+                <nav aria-label="Page navigation">
+                    <ul>
+                        <li><a href="#introduction">Introduction</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#installation">Installation</a></li>
+                        <li><a href="#configuration">Configuration</a></li>
+                        <li><a href="#quickstart">Quickstart</a></li>
+                        <li><a href="#program-setup">Program.cs</a></li>
+                        <li><a href="#migrations">Migrations</a></li>
+                        <li><a href="#jwt">JWT Auth</a></li>
+                        <li><a href="#social-login">Social Login</a></li>
+                        <li><a href="#api-reference">API Reference</a></li>
+                        <li><a href="#customization">Customization</a></li>
+                        <li><a href="#troubleshooting">Troubleshooting</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Mobile overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <div class="topbar">
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation">
+                    <span class="toggle-icon">☰</span> Navigation
+                </button>
+            </div>
 
     <main class="container">
         <!-- Introduction -->
@@ -429,13 +587,14 @@ dotnet test</code></pre>
       "ConnectionString": "Data Source=dainnuser.db"
     },
     "Jwt": {
-      "SecretKey": "your-super-secret-key-min-32-characters-long",
+      "Secret": "your-super-secret-key-min-32-characters-long",
       "Issuer": "DainnUser",
       "Audience": "DainnUserApp",
       "ExpirationMinutes": 60,
       "RefreshTokenExpirationDays": 7
     },
     "Email": {
+      "Provider": "Smtp",
       "SmtpHost": "smtp.gmail.com",
       "SmtpPort": 587,
       "SmtpUsername": "your-email@gmail.com",
@@ -444,23 +603,15 @@ dotnet test</code></pre>
       "FromName": "DainnUser",
       "EnableSsl": true
     },
-    "Features": {
-      "EnableSocialLogin": false,
-      "EnableTwoFactor": false,
-      "RequireEmailVerification": true,
-      "EnableAccountLockout": true,
-      "EnableSessionManagement": true,
-      "EnableActivityLogging": true
-    },
-    "Security": {
-      "MaxLoginAttempts": 5,
-      "LockoutDurationMinutes": 15,
-      "PasswordMinLength": 8,
-      "RequireDigit": true,
-      "RequireUppercase": true,
-      "RequireLowercase": true,
-      "RequireSpecialChar": true
-    }
+    "EnableSocialLogin": false,
+    "EnableTwoFactor": false,
+    "RequireEmailVerification": true,
+    "EnableAccountLockout": true,
+    "MaxFailedLoginAttempts": 5,
+    "LockoutDurationMinutes": 15,
+    "EnableSessionManagement": true,
+    "EnableActivityLogging": true,
+    "RefreshTokenExpirationDays": 7
   }
 }</code></pre>
 
@@ -492,12 +643,38 @@ dotnet test</code></pre>
                 </tbody>
             </table>
 
+            <h3>Email Providers</h3>
+            <p>DainnUser supports three email providers selectable via <code>Email:Provider</code>:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Provider</th>
+                        <th>Config Keys</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Smtp</strong> (default)</td>
+                        <td><code>SmtpHost</code>, <code>SmtpPort</code>, <code>SmtpUsername</code>, <code>SmtpPassword</code>, <code>EnableSsl</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>SendGrid</strong></td>
+                        <td><code>SendGridApiKey</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>AwsSes</strong></td>
+                        <td><code>AwsRegion</code>, <code>AwsAccessKeyId</code>, <code>AwsSecretAccessKey</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
             <h3>Email Configuration for Development</h3>
             <p>For local development, use <a href="https://github.com/mailhog/MailHog" target="_blank">MailHog</a> to catch emails:</p>
 
             <pre><code>{
   "DainnUser": {
     "Email": {
+      "Provider": "Smtp",
       "SmtpHost": "localhost",
       "SmtpPort": 1025,
       "SmtpUsername": "",
@@ -505,6 +682,23 @@ dotnet test</code></pre>
       "FromEmail": "dev@localhost",
       "FromName": "DainnUser Dev",
       "EnableSsl": false
+    }
+  }
+}</code></pre>
+
+            <h3>Email Subject Customization</h3>
+            <p>Override default email subject lines via <code>DainnUser:Email:Subjects:*</code>:</p>
+            <pre><code>{
+  "DainnUser": {
+    "Email": {
+      "Subjects": {
+        "EmailVerification": "Verify Your Email Address",
+        "PasswordReset": "Reset Your Password",
+        "PasswordChanged": "Your Password Has Been Changed",
+        "AccountLockout": "Account Locked - Security Alert",
+        "TwoFactorCode": "Your Two-Factor Authentication Code",
+        "ContactVerification": "Verify Contact"
+      }
     }
   }
 }</code></pre>
@@ -538,12 +732,13 @@ dotnet add package DainnUser.Api</code></pre>
       "ConnectionString": "Data Source=myapp.db"
     },
     "Jwt": {
-      "SecretKey": "my-super-secret-jwt-key-at-least-32-chars",
+      "Secret": "my-super-secret-jwt-key-at-least-32-chars",
       "Issuer": "MyApp",
       "Audience": "MyAppUsers",
       "ExpirationMinutes": 60
     },
     "Email": {
+      "Provider": "Smtp",
       "SmtpHost": "localhost",
       "SmtpPort": 1025,
       "FromEmail": "dev@localhost"
@@ -552,15 +747,16 @@ dotnet add package DainnUser.Api</code></pre>
 }</code></pre>
 
             <h3>Step 4: Update Program.cs</h3>
-            <pre><code>var builder = WebApplication.CreateBuilder(args);
+            <pre><code>using DainnUser.Api.Extensions;
+using DainnUser.Infrastructure;
+
+var builder = WebApplication.CreateBuilder(args);
 
 // Add DainnUser services
-builder.Services.AddDainnUser(builder.Configuration, options =>
-{
-    options.EnableSocialLogin = false;
-    options.EnableTwoFactor = false;
-    options.RequireEmailVerification = true;
-});
+builder.Services.AddDainnUser(builder.Configuration);
+
+// Add JWT authentication (required for Bearer token support)
+builder.Services.AddDainnUserJwtAuthentication(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -576,10 +772,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Add DainnUser middleware
-app.UseDainnUser();
-
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();</code></pre>
@@ -603,14 +798,16 @@ dotnet ef database update</code></pre>
             <h2>Program.cs Setup</h2>
 
             <h3>Basic Setup</h3>
-            <pre><code>using DainnUser.Api;
-using DainnUser.Application;
+            <pre><code>using DainnUser.Api.Extensions;
 using DainnUser.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add DainnUser services
+// Add DainnUser core services
 builder.Services.AddDainnUser(builder.Configuration);
+
+// Add JWT Bearer authentication
+builder.Services.AddDainnUserJwtAuthentication(builder.Configuration);
 
 // Add other services
 builder.Services.AddControllers();
@@ -628,8 +825,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// DainnUser middleware (includes Authentication & Authorization)
+// Add DainnUser rate limiting middleware (optional)
 app.UseDainnUser();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
@@ -645,21 +845,32 @@ app.Run();</code></pre>
 
     // Security features
     options.EnableAccountLockout = true;
+    options.MaxFailedLoginAttempts = 5;
+    options.LockoutDurationMinutes = 15;
     options.EnableRateLimiting = true;
-    options.EnableRecaptcha = false;
+    options.RecaptchaEnabled = false;
 
     // Session & logging
     options.EnableSessionManagement = true;
     options.EnableActivityLogging = true;
-    options.EnableAuditTrail = true;
+
+    // Token expiry
+    options.JwtExpirationMinutes = 60;
+    options.RefreshTokenExpirationDays = 7;
+    options.PasswordResetTokenExpirationHours = 1;
+    options.EmailVerificationTokenExpirationHours = 24;
 });</code></pre>
 
-            <h3>Custom Database Provider</h3>
-            <pre><code>builder.Services.AddDainnUser(builder.Configuration, options =>
-{
-    options.DatabaseProvider = "PostgreSQL";
-    options.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-});</code></pre>
+            <h3>Database Provider Configuration</h3>
+            <p>Set database provider and connection string in <code>appsettings.json</code> (not in code):</p>
+            <pre><code>{
+  "DainnUser": {
+    "Database": {
+      "Provider": "PostgreSQL",
+      "ConnectionString": "Host=localhost;Database=myapp;Username=postgres;Password=pass"
+    }
+  }
+}</code></pre>
 
             <h3>Available Options</h3>
             <table>
@@ -676,7 +887,13 @@ app.Run();</code></pre>
                         <td><code>EnableSocialLogin</code></td>
                         <td>bool</td>
                         <td>false</td>
-                        <td>Enable OAuth providers (Google, Facebook, etc.)</td>
+                        <td>Enable OAuth providers (Google, Facebook, GitHub, Microsoft)</td>
+                    </tr>
+                    <tr>
+                        <td><code>EnableGenericOidc</code></td>
+                        <td>bool</td>
+                        <td>false</td>
+                        <td>Enable generic OIDC provider support (Auth0, Okta, Keycloak, etc.)</td>
                     </tr>
                     <tr>
                         <td><code>EnableTwoFactor</code></td>
@@ -697,16 +914,70 @@ app.Run();</code></pre>
                         <td>Lock account after failed login attempts</td>
                     </tr>
                     <tr>
+                        <td><code>MaxFailedLoginAttempts</code></td>
+                        <td>int</td>
+                        <td>5</td>
+                        <td>Failed attempts before lockout triggers</td>
+                    </tr>
+                    <tr>
+                        <td><code>LockoutDurationMinutes</code></td>
+                        <td>int</td>
+                        <td>15</td>
+                        <td>Duration of account lockout in minutes</td>
+                    </tr>
+                    <tr>
                         <td><code>EnableSessionManagement</code></td>
                         <td>bool</td>
                         <td>true</td>
-                        <td>Track active sessions</td>
+                        <td>Track active sessions; oldest revoked when <code>MaxActiveSessionsPerUser</code> exceeded</td>
+                    </tr>
+                    <tr>
+                        <td><code>MaxActiveSessionsPerUser</code></td>
+                        <td>int</td>
+                        <td>5</td>
+                        <td>Maximum concurrent sessions per user</td>
                     </tr>
                     <tr>
                         <td><code>EnableActivityLogging</code></td>
                         <td>bool</td>
                         <td>true</td>
                         <td>Log user activities</td>
+                    </tr>
+                    <tr>
+                        <td><code>EnableRateLimiting</code></td>
+                        <td>bool</td>
+                        <td>true</td>
+                        <td>Enable sliding window rate limiting middleware</td>
+                    </tr>
+                    <tr>
+                        <td><code>RecaptchaEnabled</code></td>
+                        <td>bool</td>
+                        <td>false</td>
+                        <td>Enable Google reCAPTCHA verification</td>
+                    </tr>
+                    <tr>
+                        <td><code>JwtExpirationMinutes</code></td>
+                        <td>int</td>
+                        <td>60</td>
+                        <td>Access token lifetime in minutes</td>
+                    </tr>
+                    <tr>
+                        <td><code>RefreshTokenExpirationDays</code></td>
+                        <td>int</td>
+                        <td>7</td>
+                        <td>Refresh token lifetime in days</td>
+                    </tr>
+                    <tr>
+                        <td><code>PasswordResetTokenExpirationHours</code></td>
+                        <td>int</td>
+                        <td>1</td>
+                        <td>Password reset token lifetime in hours</td>
+                    </tr>
+                    <tr>
+                        <td><code>EmailVerificationTokenExpirationHours</code></td>
+                        <td>int</td>
+                        <td>24</td>
+                        <td>Email verification token lifetime in hours</td>
                     </tr>
                 </tbody>
             </table>
@@ -789,11 +1060,10 @@ dotnet ef migrations script --project src/DainnUser.Infrastructure --output migr
             <pre><code>{
   "DainnUser": {
     "Jwt": {
-      "SecretKey": "your-secret-key-minimum-32-characters-long",
+      "Secret": "your-secret-key-minimum-32-characters-long",
       "Issuer": "YourAppName",
       "Audience": "YourAppUsers",
-      "ExpirationMinutes": 60,
-      "RefreshTokenExpirationDays": 7
+      "ExpirationMinutes": 60
     }
   }
 }</code></pre>
@@ -815,7 +1085,7 @@ dotnet ef migrations script --project src/DainnUser.Infrastructure --output migr
 
             <h3>Using JWT in Requests</h3>
             <pre><code>// Add Authorization header to your HTTP requests
-GET /api/users/profile
+GET /api/profile
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</code></pre>
 
             <h3>Refresh Token Flow</h3>
@@ -926,12 +1196,10 @@ public class ProductsController : ControllerBase
             <h4>Step 2: Configure appsettings.json</h4>
             <pre><code>{
   "DainnUser": {
-    "SocialLogin": {
-      "Google": {
-        "ClientId": "your-google-client-id.apps.googleusercontent.com",
-        "ClientSecret": "your-google-client-secret"
-      }
-    }
+    "EnableSocialLogin": true,
+    "GoogleClientId": "your-google-client-id.apps.googleusercontent.com",
+    "GoogleClientSecret": "your-google-client-secret",
+    "GoogleCallbackPath": "/signin-google"
   }
 }</code></pre>
 
@@ -970,12 +1238,10 @@ window.location.href = '/api/auth/external-login?provider=Google&returnUrl=/dash
             <h4>Step 2: Configure appsettings.json</h4>
             <pre><code>{
   "DainnUser": {
-    "SocialLogin": {
-      "Facebook": {
-        "AppId": "your-facebook-app-id",
-        "AppSecret": "your-facebook-app-secret"
-      }
-    }
+    "EnableSocialLogin": true,
+    "FacebookAppId": "your-facebook-app-id",
+    "FacebookAppSecret": "your-facebook-app-secret",
+    "FacebookCallbackPath": "/signin-facebook"
   }
 }</code></pre>
 
@@ -1003,12 +1269,10 @@ window.location.href = '/api/auth/external-login?provider=Google&returnUrl=/dash
             <h4>Step 2: Configure appsettings.json</h4>
             <pre><code>{
   "DainnUser": {
-    "SocialLogin": {
-      "GitHub": {
-        "ClientId": "your-github-client-id",
-        "ClientSecret": "your-github-client-secret"
-      }
-    }
+    "EnableSocialLogin": true,
+    "GitHubClientId": "your-github-client-id",
+    "GitHubClientSecret": "your-github-client-secret",
+    "GitHubCallbackPath": "/signin-github"
   }
 }</code></pre>
 
@@ -1041,13 +1305,10 @@ window.location.href = '/api/auth/external-login?provider=Google&returnUrl=/dash
             <h4>Step 2: Configure appsettings.json</h4>
             <pre><code>{
   "DainnUser": {
-    "SocialLogin": {
-      "Microsoft": {
-        "ClientId": "your-microsoft-client-id",
-        "ClientSecret": "your-microsoft-client-secret",
-        "TenantId": "common"  // or your specific tenant ID
-      }
-    }
+    "EnableSocialLogin": true,
+    "MicrosoftClientId": "your-microsoft-client-id",
+    "MicrosoftClientSecret": "your-microsoft-client-secret",
+    "MicrosoftCallbackPath": "/signin-microsoft"
   }
 }</code></pre>
 
@@ -1233,28 +1494,18 @@ window.location.href = '/api/auth/external-login?provider=Google&returnUrl=/dash
                 <code>https://your-provider.com/.well-known/openid-configuration</code>
             </div>
 
-            <h3>Complete Configuration Example</h3>
+            <h3>Complete Social Login Configuration Example</h3>
             <pre><code>{
   "DainnUser": {
-    "SocialLogin": {
-      "Google": {
-        "ClientId": "123456789.apps.googleusercontent.com",
-        "ClientSecret": "GOCSPX-abc123"
-      },
-      "Facebook": {
-        "AppId": "1234567890123456",
-        "AppSecret": "abc123def456"
-      },
-      "GitHub": {
-        "ClientId": "Iv1.abc123def456",
-        "ClientSecret": "abc123def456ghi789"
-      },
-      "Microsoft": {
-        "ClientId": "12345678-1234-1234-1234-123456789012",
-        "ClientSecret": "abc~123.def456",
-        "TenantId": "common"
-      }
-    }
+    "EnableSocialLogin": true,
+    "GoogleClientId": "123456789.apps.googleusercontent.com",
+    "GoogleClientSecret": "GOCSPX-abc123",
+    "FacebookAppId": "1234567890123456",
+    "FacebookAppSecret": "abc123def456",
+    "GitHubClientId": "Iv1.abc123def456",
+    "GitHubClientSecret": "abc123def456ghi789",
+    "MicrosoftClientId": "12345678-1234-1234-1234-123456789012",
+    "MicrosoftClientSecret": "abc~123.def456"
   }
 }</code></pre>
 
@@ -1383,34 +1634,64 @@ GET /api/auth/external-accounts</code></pre>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><code>GET /api/users/profile</code></td>
+                        <td><code>GET /api/profile</code></td>
                         <td>GET</td>
                         <td>Get current user profile</td>
                     </tr>
                     <tr>
-                        <td><code>PUT /api/users/profile</code></td>
+                        <td><code>PUT /api/profile</code></td>
                         <td>PUT</td>
                         <td>Update user profile</td>
                     </tr>
                     <tr>
-                        <td><code>POST /api/users/avatar</code></td>
+                        <td><code>POST /api/profile/avatar</code></td>
                         <td>POST</td>
                         <td>Upload avatar image</td>
                     </tr>
                     <tr>
-                        <td><code>GET /api/users/activity</code></td>
-                        <td>GET</td>
-                        <td>Get user activity history</td>
-                    </tr>
-                    <tr>
-                        <td><code>GET /api/users/sessions</code></td>
-                        <td>GET</td>
-                        <td>Get active sessions</td>
-                    </tr>
-                    <tr>
-                        <td><code>DELETE /api/users/sessions/{id}</code></td>
+                        <td><code>DELETE /api/profile/avatar</code></td>
                         <td>DELETE</td>
-                        <td>Revoke specific session</td>
+                        <td>Delete avatar image</td>
+                    </tr>
+                    <tr>
+                        <td><code>PUT /api/profile/settings</code></td>
+                        <td>PUT</td>
+                        <td>Update profile settings (language, timezone)</td>
+                    </tr>
+                    <tr>
+                        <td><code>GET /api/profile/contacts</code></td>
+                        <td>GET</td>
+                        <td>List user contacts (email, phone)</td>
+                    </tr>
+                    <tr>
+                        <td><code>POST /api/profile/contacts</code></td>
+                        <td>POST</td>
+                        <td>Add contact</td>
+                    </tr>
+                    <tr>
+                        <td><code>PUT /api/profile/contacts/{id}</code></td>
+                        <td>PUT</td>
+                        <td>Update contact</td>
+                    </tr>
+                    <tr>
+                        <td><code>DELETE /api/profile/contacts/{id}</code></td>
+                        <td>DELETE</td>
+                        <td>Remove contact</td>
+                    </tr>
+                    <tr>
+                        <td><code>POST /api/profile/contacts/{id}/set-primary</code></td>
+                        <td>POST</td>
+                        <td>Set contact as primary</td>
+                    </tr>
+                    <tr>
+                        <td><code>POST /api/profile/contacts/{id}/send-verification</code></td>
+                        <td>POST</td>
+                        <td>Send OTP verification code</td>
+                    </tr>
+                    <tr>
+                        <td><code>POST /api/profile/contacts/{id}/verify</code></td>
+                        <td>POST</td>
+                        <td>Verify contact with OTP code</td>
                     </tr>
                 </tbody>
             </table>
@@ -1604,7 +1885,7 @@ builder.Services.AddScoped&lt;IUserEventHandler, UserEventHandler&gt;();</code><
                 <br><br>
                 <strong>Solutions:</strong>
                 <ul>
-                    <li>Verify JWT SecretKey matches between configuration and token generation</li>
+                    <li>Verify JWT Secret matches between configuration and token generation</li>
                     <li>Check token expiration time</li>
                     <li>Ensure <code>app.UseDainnUser()</code> is called before <code>app.UseAuthorization()</code></li>
                     <li>Verify Authorization header format: <code>Bearer {token}</code></li>
@@ -1634,7 +1915,7 @@ builder.Services.AddScoped&lt;IUserEventHandler, UserEventHandler&gt;();</code><
                 <ul>
                     <li>Wait for lockout duration to expire (default: 15 minutes)</li>
                     <li>Admin can manually unlock via database or API</li>
-                    <li>Adjust <code>MaxLoginAttempts</code> and <code>LockoutDurationMinutes</code> in config</li>
+                    <li>Adjust <code>MaxFailedLoginAttempts</code> and <code>LockoutDurationMinutes</code> in options</li>
                     <li>Disable lockout in development: <code>EnableAccountLockout = false</code></li>
                 </ul>
             </div>
@@ -1682,7 +1963,7 @@ using (var scope = app.Services.CreateScope())
 }</code></pre>
 
             <h4>Verify JWT Configuration</h4>
-            <pre><code>// Add endpoint to check JWT config (development only)
+            <pre><code>// Add endpoint to check JWT config (development only — never expose in production!)
 app.MapGet("/debug/jwt-config", (IConfiguration config) =>
 {
     return new
@@ -1690,7 +1971,7 @@ app.MapGet("/debug/jwt-config", (IConfiguration config) =>
         Issuer = config["DainnUser:Jwt:Issuer"],
         Audience = config["DainnUser:Jwt:Audience"],
         ExpirationMinutes = config["DainnUser:Jwt:ExpirationMinutes"],
-        SecretKeyLength = config["DainnUser:Jwt:SecretKey"]?.Length ?? 0
+        SecretLength = config["DainnUser:Jwt:Secret"]?.Length ?? 0
     };
 }).RequireAuthorization("Admin");</code></pre>
 
@@ -1716,11 +1997,13 @@ app.MapGet("/debug/jwt-config", (IConfiguration config) =>
             </div>
         </section>
     </main>
+        </div><!-- /.main-content -->
+    </div><!-- /.page-layout -->
 
     <footer>
         <div class="container">
             <p><strong>DainnUser</strong> - .NET User Management Library</p>
-            <p>Version 1.0.0 | MIT License | &copy; 2024 Dainn Team</p>
+            <p>Version 1.1.0 | MIT License | &copy; 2025 Dainn Team</p>
             <p>
                 <a href="https://github.com/dainn/dainn-user" target="_blank">GitHub</a> |
                 <a href="https://www.nuget.org/packages/DainnUser.Core" target="_blank">NuGet</a> |
@@ -1728,5 +2011,64 @@ app.MapGet("/debug/jwt-config", (IConfiguration config) =>
             </p>
         </div>
     </footer>
+    <script>
+    (function () {
+        var sidebar = document.getElementById('sidebar');
+        var toggle  = document.getElementById('sidebarToggle');
+        var close   = document.getElementById('sidebarClose');
+        var overlay = document.getElementById('sidebarOverlay');
+
+        function isMobile() { return window.innerWidth < 1024; }
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebar.classList.remove('collapsed');
+            overlay.classList.add('active');
+        }
+
+        function closeSidebar() {
+            if (isMobile()) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            } else {
+                sidebar.classList.add('collapsed');
+            }
+        }
+
+        toggle.addEventListener('click', function () {
+            if (isMobile()) {
+                sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+            } else {
+                sidebar.classList.contains('collapsed')
+                    ? sidebar.classList.remove('collapsed')
+                    : sidebar.classList.add('collapsed');
+            }
+        });
+
+        close.addEventListener('click', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        // Close on mobile when a link is clicked
+        document.querySelectorAll('.sidebar a').forEach(function (a) {
+            a.addEventListener('click', function () {
+                if (isMobile()) closeSidebar();
+            });
+        });
+
+        // Highlight active section on scroll
+        var sections = document.querySelectorAll('section[id]');
+        var links    = document.querySelectorAll('.sidebar a[href^="#"]');
+
+        window.addEventListener('scroll', function () {
+            var cur = '';
+            sections.forEach(function (s) {
+                if (window.scrollY >= s.offsetTop - 120) cur = s.id;
+            });
+            links.forEach(function (a) {
+                a.classList.toggle('active', a.getAttribute('href') === '#' + cur);
+            });
+        }, { passive: true });
+    })();
+    </script>
 </body>
 </html>

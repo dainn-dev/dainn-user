@@ -9,6 +9,8 @@ namespace DainnStripe.Services;
 
 /// <summary>
 /// Syncs the local managed catalog from active Stripe products and prices.
+/// Uses Stripe auto-pagination to handle catalogs of any size and batch-loads
+/// existing local records to avoid N+1 queries.
 /// </summary>
 public class DainnStripeCatalogSyncService : IDainnStripeCatalogSyncService
 {
@@ -47,19 +49,38 @@ public class DainnStripeCatalogSyncService : IDainnStripeCatalogSyncService
             var priceService = new PriceService(client);
             var now = DateTime.UtcNow;
 
-            var productList = await productService.ListAsync(
+            // Collect all active Stripe products via auto-pagination (handles any catalog size)
+            var stripeProducts = new List<Product>();
+            await foreach (var sp in productService.ListAutoPagingAsync(
                 new ProductListOptions { Active = true, Limit = 100 },
                 null,
-                cancellationToken);
-
-            foreach (var sp in productList)
+                cancellationToken))
             {
-                var existing = await _dbContext.DainnStripeProducts
-                    .SingleOrDefaultAsync(p => p.StripeProductId == sp.Id, cancellationToken);
+                stripeProducts.Add(sp);
+            }
 
-                if (existing is null)
+            // Batch-load all matching local products in a single query to avoid N+1
+            var stripeProductIds = stripeProducts.Select(p => p.Id).ToList();
+            var existingProductMap = await _dbContext.DainnStripeProducts
+                .Where(p => p.StripeProductId != null && stripeProductIds.Contains(p.StripeProductId))
+                .ToDictionaryAsync(p => p.StripeProductId!, cancellationToken);
+
+            // Upsert products and build a lookup map for price sync
+            var localProductMap = new Dictionary<string, DainnStripeProduct>(stripeProducts.Count);
+            foreach (var sp in stripeProducts)
+            {
+                if (existingProductMap.TryGetValue(sp.Id, out var existing))
                 {
-                    _dbContext.DainnStripeProducts.Add(new DainnStripeProduct
+                    existing.Name = sp.Name;
+                    existing.Description = sp.Description;
+                    existing.Active = sp.Active;
+                    existing.UpdatedAt = now;
+                    run.ProductsUpdated++;
+                    localProductMap[sp.Id] = existing;
+                }
+                else
+                {
+                    var newProduct = new DainnStripeProduct
                     {
                         Id = Guid.NewGuid(),
                         LookupKey = sp.Id,
@@ -69,47 +90,61 @@ public class DainnStripeCatalogSyncService : IDainnStripeCatalogSyncService
                         Active = sp.Active,
                         CreatedAt = now,
                         UpdatedAt = now
-                    });
+                    };
+                    _dbContext.DainnStripeProducts.Add(newProduct);
                     run.ProductsCreated++;
-                }
-                else
-                {
-                    existing.Name = sp.Name;
-                    existing.Description = sp.Description;
-                    existing.Active = sp.Active;
-                    existing.UpdatedAt = now;
-                    run.ProductsUpdated++;
+                    localProductMap[sp.Id] = newProduct;
                 }
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            foreach (var sp in productList)
+            // Sync prices per product; each product uses auto-pagination and a single batch query
+            foreach (var sp in stripeProducts)
             {
-                var product = await _dbContext.DainnStripeProducts
-                    .SingleOrDefaultAsync(p => p.StripeProductId == sp.Id, cancellationToken);
-
-                if (product is null)
+                if (!localProductMap.TryGetValue(sp.Id, out var localProduct))
                 {
                     continue;
                 }
 
-                var priceList = await priceService.ListAsync(
+                // Collect all Stripe prices for this product via auto-pagination
+                var stripePrices = new List<Price>();
+                await foreach (var sp2 in priceService.ListAutoPagingAsync(
                     new PriceListOptions { Product = sp.Id, Limit = 100 },
                     null,
-                    cancellationToken);
-
-                foreach (var sp2 in priceList)
+                    cancellationToken))
                 {
-                    var existingPrice = await _dbContext.DainnStripePrices
-                        .SingleOrDefaultAsync(p => p.StripePriceId == sp2.Id, cancellationToken);
+                    stripePrices.Add(sp2);
+                }
 
-                    if (existingPrice is null)
+                if (stripePrices.Count == 0)
+                {
+                    continue;
+                }
+
+                // Batch-load existing prices for this product in a single query
+                var stripePriceIds = stripePrices.Select(p => p.Id).ToList();
+                var existingPriceMap = await _dbContext.DainnStripePrices
+                    .Where(p => p.ProductId == localProduct.Id
+                        && p.StripePriceId != null
+                        && stripePriceIds.Contains(p.StripePriceId))
+                    .ToDictionaryAsync(p => p.StripePriceId!, cancellationToken);
+
+                foreach (var sp2 in stripePrices)
+                {
+                    if (existingPriceMap.TryGetValue(sp2.Id, out var existingPrice))
+                    {
+                        existingPrice.UnitAmount = sp2.UnitAmount ?? 0;
+                        existingPrice.Active = sp2.Active;
+                        existingPrice.UpdatedAt = now;
+                        run.PricesUpdated++;
+                    }
+                    else
                     {
                         _dbContext.DainnStripePrices.Add(new DainnStripePrice
                         {
                             Id = Guid.NewGuid(),
-                            ProductId = product.Id,
+                            ProductId = localProduct.Id,
                             LookupKey = sp2.Id,
                             StripePriceId = sp2.Id,
                             Currency = sp2.Currency,
@@ -119,13 +154,6 @@ public class DainnStripeCatalogSyncService : IDainnStripeCatalogSyncService
                             UpdatedAt = now
                         });
                         run.PricesCreated++;
-                    }
-                    else
-                    {
-                        existingPrice.UnitAmount = sp2.UnitAmount ?? 0;
-                        existingPrice.Active = sp2.Active;
-                        existingPrice.UpdatedAt = now;
-                        run.PricesUpdated++;
                     }
                 }
             }

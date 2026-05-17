@@ -56,41 +56,153 @@
             opacity: 0.9;
         }
 
-        nav {
+        /* ── Sidebar layout ── */
+        .page-layout {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .sidebar {
+            width: 260px;
+            flex-shrink: 0;
             background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: width 0.25s ease;
+            z-index: 50;
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+        }
+
+        .sidebar-inner {
+            min-width: 260px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1rem 0.75rem;
             border-bottom: 1px solid var(--border);
             position: sticky;
             top: 0;
-            z-index: 100;
+            background: var(--bg-secondary);
+            z-index: 1;
         }
 
-        nav ul {
+        .sidebar-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+        }
+
+        .sidebar-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0.1rem 0.3rem;
+            border-radius: 4px;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .sidebar-close:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .sidebar nav ul {
             list-style: none;
-            display: flex;
-            flex-wrap: wrap;
-            padding: 0;
+            padding: 0.5rem 0 1.5rem;
         }
 
-        nav li {
+        .sidebar nav li {
             margin: 0;
         }
 
-        nav a {
+        .sidebar nav a {
             display: block;
-            padding: 1rem 1.5rem;
+            padding: 0.55rem 1.25rem;
             color: var(--text);
             text-decoration: none;
-            transition: all 0.2s;
-            border-bottom: 2px solid transparent;
+            font-size: 0.875rem;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            border-left: 3px solid transparent;
         }
 
-        nav a:hover {
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
             background: var(--bg);
-            border-bottom-color: var(--primary);
+            border-left-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* ── Main content area ── */
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .topbar {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .sidebar-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.45rem 0.9rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text);
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            font-family: inherit;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .toggle-icon {
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        /* ── Overlay (mobile) ── */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 200;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
         }
 
         main {
-            padding: 3rem 0;
+            padding: 2.5rem 0;
         }
 
         section {
@@ -247,21 +359,36 @@
         }
 
         @media (max-width: 768px) {
-            nav ul {
-                flex-direction: column;
-            }
+            header h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
 
-            nav a {
-                padding: 0.75rem 1rem;
+        @media (max-width: 1023px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: 280px;
+                z-index: 300;
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
             }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .sidebar.collapsed {
+                width: 280px;
+                transform: translateX(-100%);
+            }
+            .topbar { display: flex; }
+            .sidebar-toggle { display: flex; }
+        }
 
-            header h1 {
-                font-size: 2rem;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
+        @media (min-width: 1024px) {
+            .sidebar-overlay { display: none !important; }
+            .topbar { display: none; }
+            .sidebar.collapsed ~ .main-content .topbar { display: flex; }
         }
     </style>
 </head>
@@ -269,26 +396,46 @@
     <header>
         <div class="container">
             <h1>DainnStripe</h1>
-            <p>Complete .NET Stripe Integration - Payments, Subscriptions, Webhooks & Catalog Management</p>
+            <p>Complete .NET Stripe Integration - Payments, Subscriptions, Webhooks &amp; Catalog Management</p>
         </div>
     </header>
 
-    <nav>
-        <div class="container">
-            <ul>
-                <li><a href="#introduction">Introduction</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#installation">Installation</a></li>
-                <li><a href="#configuration">Configuration</a></li>
-                <li><a href="#quickstart">Quickstart</a></li>
-                <li><a href="#program-setup">Program.cs</a></li>
-                <li><a href="#webhooks">Webhooks</a></li>
-                <li><a href="#services">Services</a></li>
-                <li><a href="#catalog">Catalog</a></li>
-                <li><a href="#troubleshooting">Troubleshooting</a></li>
-            </ul>
-        </div>
-    </nav>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="page-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <span class="sidebar-title">DainnStripe</span>
+                    <button class="sidebar-close" id="sidebarClose" aria-label="Close sidebar">&#x2715;</button>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#introduction">Introduction</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#installation">Installation</a></li>
+                        <li><a href="#configuration">Configuration</a></li>
+                        <li><a href="#quickstart">Quickstart</a></li>
+                        <li><a href="#program-setup">Program.cs</a></li>
+                        <li><a href="#webhooks">Webhooks</a></li>
+                        <li><a href="#services">Services</a></li>
+                        <li><a href="#catalog">Catalog</a></li>
+                        <li><a href="#domain-ecommerce">E-commerce</a></li>
+                        <li><a href="#domain-saas">SaaS / Subscription</a></li>
+                        <li><a href="#domain-marketplace">Marketplace</a></li>
+                        <li><a href="#domain-b2b">B2B / Invoicing</a></li>
+                        <li><a href="#troubleshooting">Troubleshooting</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <div class="main-content">
+            <div class="topbar">
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+                    <span class="toggle-icon">&#9776;</span>
+                </button>
+            </div>
 
     <main class="container">
         <!-- Introduction -->
@@ -341,7 +488,7 @@
                     <ul>
                         <li>Payment Intents API</li>
                         <li>Checkout Sessions</li>
-                        <li>Payment tracking & persistence</li>
+                        <li>Payment tracking &amp; persistence</li>
                         <li>Refund management</li>
                         <li>Payment attempt history</li>
                         <li>Automatic status updates</li>
@@ -351,7 +498,7 @@
                 <div class="feature-card">
                     <h4>🔄 Subscriptions</h4>
                     <ul>
-                        <li>Create & manage subscriptions</li>
+                        <li>Create &amp; manage subscriptions</li>
                         <li>Multiple pricing models</li>
                         <li>Trial periods</li>
                         <li>Proration handling</li>
@@ -470,10 +617,11 @@ scoop install stripe
     "WebhookSigningSecret": "whsec_your_webhook_secret_here",
     "WebhookToleranceSeconds": 300,
     "WebhookPath": "/stripe/webhooks",
-    "ThrowOnApiVersionMismatch": false
-  },
-  "ConnectionStrings": {
-    "DainnStripe": "Data Source=dainnstripe.db"
+    "ThrowOnApiVersionMismatch": false,
+    "Database": {
+      "Provider": "SQLite",
+      "ConnectionString": "Data Source=dainnstripe.db"
+    }
   }
 }</code></pre>
 
@@ -534,12 +682,12 @@ scoop install stripe
             </table>
 
             <h3>Database Configuration</h3>
-            <p>DainnStripe supports multiple database providers:</p>
+            <p>DainnStripe requires <code>DainnStripe:Database:Provider</code> and <code>DainnStripe:Database:ConnectionString</code> in appsettings:</p>
 
             <table>
                 <thead>
                     <tr>
-                        <th>Provider</th>
+                        <th>Provider value</th>
                         <th>Connection String Example</th>
                     </tr>
                 </thead>
@@ -549,7 +697,7 @@ scoop install stripe
                         <td><code>Data Source=dainnstripe.db</code></td>
                     </tr>
                     <tr>
-                        <td><strong>SQL Server</strong></td>
+                        <td><strong>SqlServer</strong></td>
                         <td><code>Server=localhost;Database=DainnStripe;Trusted_Connection=True;</code></td>
                     </tr>
                     <tr>
@@ -592,10 +740,11 @@ cd MyPaymentApp</code></pre>
   "DainnStripe": {
     "SecretKey": "sk_test_your_secret_key",
     "PublishableKey": "pk_test_your_publishable_key",
-    "WebhookSigningSecret": "whsec_your_webhook_secret"
-  },
-  "ConnectionStrings": {
-    "DainnStripe": "Data Source=payments.db"
+    "WebhookSigningSecret": "whsec_your_webhook_secret",
+    "Database": {
+      "Provider": "SQLite",
+      "ConnectionString": "Data Source=payments.db"
+    }
   }
 }</code></pre>
 
@@ -834,29 +983,29 @@ stripe listen --forward-to https://localhost:5001/stripe/webhooks
             <h3>Custom Webhook Handlers</h3>
             <p>Create custom handlers by implementing <code>IStripeWebhookHandler</code>:</p>
 
-            <pre><code>using DainnStripe.Interfaces;
-using DainnStripe.Models;
+            <pre><code>using DainnStripe.Entities;
+using DainnStripe.Interfaces;
 using Stripe;
 
 public class CustomPaymentHandler : IStripeWebhookHandler
 {
-    public bool CanHandle(Event stripeEvent)
-    {
-        return stripeEvent.Type == "payment_intent.succeeded";
-    }
+    // Return true for event types this handler should process
+    public bool CanHandle(string eventType)
+        =&gt; eventType == "payment_intent.succeeded";
 
-    public async Task&lt;StripeWebhookProcessResult&gt; HandleAsync(Event stripeEvent)
+    public async Task HandleAsync(
+        Event stripeEvent,
+        StripeWebhookEventRecord record,
+        CancellationToken cancellationToken = default)
     {
         var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
 
         // Your custom logic here
         Console.WriteLine($"Payment succeeded: {paymentIntent.Id}");
-
-        return StripeWebhookProcessResult.Success();
     }
 }
 
-// Register in Program.cs
+// Register in Program.cs (after AddDainnStripe)
 builder.Services.AddScoped&lt;IStripeWebhookHandler, CustomPaymentHandler&gt;();</code></pre>
 
             <h3>Testing Webhooks</h3>
@@ -907,8 +1056,9 @@ var result = await _paymentService.CreatePaymentIntentAsync(request);
 
             <pre><code>public interface IDainnStripeCheckoutService
 {
-    Task&lt;CheckoutSessionResult&gt; CreateCheckoutSessionAsync(CreateCheckoutSessionRequest request);
-    Task&lt;CheckoutSessionResult&gt; GetCheckoutSessionAsync(string sessionId);
+    Task&lt;CheckoutSessionResult&gt; CreateAsync(
+        CreateCheckoutSessionRequest request,
+        CancellationToken cancellationToken = default);
 }</code></pre>
 
             <h4>Example: Create Checkout Session</h4>
@@ -927,7 +1077,7 @@ var result = await _paymentService.CreatePaymentIntentAsync(request);
     }
 };
 
-var result = await _checkoutService.CreateCheckoutSessionAsync(request);
+var result = await _checkoutService.CreateAsync(request);
 // Redirect user to result.Url</code></pre>
 
             <h3>Subscription Service</h3>
@@ -935,41 +1085,80 @@ var result = await _checkoutService.CreateCheckoutSessionAsync(request);
 
             <pre><code>public interface IDainnStripeSubscriptionService
 {
-    Task&lt;SubscriptionResult&gt; CreateSubscriptionAsync(CreateSubscriptionRequest request);
-    Task&lt;SubscriptionResult&gt; GetSubscriptionAsync(string subscriptionId);
-    Task&lt;SubscriptionResult&gt; CancelSubscriptionAsync(string subscriptionId);
-    Task&lt;SubscriptionResult&gt; UpdateSubscriptionAsync(string subscriptionId, UpdateSubscriptionRequest request);
+    // Creates a Stripe subscription and persists it locally
+    Task&lt;DainnStripeSubscription&gt; CreateAsync(
+        CreateSubscriptionRequest request,
+        CancellationToken cancellationToken = default);
+
+    // Cancels immediately and marks it canceled locally
+    Task&lt;DainnStripeSubscription&gt; CancelAsync(
+        string ownerId,
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken = default);
+
+    // Creates or updates local record from Stripe subscription data
+    Task&lt;DainnStripeSubscription&gt; SyncAsync(
+        SyncSubscriptionRequest request,
+        CancellationToken cancellationToken = default);
 }</code></pre>
 
-            <h4>Example: Create Subscription</h4>
-            <pre><code>var request = new CreateSubscriptionRequest
+            <h4>Example: Create and Cancel Subscription</h4>
+            <pre><code>// Create
+var request = new CreateSubscriptionRequest
 {
-    CustomerId = "cus_1234567890",
+    OwnerId = userId,
+    StripeCustomerId = "cus_1234567890",
     PriceId = "price_monthly_plan",
     TrialPeriodDays = 14
 };
 
-var result = await _subscriptionService.CreateSubscriptionAsync(request);</code></pre>
+var subscription = await _subscriptionService.CreateAsync(request);
+
+// Cancel
+await _subscriptionService.CancelAsync(userId, subscription.StripeSubscriptionId);</code></pre>
 
             <h3>Catalog Service</h3>
             <p><code>IDainnStripeCatalogService</code> - Manage products and prices</p>
 
             <pre><code>public interface IDainnStripeCatalogService
 {
-    Task&lt;DainnStripeProduct&gt; UpsertProductAsync(UpsertCatalogProductRequest request);
-    Task&lt;DainnStripePrice&gt; UpsertPriceAsync(UpsertCatalogPriceRequest request);
-    Task&lt;List&lt;DainnStripeProduct&gt;&gt; GetProductsAsync();
-    Task&lt;List&lt;DainnStripePrice&gt;&gt; GetPricesForProductAsync(string productId);
+    Task&lt;DainnStripeProduct&gt; UpsertProductAsync(
+        UpsertCatalogProductRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task&lt;DainnStripePrice&gt; UpsertPriceAsync(
+        UpsertCatalogPriceRequest request,
+        CancellationToken cancellationToken = default);
+
+    // Returns active products with active prices
+    Task&lt;IReadOnlyList&lt;DainnStripeProduct&gt;&gt; GetActiveCatalogAsync(
+        CancellationToken cancellationToken = default);
 }</code></pre>
 
             <h3>Connect Service</h3>
-            <p><code>IDainnStripeConnectService</code> - Manage Stripe Connect accounts for marketplaces</p>
+            <p><code>IDainnStripeConnectService</code> - Manage tenants and Stripe Connect accounts for marketplaces</p>
 
             <pre><code>public interface IDainnStripeConnectService
 {
-    Task&lt;ConnectedAccountResult&gt; CreateConnectedAccountAsync(CreateConnectedAccountRequest request);
-    Task&lt;ConnectedAccountLinkResult&gt; CreateAccountLinkAsync(CreateConnectedAccountLinkRequest request);
-    Task&lt;ConnectedAccountResult&gt; GetConnectedAccountAsync(string accountId);
+    // Create or update a tenant record
+    Task&lt;DainnStripeTenant&gt; UpsertTenantAsync(
+        UpsertTenantRequest request,
+        CancellationToken cancellationToken = default);
+
+    // Create a connected account for a tenant owner
+    Task&lt;DainnStripeConnectedAccount&gt; CreateConnectedAccountAsync(
+        CreateConnectedAccountRequest request,
+        CancellationToken cancellationToken = default);
+
+    // Create an onboarding link (account_onboarding or account_update)
+    Task&lt;ConnectedAccountLinkResult&gt; CreateOnboardingLinkAsync(
+        CreateConnectedAccountLinkRequest request,
+        CancellationToken cancellationToken = default);
+
+    // Sync local connected account status from Stripe
+    Task&lt;DainnStripeConnectedAccount?&gt; SyncConnectedAccountAsync(
+        SyncConnectedAccountRequest request,
+        CancellationToken cancellationToken = default);
 }</code></pre>
 
             <h3>Money Movement Service</h3>
@@ -977,10 +1166,38 @@ var result = await _subscriptionService.CreateSubscriptionAsync(request);</code>
 
             <pre><code>public interface IDainnStripeMoneyMovementService
 {
-    Task&lt;TransferResult&gt; CreateTransferAsync(CreateTransferRequest request);
-    Task&lt;PayoutResult&gt; CreatePayoutAsync(CreatePayoutRequest request);
-    Task&lt;BalanceSnapshotResult&gt; GetBalanceAsync();
+    Task&lt;TransferResult&gt; CreateTransferAsync(
+        CreateTransferRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task&lt;PayoutResult&gt; CreatePayoutAsync(
+        CreatePayoutRequest request,
+        CancellationToken cancellationToken = default);
 }</code></pre>
+
+            <h3>Built-In Endpoint Groups</h3>
+            <p>DainnStripe ships with ready-made minimal API endpoint groups you can map in <code>Program.cs</code>:</p>
+
+            <pre><code>// Stripe webhook (required)
+app.MapDainnStripeWebhooks();                       // POST /stripe/webhooks
+
+// Commerce: checkout, payment intents, subscriptions
+app.MapDainnStripeCommerceEndpoints();              // /dainnstripe/commerce/*
+
+// Catalog: products, prices, Stripe sync
+app.MapDainnStripeCatalogEndpoints();              // /dainnstripe/catalog/*
+
+// Connect: tenants, connected accounts, onboarding links
+app.MapDainnStripeConnectEndpoints();              // /dainnstripe/connect/*
+
+// Money movement: transfers, payouts, reconciliation
+app.MapDainnStripeMoneyMovementEndpoints();        // /dainnstripe/money-movement/*</code></pre>
+
+            <p>All groups except the webhook require authorization by default. Override the pattern and auth requirement:</p>
+
+            <pre><code>app.MapDainnStripeCatalogEndpoints(
+    pattern: "/api/billing/catalog",
+    requireAuthorization: false);</code></pre>
 
             <h3>Service Injection</h3>
             <p>All services are registered automatically and can be injected via constructor:</p>
@@ -1007,68 +1224,753 @@ var result = await _subscriptionService.CreateSubscriptionAsync(request);</code>
         <section id="catalog">
             <h2>Catalog Management</h2>
 
-            <h3>Product & Price Synchronization</h3>
-            <p>DainnStripe can synchronize your Stripe product catalog to your local database for faster queries and offline access.</p>
+            <div class="alert alert-warning">
+                <strong>When to use this:</strong> DainnStripe Catalog is designed for a small, managed set of
+                items — SaaS pricing plans, membership tiers, or a handful of recurring prices. It is
+                <strong>not</strong> intended as the primary catalog for an e-commerce store with hundreds or
+                thousands of products. For large product catalogs see the
+                <a href="#domain-ecommerce">E-commerce domain guide</a>.
+            </div>
 
-            <h3>Create a Product</h3>
-            <pre><code>var productRequest = new UpsertCatalogProductRequest
+            <h3>Upsert a Product</h3>
+            <p>
+                When <code>StripeProductId</code> is omitted and a <code>IDainnStripeClientFactory</code> is
+                registered, DainnStripe automatically creates the product on Stripe and stores the returned ID
+                locally. Pass an explicit <code>StripeProductId</code> to link an existing Stripe product
+                without making an API call.
+            </p>
+            <pre><code>// Auto-provision on Stripe (StripeProductId omitted)
+var product = await catalogService.UpsertProductAsync(new UpsertCatalogProductRequest
 {
-    Name = "Premium Plan",
-    Description = "Access to all premium features",
-    Active = true,
-    Metadata = new Dictionary&lt;string, string&gt;
-    {
-        { "feature_set", "premium" }
-    }
-};
+    LookupKey   = "plan-pro",
+    Name        = "Pro Plan",
+    Description = "Access to all Pro features",
+    Active      = true
+});
+// product.StripeProductId is now populated from Stripe
 
-var product = await _catalogService.UpsertProductAsync(productRequest);</code></pre>
-
-            <h3>Create a Price</h3>
-            <pre><code>var priceRequest = new UpsertCatalogPriceRequest
+// Link to an existing Stripe product
+var product = await catalogService.UpsertProductAsync(new UpsertCatalogProductRequest
 {
-    ProductId = product.StripeProductId,
-    UnitAmount = 2999, // $29.99
-    Currency = "usd",
-    Interval = DainnStripePriceInterval.Month,
-    Active = true
-};
+    LookupKey       = "plan-pro",
+    StripeProductId = "prod_abc123",   // pre-existing Stripe product
+    Name            = "Pro Plan",
+    Active          = true
+});</code></pre>
 
-var price = await _catalogService.UpsertPriceAsync(priceRequest);</code></pre>
-
-            <h3>Sync Catalog from Stripe</h3>
-            <p>Use <code>IDainnStripeCatalogSyncService</code> to sync your entire catalog:</p>
-
-            <pre><code>public interface IDainnStripeCatalogSyncService
+            <h3>Upsert a Price</h3>
+            <p>
+                When <code>StripePriceId</code> is omitted, DainnStripe creates the price on Stripe
+                automatically. The parent product must already have a <code>StripeProductId</code>.
+            </p>
+            <pre><code>// Auto-provision recurring price on Stripe
+var price = await catalogService.UpsertPriceAsync(new UpsertCatalogPriceRequest
 {
-    Task&lt;CatalogSyncResult&gt; SyncAllProductsAsync();
-    Task&lt;CatalogSyncResult&gt; SyncProductAsync(string productId);
+    ProductLookupKey = "plan-pro",
+    LookupKey        = "plan-pro-monthly",
+    UnitAmount       = 1900,                           // $19.00
+    Currency         = "usd",
+    Interval         = DainnStripePriceInterval.Month,
+    IntervalCount    = 1,
+    Active           = true
+});
+// price.StripePriceId is now populated — use it in checkout line items
+
+// One-time price (no recurrence)
+var price = await catalogService.UpsertPriceAsync(new UpsertCatalogPriceRequest
+{
+    ProductLookupKey = "plan-pro",
+    LookupKey        = "plan-pro-onetime",
+    UnitAmount       = 4900,
+    Currency         = "usd",
+    Interval         = DainnStripePriceInterval.None,  // one-time
+    Active           = true
+});</code></pre>
+
+            <h3>Query Active Catalog</h3>
+
+            <h4>Small catalogs — load all</h4>
+            <pre><code>// Returns all active products with active prices.
+// Suitable for rendering a pricing page with a few plans.
+var products = await catalogService.GetActiveCatalogAsync();</code></pre>
+
+            <h4>Large catalogs — paginated (recommended)</h4>
+            <pre><code>// Returns one page at a time — safe for any catalog size.
+var page = await catalogService.GetActiveCatalogPagedAsync(page: 1, pageSize: 50);
+
+Console.WriteLine($"Page {page.Page} of {page.TotalPages} ({page.TotalCount} total)");
+
+foreach (var product in page.Items)
+{
+    foreach (var price in product.Prices)
+        Console.WriteLine($"  {product.Name}: {price.UnitAmount} {price.Currency}");
 }
 
-// Example usage
-var syncResult = await _catalogSyncService.SyncAllProductsAsync();
-Console.WriteLine($"Synced {syncResult.ProductsSynced} products, {syncResult.PricesSynced} prices");</code></pre>
+// Next page
+if (page.HasNextPage)
+{
+    var next = await catalogService.GetActiveCatalogPagedAsync(page: 2, pageSize: 50);
+}
 
-            <h3>Query Local Catalog</h3>
-            <pre><code>// Get all active products
-var products = await _catalogService.GetProductsAsync();
+// CatalogPage properties:
+// .Items          — IReadOnlyList&lt;DainnStripeProduct&gt; for this page
+// .Page           — current 1-based page number
+// .PageSize       — items per page (clamped to 1–200)
+// .TotalCount     — total active products across all pages
+// .TotalPages     — Math.Ceiling(TotalCount / PageSize)
+// .HasNextPage    — Page &lt; TotalPages
+// .HasPreviousPage — Page &gt; 1</code></pre>
 
-// Get prices for a specific product
-var prices = await _catalogService.GetPricesForProductAsync(productId);
+            <h3>Sync Catalog from Stripe</h3>
+            <p>
+                <code>IDainnStripeCatalogSyncService.SyncFromStripeAsync</code> pulls all active products
+                and prices from Stripe using auto-pagination (handles any catalog size) and upserts them
+                into the local database. Use this to seed the local catalog or reconcile after changes made
+                directly in the Stripe Dashboard.
+            </p>
+            <pre><code>// Trigger manually or from a background job / IHostedService
+var result = await catalogSyncService.SyncFromStripeAsync(triggerSource: "startup");
 
-// Filter by metadata
-var premiumProducts = products
-    .Where(p => p.Metadata.ContainsKey("feature_set") &&
-                p.Metadata["feature_set"] == "premium")
-    .ToList();</code></pre>
+Console.WriteLine($"Products: +{result.ProductsCreated} created, ~{result.ProductsUpdated} updated");
+Console.WriteLine($"Prices:   +{result.PricesCreated} created, ~{result.PricesUpdated} updated");
 
-            <h3>Database Schema</h3>
-            <p>DainnStripe creates the following tables for catalog management:</p>
+// CatalogSyncResult properties:
+// .SyncRunId        — Guid of the DainnStripeCatalogSyncRun audit record
+// .Succeeded        — true if sync completed without exception
+// .ProductsCreated  — number of new local products created
+// .ProductsUpdated  — number of existing local products updated
+// .PricesCreated    — number of new local prices created
+// .PricesUpdated    — number of existing local prices updated</code></pre>
+
+            <h3>Database Tables</h3>
             <ul>
-                <li><code>DainnStripeProducts</code> - Product information</li>
-                <li><code>DainnStripePrices</code> - Price information</li>
-                <li><code>DainnStripeCatalogSyncRuns</code> - Sync history and audit trail</li>
+                <li><code>DainnStripeProducts</code> — local product records linked to Stripe via <code>StripeProductId</code></li>
+                <li><code>DainnStripePrices</code> — local price records linked to Stripe via <code>StripePriceId</code></li>
+                <li><code>DainnStripeCatalogSyncRuns</code> — audit trail for each sync run</li>
             </ul>
+        </section>
+
+        <!-- E-commerce Domain -->
+        <section id="domain-ecommerce">
+            <h2>Domain: E-commerce</h2>
+            <p>
+                Use this when selling products or services with one-time payments. Two checkout mechanisms
+                are available: <strong>Checkout Session</strong> (Stripe-hosted page — simple, redirect-based)
+                or <strong>PaymentIntent</strong> (custom UI embedding Stripe Elements directly).
+            </p>
+
+            <h3>Do you need to create products on Stripe?</h3>
+            <p>
+                <code>CreateCheckoutSessionLineItem</code> requires a <code>StripePriceId</code> — a Stripe
+                Price that already exists on your Stripe account. This does <strong>not</strong> mean you
+                need to pre-create every product in the Stripe Dashboard.
+            </p>
+            <table>
+                <thead>
+                    <tr><th>Catalog size</th><th>Recommended approach</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Small (&lt; 50 items) — SaaS plans, memberships</td>
+                        <td>Use <code>IDainnStripeCatalogService</code> to manage products &amp; prices.
+                            DainnStripe auto-creates them on Stripe and stores <code>StripePriceId</code> locally.</td>
+                    </tr>
+                    <tr>
+                        <td>Large (50 + items) — E-commerce product catalog</td>
+                        <td>Keep the full catalog in <strong>your own database</strong>.
+                            Add a <code>StripePriceId</code> column and populate it lazily on first checkout
+                            (see pattern below). Stripe stores nothing until a user checks out.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Services Used</h3>
+            <table>
+                <thead>
+                    <tr><th>Service</th><th>Purpose</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>IDainnStripeCheckoutService</code></td><td>Create a Checkout Session, persist <code>DainnStripePayment { Status = Pending }</code></td></tr>
+                    <tr><td><code>IDainnStripePaymentService</code></td><td>Create a PaymentIntent, return <code>ClientSecret</code> to the frontend</td></tr>
+                    <tr><td><code>IDainnStripeCatalogService</code></td><td>Manage a small set of Stripe-backed products &amp; prices in code (SaaS plans only)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Setup — Program.cs</h3>
+            <pre><code>builder.Services.AddDainnStripe(builder.Configuration);
+
+var app = builder.Build();
+app.UseDainnStripe();
+app.MapDainnStripeWebhooks();            // POST /dainnstripe/webhooks
+app.MapDainnStripeCommerceEndpoints();   // POST /dainnstripe/commerce/payments/checkout</code></pre>
+
+            <h3>Pattern A — Large catalog: lazy StripePriceId</h3>
+            <p>
+                Your product table already has all the data you need. Add a nullable
+                <code>StripePriceId</code> column. On the first checkout for each product, create a Stripe
+                Price on demand and cache the ID back. Every subsequent checkout reuses the cached ID —
+                no Stripe API call needed.
+            </p>
+            <pre><code>// Helper: get or lazily create a Stripe Price for a product
+private async Task&lt;string&gt; GetOrCreateStripePriceAsync(Product product, CancellationToken ct)
+{
+    if (!string.IsNullOrEmpty(product.StripePriceId))
+        return product.StripePriceId;
+
+    // First checkout for this product — provision on Stripe now
+    var stripeProductService = new ProductService();
+    var stripeProduct = await stripeProductService.CreateAsync(new ProductCreateOptions
+    {
+        Name        = product.Name,
+        Description = product.Description
+    }, cancellationToken: ct);
+
+    var stripePriceService = new PriceService();
+    var stripePrice = await stripePriceService.CreateAsync(new PriceCreateOptions
+    {
+        Product    = stripeProduct.Id,
+        UnitAmount = product.PriceCents,
+        Currency   = "usd"
+    }, cancellationToken: ct);
+
+    // Cache back to your DB so future checkouts skip the Stripe call
+    product.StripePriceId = stripePrice.Id;
+    await _db.SaveChangesAsync(ct);
+
+    return stripePrice.Id;
+}
+
+// Checkout endpoint
+app.MapPost("/checkout", async (CartDto cart, IDainnStripeCheckoutService checkoutService,
+    HttpContext httpContext, AppDbContext db, CancellationToken ct) =>
+{
+    var request = new CreateCheckoutSessionRequest
+    {
+        OwnerId    = httpContext.User.FindFirst("sub")!.Value,
+        Mode       = DainnStripeCheckoutMode.Payment,
+        SuccessUrl = "https://yourshop.com/order/success?session={CHECKOUT_SESSION_ID}",
+        CancelUrl  = "https://yourshop.com/cart"
+    };
+
+    foreach (var item in cart.Items)
+    {
+        var product = await db.Products.FindAsync(item.ProductId);
+        var stripePriceId = await GetOrCreateStripePriceAsync(product!, ct);
+
+        request.LineItems.Add(new CreateCheckoutSessionLineItem
+        {
+            StripePriceId = stripePriceId,
+            Quantity      = item.Quantity,
+            UnitAmount    = product!.PriceCents,
+            Currency      = "usd"
+        });
+    }
+
+    request.Metadata["order_id"] = cart.OrderId.ToString();
+
+    var result = await checkoutService.CreateAsync(request, ct);
+    // DainnStripe persists DainnStripePayment { Status = Pending }
+
+    return Results.Redirect(result.Url!);
+});</code></pre>
+
+            <div class="alert alert-info">
+                <strong>Stripe stores nothing</strong> until the first checkout for each product.
+                You are not pre-creating 1 000 products on Stripe — only products that have ever
+                been purchased will appear in your Stripe Dashboard.
+            </div>
+
+            <h3>Pattern B — Small catalog: DainnStripe Catalog</h3>
+            <p>Suitable for SaaS plans or a small, stable set of items managed entirely in code.</p>
+            <pre><code>// Run once at startup / migration to ensure plans exist on Stripe
+await catalogService.UpsertProductAsync(new UpsertCatalogProductRequest
+{
+    LookupKey = "plan-pro",
+    Name      = "Pro Plan",
+    Active    = true
+    // StripeProductId omitted → auto-created on Stripe
+});
+
+var price = await catalogService.UpsertPriceAsync(new UpsertCatalogPriceRequest
+{
+    ProductLookupKey = "plan-pro",
+    LookupKey        = "plan-pro-monthly",
+    UnitAmount       = 1900,                          // $19.00
+    Currency         = "usd",
+    Interval         = DainnStripePriceInterval.Month
+    // StripePriceId omitted → auto-created on Stripe
+});
+
+// At checkout, retrieve StripePriceId from the local catalog
+var catalog = await catalogService.GetActiveCatalogAsync();
+var proPrice = catalog.Single(p => p.LookupKey == "plan-pro")
+                      .Prices.Single(p => p.LookupKey == "plan-pro-monthly");
+
+request.LineItems.Add(new CreateCheckoutSessionLineItem
+{
+    StripePriceId = proPrice.StripePriceId!,
+    Quantity      = 1
+});</code></pre>
+
+            <h3>Post-payment — Custom Webhook Handler</h3>
+            <p>
+                The built-in <code>DainnStripePaymentWebhookHandler</code> automatically updates
+                <code>DainnStripePayment.Status</code>. Add your own handler for business logic:
+            </p>
+            <pre><code>public class OrderFulfillmentWebhookHandler : IStripeWebhookHandler
+{
+    private readonly IOrderService _orderService;
+
+    public OrderFulfillmentWebhookHandler(IOrderService orderService)
+        => _orderService = orderService;
+
+    public bool CanHandle(string eventType)
+        => eventType == "checkout.session.completed";
+
+    public async Task HandleAsync(
+        Event stripeEvent,
+        StripeWebhookEventRecord record,
+        CancellationToken cancellationToken = default)
+    {
+        var session = (Session)stripeEvent.Data.Object;
+
+        if (!session.Metadata.TryGetValue("order_id", out var orderId))
+            return;
+
+        await _orderService.FulfillAsync(orderId, cancellationToken);
+    }
+}
+
+// Register in Program.cs
+builder.Services.AddScoped&lt;IStripeWebhookHandler, OrderFulfillmentWebhookHandler&gt;();</code></pre>
+
+            <h3>Built-in webhook events</h3>
+            <table>
+                <thead>
+                    <tr><th>Stripe Event</th><th>Result in DB</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>checkout.session.completed</code></td><td><code>DainnStripePayment.Status = Succeeded</code></td></tr>
+                    <tr><td><code>checkout.session.expired</code></td><td><code>DainnStripePayment.Status = Canceled</code></td></tr>
+                    <tr><td><code>payment_intent.succeeded</code></td><td>Updates Amount + Status</td></tr>
+                    <tr><td><code>payment_intent.payment_failed</code></td><td><code>Status = Failed</code></td></tr>
+                    <tr><td><code>payment_intent.canceled</code></td><td><code>Status = Canceled</code></td></tr>
+                    <tr><td><code>charge.refunded</code></td><td>Creates <code>DainnStripeRefundRecord</code></td></tr>
+                </tbody>
+            </table>
+
+            <h3>Flow: PaymentIntent (Custom UI)</h3>
+            <p>Use when embedding Stripe Elements in your frontend instead of redirecting to the Stripe-hosted page.</p>
+            <pre><code>app.MapPost("/create-payment-intent", async (
+    OrderDto order,
+    IDainnStripePaymentService paymentService,
+    HttpContext httpContext) =>
+{
+    var result = await paymentService.CreatePaymentIntentAsync(new CreatePaymentIntentRequest
+    {
+        OwnerId     = httpContext.User.FindFirst("sub")!.Value,
+        Amount      = order.TotalCents,    // cents: 4999 = $49.99
+        Currency    = "usd",
+        Description = $"Order #{order.Id}"
+    });
+
+    // Return ClientSecret to frontend for Stripe.js to confirm payment
+    return Results.Ok(new { clientSecret = result.ClientSecret });
+});</code></pre>
+        </section>
+
+        <!-- SaaS / Subscription Domain -->
+        <section id="domain-saas">
+            <h2>Domain: SaaS / Subscription</h2>
+            <p>
+                Use this for software billed monthly or annually, membership sites, or any model that requires
+                recurring billing. Supports trial periods, cancel-at-period-end, and automatic status
+                synchronization from Stripe webhooks.
+            </p>
+
+            <h3>Services Used</h3>
+            <table>
+                <thead>
+                    <tr><th>Service</th><th>Purpose</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>IDainnStripeCheckoutService</code></td><td>Create a Checkout Session in <code>Subscription</code> mode</td></tr>
+                    <tr><td><code>IDainnStripeSubscriptionService</code></td><td>Create, cancel, and sync subscriptions directly via the API</td></tr>
+                    <tr><td><code>IDainnStripeCatalogService</code></td><td>Manage subscription plans (pricing tiers)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Flow: Checkout Session (Subscription mode)</h3>
+            <pre><code>app.MapPost("/subscribe", async (
+    SubscribeDto dto,
+    IDainnStripeCheckoutService checkoutService,
+    HttpContext httpContext) =>
+{
+    var request = new CreateCheckoutSessionRequest
+    {
+        OwnerId    = httpContext.User.FindFirst("sub")!.Value,
+        Mode       = DainnStripeCheckoutMode.Subscription,   // &lt;-- subscription mode
+        SuccessUrl = "https://app.com/dashboard?subscribed=true",
+        CancelUrl  = "https://app.com/pricing",
+    };
+
+    request.LineItems.Add(new CreateCheckoutSessionLineItem
+    {
+        StripePriceId = dto.StripePriceId,  // recurring price ID
+        Quantity      = 1
+    });
+
+    var result = await checkoutService.CreateAsync(request);
+    // DainnStripe saves DainnStripeSubscription { Status = Incomplete }
+
+    return Results.Redirect(result.Url!);
+});</code></pre>
+
+            <h3>Flow: Create Subscription Directly (without Checkout page)</h3>
+            <pre><code>var sub = await subscriptionService.CreateAsync(new CreateSubscriptionRequest
+{
+    OwnerId          = userId,
+    StripeCustomerId = stripeCustomerId,  // already on file from a previous session
+    StripePriceId    = "price_monthly_pro",
+    TrialPeriodDays  = 14
+});
+// sub.Status = Active (or Trialing if a trial is configured)</code></pre>
+
+            <h3>Cancel a Subscription</h3>
+            <pre><code>// Cancel immediately
+var sub = await subscriptionService.CancelAsync(userId, stripeSubscriptionId);
+// sub.Status = Canceled, sub.CanceledAt = UtcNow</code></pre>
+
+            <h3>Built-in webhook events already handled</h3>
+            <table>
+                <thead>
+                    <tr><th>Stripe Event</th><th>Result in DB</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>customer.subscription.created</code></td><td>Creates or syncs <code>DainnStripeSubscription</code></td></tr>
+                    <tr><td><code>customer.subscription.updated</code></td><td>Updates Status, Period, CancelAtPeriodEnd</td></tr>
+                    <tr><td><code>customer.subscription.deleted</code></td><td><code>Status = Canceled</code></td></tr>
+                    <tr><td><code>invoice.payment_succeeded</code></td><td>Creates/updates <code>DainnStripeInvoice { Status = Paid }</code></td></tr>
+                    <tr><td><code>invoice.payment_failed</code></td><td><code>DainnStripeInvoice { Status = Open }</code></td></tr>
+                    <tr><td><code>invoice.finalized</code></td><td>Saves hosted URL + PDF URL</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Custom Webhook — React to Subscription Status Changes</h3>
+            <pre><code>public class SubscriptionLifecycleWebhookHandler : IStripeWebhookHandler
+{
+    private readonly IUserPlanService _userPlanService;
+
+    public SubscriptionLifecycleWebhookHandler(IUserPlanService userPlanService)
+        => _userPlanService = userPlanService;
+
+    public bool CanHandle(string eventType) => eventType is
+        "customer.subscription.updated" or
+        "customer.subscription.deleted";
+
+    public async Task HandleAsync(
+        Event stripeEvent,
+        StripeWebhookEventRecord record,
+        CancellationToken cancellationToken = default)
+    {
+        var sub = (Subscription)stripeEvent.Data.Object;
+
+        var plan = sub.Status switch
+        {
+            "active"   => UserPlan.Pro,
+            "trialing" => UserPlan.Trial,
+            _          => UserPlan.Free
+        };
+
+        await _userPlanService.UpdatePlanAsync(sub.CustomerId, plan, cancellationToken);
+    }
+}
+
+builder.Services.AddScoped&lt;IStripeWebhookHandler, SubscriptionLifecycleWebhookHandler&gt;();</code></pre>
+
+            <h3>Defining Plans in the Catalog</h3>
+            <pre><code>// Run once at startup or during migration
+await catalogService.UpsertProductAsync(new UpsertCatalogProductRequest
+{
+    LookupKey = "plan-pro",
+    Name      = "Pro Plan",
+    Active    = true
+});
+
+await catalogService.UpsertPriceAsync(new UpsertCatalogPriceRequest
+{
+    ProductLookupKey = "plan-pro",
+    LookupKey        = "plan-pro-monthly",
+    UnitAmount       = 1900,                          // $19/month
+    Currency         = "usd",
+    Interval         = DainnStripePriceInterval.Month
+});</code></pre>
+        </section>
+
+        <!-- Marketplace Domain -->
+        <section id="domain-marketplace">
+            <h2>Domain: Marketplace / Platform</h2>
+            <p>
+                Use this for two-sided marketplace models (buyer &amp; seller) like Airbnb, Etsy, or Upwork, or any
+                platform that needs to collect money from buyers and distribute it to sellers/vendors
+                via Stripe Connect.
+            </p>
+
+            <h3>Services Used</h3>
+            <table>
+                <thead>
+                    <tr><th>Service</th><th>Purpose</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>IDainnStripeConnectService</code></td><td>Manage Tenants, create Connected Accounts, and generate onboarding links</td></tr>
+                    <tr><td><code>IDainnStripeMoneyMovementService</code></td><td>Transfer funds to sellers and initiate bank payouts</td></tr>
+                    <tr><td><code>IDainnStripeCheckoutService</code></td><td>Collect payment from buyers (Payment mode)</td></tr>
+                    <tr><td><code>IDainnStripeReconciliationService</code></td><td>Re-sync transfers/payouts with Stripe and capture balance snapshots</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Step 1 — Initialize Tenant (once)</h3>
+            <pre><code>await connectService.UpsertTenantAsync(new UpsertTenantRequest
+{
+    TenantId        = "marketplace-main",
+    DisplayName     = "My Marketplace",
+    DefaultCurrency = "usd",
+    Active          = true
+});</code></pre>
+
+            <h3>Step 2 — Onboard a Seller</h3>
+            <pre><code>// Create a Connected Account for the seller
+var account = await connectService.CreateConnectedAccountAsync(new CreateConnectedAccountRequest
+{
+    TenantId        = "marketplace-main",
+    OwnerId         = sellerId,
+    Email           = seller.Email,
+    Country         = "US",
+    DefaultCurrency = "usd"
+});
+
+// Create an onboarding link so the seller can fill in their details on Stripe
+var link = await connectService.CreateOnboardingLinkAsync(new CreateConnectedAccountLinkRequest
+{
+    StripeAccountId = account.StripeAccountId,
+    ReturnUrl       = "https://marketplace.com/seller/onboarding/complete",
+    RefreshUrl      = "https://marketplace.com/seller/onboarding/refresh"
+});
+
+// Redirect the seller to link.Url to complete KYC on Stripe
+return Results.Redirect(link.Url);</code></pre>
+
+            <h3>Step 3 — Collect Payment from Buyer</h3>
+            <pre><code>// Collect payment from buyer (retain application fee, then transfer to seller)
+var checkout = await checkoutService.CreateAsync(new CreateCheckoutSessionRequest
+{
+    OwnerId    = buyerId,
+    Mode       = DainnStripeCheckoutMode.Payment,
+    SuccessUrl = "https://marketplace.com/order/success",
+    CancelUrl  = "https://marketplace.com/cart",
+});
+
+checkout.LineItems.Add(new CreateCheckoutSessionLineItem
+{
+    StripePriceId = "price_listing_xyz",
+    Quantity      = 1,
+    UnitAmount    = 10000,   // $100
+    Currency      = "usd"
+});
+
+// Store orderId + sellerId in metadata for webhook processing
+checkout.Metadata["order_id"]  = orderId.ToString();
+checkout.Metadata["seller_id"] = sellerId;
+
+var result = await checkoutService.CreateAsync(checkout);</code></pre>
+
+            <h3>Step 4 — Transfer Funds to Seller After Successful Payment</h3>
+            <pre><code>public class MarketplacePaymentWebhookHandler : IStripeWebhookHandler
+{
+    private readonly IDainnStripeMoneyMovementService _moneyMovement;
+
+    public MarketplacePaymentWebhookHandler(IDainnStripeMoneyMovementService moneyMovement)
+        => _moneyMovement = moneyMovement;
+
+    public bool CanHandle(string eventType)
+        => eventType == "checkout.session.completed";
+
+    public async Task HandleAsync(
+        Event stripeEvent,
+        StripeWebhookEventRecord record,
+        CancellationToken cancellationToken = default)
+    {
+        var session = (Session)stripeEvent.Data.Object;
+
+        if (!session.Metadata.TryGetValue("seller_id", out var sellerId))
+            return;
+
+        // Transfer 90% to seller, retain 10% as platform fee
+        var sellerAmount = (long)(session.AmountTotal!.Value * 0.9);
+
+        await _moneyMovement.CreateTransferAsync(new CreateTransferRequest
+        {
+            OwnerId                    = sellerId,
+            StripeDestinationAccountId = sellerStripeAccountId,
+            Amount                     = sellerAmount,
+            Currency                   = "usd",
+            TransferGroup              = session.Metadata["order_id"]
+        }, cancellationToken);
+    }
+}
+
+builder.Services.AddScoped&lt;IStripeWebhookHandler, MarketplacePaymentWebhookHandler&gt;();</code></pre>
+
+            <h3>Step 5 — Pay Out Funds to Seller's Bank Account</h3>
+            <pre><code>// Triggered manually or on a schedule (background job)
+await moneyMovementService.CreatePayoutAsync(new CreatePayoutRequest
+{
+    OwnerId         = sellerId,
+    StripeAccountId = seller.StripeAccountId,
+    Amount          = payoutAmountCents,
+    Currency        = "usd",
+    Method          = "standard"   // or "instant"
+});</code></pre>
+
+            <h3>Reconciliation — Re-sync with Stripe</h3>
+            <pre><code>// Run periodically (scheduled job / background service)
+var result = await reconciliationService.ReconcileMoneyMovementAsync(new ReconcileMoneyMovementRequest
+{
+    IncludeTransfers      = true,
+    IncludePayouts        = true,
+    CaptureBalanceSnapshot = true
+});
+
+Console.WriteLine($"Transfers: {result.TransfersReconciled}, Payouts: {result.PayoutsReconciled}");</code></pre>
+
+            <h3>Built-in webhook events already handled</h3>
+            <table>
+                <thead>
+                    <tr><th>Stripe Event</th><th>Result in DB</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>account.updated</code></td><td>Syncs <code>DainnStripeConnectedAccount</code> (ChargesEnabled, PayoutsEnabled)</td></tr>
+                    <tr><td><code>payout.paid</code></td><td>Updates <code>DainnStripePayout.Status = paid</code></td></tr>
+                    <tr><td><code>payout.failed</code></td><td><code>DainnStripePayout.Status = failed</code></td></tr>
+                </tbody>
+            </table>
+
+            <div class="alert alert-info">
+                <strong>Note:</strong> A Connected Account must have <code>ChargesEnabled = true</code> and
+                <code>PayoutsEnabled = true</code> (onboarding complete) before it can receive Transfers or initiate Payouts.
+                Check that <code>account.Status == DainnStripeConnectedAccountStatus.Active</code> before transferring funds.
+            </div>
+        </section>
+
+        <!-- B2B / Invoicing Domain -->
+        <section id="domain-b2b">
+            <h2>Domain: B2B / Invoicing</h2>
+            <p>
+                Use this for accounting software, agency billing, or any application that needs to create and track
+                invoices sent to businesses. DainnStripe automatically persists <code>DainnStripeInvoice</code>
+                and <code>DainnStripeCreditNote</code> records via webhooks — no need to manually create invoices
+                outside of Stripe.
+            </p>
+
+            <h3>How It Works</h3>
+            <div class="alert alert-info">
+                <strong>Principle:</strong> Invoices and CreditNotes are managed on the Stripe side (via the Stripe Dashboard
+                or Stripe API). DainnStripe listens to webhooks and automatically persists the data to your local database.
+            </div>
+
+            <h3>Built-in webhook events already handled</h3>
+            <table>
+                <thead>
+                    <tr><th>Stripe Event</th><th>Result in DB</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>invoice.finalized</code></td><td>Creates <code>DainnStripeInvoice { Status = Open }</code>, saves hosted URL + PDF</td></tr>
+                    <tr><td><code>invoice.payment_succeeded</code></td><td><code>DainnStripeInvoice { Status = Paid, AmountPaid }</code></td></tr>
+                    <tr><td><code>invoice.payment_failed</code></td><td><code>DainnStripeInvoice { Status = Open }</code></td></tr>
+                </tbody>
+            </table>
+
+            <h3>Querying Invoices from the Local Database</h3>
+            <pre><code>// Inject DainnStripeDbContext for direct queries
+public class InvoiceController : ControllerBase
+{
+    private readonly DainnStripeDbContext _db;
+
+    public InvoiceController(DainnStripeDbContext db) => _db = db;
+
+    [HttpGet("api/invoices")]
+    public async Task&lt;IActionResult&gt; GetInvoices(CancellationToken ct)
+    {
+        var invoices = await _db.DainnStripeInvoices
+            .Where(i => i.OwnerId == User.FindFirst("sub")!.Value)
+            .OrderByDescending(i => i.CreatedAt)
+            .Select(i => new
+            {
+                i.StripeInvoiceId,
+                i.AmountDue,
+                i.AmountPaid,
+                i.Currency,
+                i.Status,
+                i.HostedInvoiceUrl,
+                i.InvoicePdfUrl,
+                i.PeriodStart,
+                i.PeriodEnd
+            })
+            .ToListAsync(ct);
+
+        return Ok(invoices);
+    }
+}</code></pre>
+
+            <h3>Custom Webhook — Send Email When Invoice is Paid</h3>
+            <pre><code>public class InvoicePaidWebhookHandler : IStripeWebhookHandler
+{
+    private readonly IEmailService _emailService;
+
+    public InvoicePaidWebhookHandler(IEmailService emailService)
+        => _emailService = emailService;
+
+    public bool CanHandle(string eventType)
+        => eventType == "invoice.payment_succeeded";
+
+    public async Task HandleAsync(
+        Event stripeEvent,
+        StripeWebhookEventRecord record,
+        CancellationToken cancellationToken = default)
+    {
+        var invoice = (Invoice)stripeEvent.Data.Object;
+
+        await _emailService.SendAsync(
+            to: invoice.CustomerEmail,
+            subject: $"Invoice #{invoice.Number} paid",
+            body: $"Thank you. Download PDF: {invoice.InvoicePdf}",
+            cancellationToken: cancellationToken
+        );
+    }
+}
+
+builder.Services.AddScoped&lt;IStripeWebhookHandler, InvoicePaidWebhookHandler&gt;();</code></pre>
+
+            <h3>Invoice Statuses</h3>
+            <table>
+                <thead>
+                    <tr><th>DainnStripeInvoiceStatus</th><th>Meaning</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>Draft</code></td><td>Draft, not yet finalized</td></tr>
+                    <tr><td><code>Open</code></td><td>Sent, awaiting payment</td></tr>
+                    <tr><td><code>Paid</code></td><td>Payment received</td></tr>
+                    <tr><td><code>Uncollectible</code></td><td>Unable to collect</td></tr>
+                    <tr><td><code>Void</code></td><td>Voided / canceled</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Combining with Subscriptions</h3>
+            <p>
+                In SaaS applications, Stripe automatically creates an invoice each billing cycle and fires the
+                <code>invoice.payment_succeeded</code> webhook. DainnStripe automatically links the invoice to the
+                subscription via <code>DainnStripeInvoice.StripeSubscriptionId</code> — no additional code required.
+            </p>
         </section>
 
         <!-- Troubleshooting -->
@@ -1220,11 +2122,13 @@ SELECT * FROM DainnStripeSubscriptions ORDER BY CreatedAt DESC;</code></pre>
             </ul>
         </section>
     </main>
+        </div><!-- /.main-content -->
+    </div><!-- /.page-layout -->
 
     <footer>
         <div class="container">
             <p><strong>DainnStripe</strong> - .NET Stripe Integration Library</p>
-            <p>Version 1.0.0 | MIT License | &copy; 2024 Dainn Team</p>
+            <p>Version 1.1.0 | MIT License | &copy; 2025 Dainn Team</p>
             <p>
                 <a href="https://github.com/dainn/dainn-user" target="_blank">GitHub</a> |
                 <a href="https://www.nuget.org/packages/DainnStripe" target="_blank">NuGet</a> |
@@ -1232,5 +2136,62 @@ SELECT * FROM DainnStripeSubscriptions ORDER BY CreatedAt DESC;</code></pre>
             </p>
         </div>
     </footer>
+
+    <script>
+    (function () {
+        var sidebar = document.getElementById('sidebar');
+        var toggle  = document.getElementById('sidebarToggle');
+        var close   = document.getElementById('sidebarClose');
+        var overlay = document.getElementById('sidebarOverlay');
+
+        function isMobile() { return window.innerWidth < 1024; }
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebar.classList.remove('collapsed');
+            overlay.classList.add('active');
+        }
+
+        function closeSidebar() {
+            if (isMobile()) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            } else {
+                sidebar.classList.add('collapsed');
+            }
+        }
+
+        toggle.addEventListener('click', function () {
+            if (isMobile()) {
+                sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+            } else {
+                sidebar.classList.contains('collapsed')
+                    ? sidebar.classList.remove('collapsed')
+                    : sidebar.classList.add('collapsed');
+            }
+        });
+
+        close.addEventListener('click', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        document.querySelectorAll('.sidebar a').forEach(function (a) {
+            a.addEventListener('click', function () {
+                if (isMobile()) closeSidebar();
+            });
+        });
+
+        var sections = document.querySelectorAll('section[id]');
+        var links    = document.querySelectorAll('.sidebar a[href^="#"]');
+        window.addEventListener('scroll', function () {
+            var cur = '';
+            sections.forEach(function (s) {
+                if (window.scrollY >= s.offsetTop - 120) cur = s.id;
+            });
+            links.forEach(function (a) {
+                a.classList.toggle('active', a.getAttribute('href') === '#' + cur);
+            });
+        }, { passive: true });
+    })();
+    </script>
 </body>
 </html>
